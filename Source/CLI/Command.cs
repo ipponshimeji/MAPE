@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using MAPE.Core;
+using MAPE.Windows;
 
 
 namespace CLI {
-	class Command: CommandBase {
+	class Command: WindowsCommand {
 		#region entry point
 
 		static void Main(string[] args) {

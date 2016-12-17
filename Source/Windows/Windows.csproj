@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6B4BC62C-83D5-452F-ABF2-6C2DDE02D3AB}</ProjectGuid>
+    <ProjectGuid>{F886F3A8-8113-4160-8194-45ABC166BD75}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MAPE.Core</RootNamespace>
-    <AssemblyName>MAPE.Core</AssemblyName>
+    <RootNamespace>MAPE.Windows</RootNamespace>
+    <AssemblyName>MAPE.Windows</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
@@ -35,7 +35,6 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -43,19 +42,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ComponentFactory.cs" />
-    <Compile Include="CommandBase.cs" />
-    <Compile Include="InstanceCache.cs" />
-    <Compile Include="TaskingComponent.cs" />
-    <Compile Include="MessageBuffer.cs" />
-    <Compile Include="Response.cs" />
-    <Compile Include="Request.cs" />
-    <Compile Include="Message.cs" />
-    <Compile Include="Listener.cs" />
-    <Compile Include="ConnectionCollection.cs" />
-    <Compile Include="Connection.cs" />
-    <Compile Include="Proxy.cs" />
+    <Compile Include="WindowsCommand.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Core\Core.csproj">
+      <Project>{6b4bc62c-83d5-452f-abf2-6c2dde02d3ab}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

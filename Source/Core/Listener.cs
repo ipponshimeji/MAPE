@@ -5,15 +5,14 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 
 namespace MAPE.Core {
-	public class Listener: IDisposable {
+	public class Listener: TaskingComponent, IDisposable {
 		#region constants
 
-		public const int DefaultBackLog = 4;
-
-		public const int DefaultTimeout = 3000;     // 3000[ms]
+		public const int DefaultBackLog = 8;
 
 		#endregion
 
@@ -22,20 +21,21 @@ namespace MAPE.Core {
 
 		private readonly Proxy owner;
 
+		#endregion
+
+
+		#region data - synchronized by locking this
+
 		private TcpListener listener;
 
 		private int backLog;
-
-		private int timeout;
-
-		private Thread listeningThread;
 
 		#endregion
 
 
 		#region creation and disposal
 
-		public Listener(Proxy owner, IPEndPoint endPoint, int backLog = DefaultBackLog, int timeout = DefaultTimeout) {
+		public Listener(Proxy owner, IPEndPoint endPoint, int backLog = DefaultBackLog) {
 			// argument checks
 			if (owner == null) {
 				throw new ArgumentNullException(nameof(owner));
@@ -46,16 +46,11 @@ namespace MAPE.Core {
 			if (backLog < 0) {
 				throw new ArgumentOutOfRangeException(nameof(backLog));
 			}
-			if (timeout < 0 && timeout != Timeout.Infinite) {
-				throw new ArgumentOutOfRangeException(nameof(timeout));
-			}
 
 			// initialize members
 			this.owner = owner;
 			this.listener = new TcpListener(endPoint);
 			this.backLog = backLog;
-			this.timeout = timeout;
-			this.listeningThread = null;
 
 			return;
 		}
@@ -67,6 +62,8 @@ namespace MAPE.Core {
 			// clear the listener
 			lock (this) {
 				this.listener = null;
+				// listeningTask will be cleard at this.Task
+				// see the prop getter of ListeningTask
 			}
 
 			return;
@@ -82,43 +79,46 @@ namespace MAPE.Core {
 				// state checks
 				TcpListener listener = this.listener;
 				if (listener == null) {
-					throw new ObjectDisposedException(nameof(Listener));
+					throw new ObjectDisposedException(this.GetType().Name);
 				}
-				Thread listeningThread = this.listeningThread;
-				if (listeningThread != null) {
+
+				Task listeningTask = this.Task;
+				if (listeningTask != null) {
+					// already listening
 					return;
 				}
 
 				// start listening
 				try {
+					listeningTask = new Task(Listen, TaskCreationOptions.LongRunning);
 					listener.Start(this.backLog);
-					listeningThread = new Thread(Listen);
-					listeningThread.Start();
+					listeningTask.Start();
 				} catch {
 					listener.Stop();
 					throw;
 				}
-				this.listeningThread = listeningThread;
+
+				// update its state
+				this.Task = listeningTask;
 			}
 
 			return;
 		}
 
-		public void Stop() {
-			Thread listeningThread;
-			int timeout;
+		public bool Stop(int millisecondsTimeout = 0) {
+			Task listeningTask;
 			lock (this) {
 				// state checks
 				TcpListener listener = this.listener;
 				if (listener == null) {
 					throw new ObjectDisposedException(nameof(Listener));
 				}
-				listeningThread = this.listeningThread;
-				this.listeningThread = null;
-				if (listeningThread == null) {
-					return;
+
+				listeningTask = this.Task;
+				if (listeningTask == null) {
+					// already stopped
+					return true;
 				}
-				timeout = this.timeout;
 
 				// stop listening
 				try {
@@ -128,10 +128,14 @@ namespace MAPE.Core {
 				}
 			}
 
-			// wait for the termination of the listening thread
-			listeningThread.Join(timeout);
+			// wait for the completion of the listening task
+			// Note that -1 timeout means 'Infinite'.
+			bool stopConfirmed = false;
+			if (millisecondsTimeout != 0) {
+				stopConfirmed = listeningTask.Wait(millisecondsTimeout);
+			}
 
-			return;
+			return stopConfirmed;
 		}
 
 		#endregion
@@ -140,21 +144,26 @@ namespace MAPE.Core {
 		#region privates
 
 		private void Listen() {
+			// state checks
 			TcpListener listener;
+			Proxy owner;
 			lock (this) {
 				listener = this.listener;
+				owner = this.owner;
 			}
 			if (listener == null) {
+				// may be disposed immediately after Start() call
 				return;
 			}
 
+			// start accept loop
 			try {
 				do {
 					TcpClient client = listener.AcceptTcpClient();
-					this.owner.OnAccept(client);
+					owner.OnAccept(client);
 				} while (true);
-			} catch (SocketException exception) {
-				// ToDo: 
+			} catch (Exception) {
+				// ToDo: log
 				;
 			}
 

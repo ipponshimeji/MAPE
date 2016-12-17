@@ -27,12 +27,13 @@ namespace MAPE.Core {
 		#region methods
 
 		public void Run(string[] args) {
-			using (Proxy proxy = new Proxy()) {
+			using (Proxy proxy = new Proxy(null)) {
 				proxy.Start();
 				Console.WriteLine("Listening...");
 				Console.WriteLine("Push any key to quit.");
 				Console.ReadKey();
-				proxy.Stop();
+				bool b = proxy.Stop(5000);
+				Console.WriteLine(b? "Completed.": "Not Completed.");
 			}
 
 			return;
