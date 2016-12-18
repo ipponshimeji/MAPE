@@ -82,7 +82,7 @@ namespace MAPE.Core {
 				// state checks
 				TcpListener listener = this.listener;
 				if (listener == null) {
-					throw new ObjectDisposedException(this.GetType().Name);
+					throw new ObjectDisposedException(this.ObjectName);
 				}
 
 				Task listeningTask = this.Task;
@@ -90,6 +90,7 @@ namespace MAPE.Core {
 					// already listening
 					return;
 				}
+				TraceInformation("Starting...");
 
 				// start listening
 				try {
@@ -103,6 +104,7 @@ namespace MAPE.Core {
 
 				// update its state
 				this.Task = listeningTask;
+				TraceInformation("Started.");
 			}
 
 			return;
@@ -114,7 +116,7 @@ namespace MAPE.Core {
 				// state checks
 				TcpListener listener = this.listener;
 				if (listener == null) {
-					throw new ObjectDisposedException(nameof(Listener));
+					throw new ObjectDisposedException(this.ObjectName);
 				}
 
 				listeningTask = this.Task;
@@ -122,6 +124,7 @@ namespace MAPE.Core {
 					// already stopped
 					return true;
 				}
+				TraceInformation("Stopping...");
 
 				// stop listening
 				try {
@@ -169,6 +172,9 @@ namespace MAPE.Core {
 				// ToDo: log
 				;
 			}
+
+			// log
+			TraceInformation("Stopped.");
 
 			return;
 		}

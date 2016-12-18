@@ -96,6 +96,7 @@ namespace MAPE.Core {
 					// already started
 					return;
 				}
+				TraceInformation("Starting...");
 
 				// create listeners
 				listeners = CreateListeners();
@@ -103,13 +104,17 @@ namespace MAPE.Core {
 					try {
 						listener.Start();
 					} catch (Exception) {
-						// ToDo: log
+						// log
 						// continue
 					}
 				};
 
+				// start listeners
 				Parallel.ForEach(listeners, start);
 				this.listeners = listeners;
+
+				// update its state
+				TraceInformation("Started.");
 			}
 
 			return;
@@ -125,6 +130,7 @@ namespace MAPE.Core {
 					// already stopped
 					return true;
 				}
+				TraceInformation("Stopping...");
 
 				// stop listening
 				Action<Listener> stop = (listener) => {
@@ -165,6 +171,9 @@ namespace MAPE.Core {
 					}
 				};
 				Parallel.ForEach(listeners, dispose);
+
+				// log
+				TraceInformation(stopConfirmed? "Stopped.": "Requested to stop, but not comfirm actual stop.");
 			}
 
 			return stopConfirmed;

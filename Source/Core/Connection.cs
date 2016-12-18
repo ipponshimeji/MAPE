@@ -122,8 +122,9 @@ namespace MAPE.Core {
 			lock (this) {
 				// state checks
 				if (this.owner == null) {
-					throw new ObjectDisposedException(this.GetType().Name);
+					throw new ObjectDisposedException(this.ObjectName);
 				}
+				TraceInformation("Starting...");
 
 				Task communicatingTask = this.Task;
 				if (communicatingTask != null) {
@@ -132,7 +133,7 @@ namespace MAPE.Core {
 				communicatingTask = new Task(Communicate);
 				communicatingTask.ContinueWith(
 					(t) => {
-						TraceInformation("Completed.");
+						TraceInformation("Stopped.");
 						this.ObjectName = ObjectBaseName;
 						this.owner.OnConnectionCompleted(this);
 					}
@@ -145,6 +146,9 @@ namespace MAPE.Core {
 
 				// start communicating task
 				communicatingTask.Start();
+
+				// log
+				TraceInformation("Started.");
 			}
 
 			return;
@@ -155,7 +159,7 @@ namespace MAPE.Core {
 			lock (this) {
 				// state checks
 				if (this.owner == null) {
-					throw new ObjectDisposedException(this.GetType().Name);
+					throw new ObjectDisposedException(this.ObjectName);
 				}
 
 				communicatingTask = this.Task;
@@ -163,6 +167,7 @@ namespace MAPE.Core {
 					// already stopped
 					return true;
 				}
+				TraceInformation("Stopping...");
 
 				// force the connections to close
 				// It will cause exceptions on I/O in communicating thread.
