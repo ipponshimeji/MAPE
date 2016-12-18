@@ -8,7 +8,14 @@ using System.Threading.Tasks;
 
 
 namespace MAPE.Core {
-    public class Proxy: IDisposable {
+    public class Proxy: Component {
+		#region constants
+
+		public const string ObjectBaseName = "Proxy";
+
+		#endregion
+
+
 		#region data
 
 		private readonly ComponentFactory componentFactory;
@@ -50,6 +57,7 @@ namespace MAPE.Core {
 			}
 
 			// initialize members
+			this.ObjectName = ObjectBaseName;
 			// ToDo: give server info from config
 			this.componentFactory = componentFactory;
 			this.serverName = "localhost";	// ToDo: just for test
@@ -60,7 +68,7 @@ namespace MAPE.Core {
 			return;
 		}
 
-		public virtual void Dispose() {
+		public override void Dispose() {
 			// ensure that it stops listening
 			Stop();
 

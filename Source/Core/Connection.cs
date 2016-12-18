@@ -11,7 +11,14 @@ using System.Threading.Tasks;
 
 
 namespace MAPE.Core {
-    public class Connection: TaskingComponent, IDisposable {
+    public class Connection: TaskingComponent {
+		#region constants
+
+		public const string ObjectBaseName = "Connection";
+
+		#endregion
+
+
 		#region data
 
 		private ConnectionCollection owner = null;
@@ -48,9 +55,13 @@ namespace MAPE.Core {
 		#region creation and disposal
 
 		public Connection() {
+			// initialize members
+			this.ObjectName = ObjectBaseName;
+
+			return;
 		}
 
-		public void Dispose() {
+		public override void Dispose() {
 			// stop communicating
 			StopCommunication();
 		}
@@ -119,9 +130,16 @@ namespace MAPE.Core {
 					throw new InvalidOperationException("It already started communication.");
 				}
 				communicatingTask = new Task(Communicate);
-				communicatingTask.ContinueWith(t => { this.owner.OnConnectionCompleted(this); });
+				communicatingTask.ContinueWith(
+					(t) => {
+						TraceInformation("Completed.");
+						this.ObjectName = ObjectBaseName;
+						this.owner.OnConnectionCompleted(this);
+					}
+				);
 				this.Task = communicatingTask;
 
+				this.ObjectName = $"{ObjectBaseName}({client.Client.RemoteEndPoint.ToString()})";
 				Debug.Assert(this.client == null);
 				this.client = client;
 

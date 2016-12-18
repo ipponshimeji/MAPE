@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 
 namespace MAPE.Core {
-	public class TaskingComponent {
+	public abstract class TaskingComponent: Component {
 		#region data - synchronized by locking this
 
 		private Task task = null;
@@ -46,7 +46,7 @@ namespace MAPE.Core {
 
 		#region creation and disposal
 
-		public TaskingComponent() {
+		protected TaskingComponent() {
 		}
 
 		#endregion

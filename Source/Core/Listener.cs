@@ -9,8 +9,10 @@ using System.Threading.Tasks;
 
 
 namespace MAPE.Core {
-	public class Listener: TaskingComponent, IDisposable {
+	public class Listener: TaskingComponent {
 		#region constants
+
+		public const string ObjectBaseName = "Listener";
 
 		public const int DefaultBackLog = 8;
 
@@ -48,6 +50,7 @@ namespace MAPE.Core {
 			}
 
 			// initialize members
+			this.ObjectName = $"{ObjectBaseName}({endPoint.ToString()})";
 			this.owner = owner;
 			this.listener = new TcpListener(endPoint);
 			this.backLog = backLog;
@@ -55,7 +58,7 @@ namespace MAPE.Core {
 			return;
 		}
 
-		public void Dispose() {
+		public override void Dispose() {
 			// stop listening
 			Stop();
 

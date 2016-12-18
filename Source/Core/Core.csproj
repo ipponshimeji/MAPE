@@ -46,6 +46,7 @@
     <Compile Include="ComponentFactory.cs" />
     <Compile Include="CommandBase.cs" />
     <Compile Include="InstanceCache.cs" />
+    <Compile Include="Component.cs" />
     <Compile Include="TaskingComponent.cs" />
     <Compile Include="MessageBuffer.cs" />
     <Compile Include="Response.cs" />
