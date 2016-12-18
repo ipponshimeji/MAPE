@@ -260,6 +260,7 @@ namespace MAPE.Core {
 						}
 					}
 				}
+				TraceInformation("Communication completed.");
 			} catch (Exception exception) {
 				TraceError($"Fail to communicate: {exception.Message}");
 				throw;

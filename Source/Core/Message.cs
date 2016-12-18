@@ -181,7 +181,7 @@ namespace MAPE.Core {
 
 			string value;
 			switch (decapitalizedFieldName) {
-				case "content-encoding":
+				case "content-length":
 					value = messageBuffer.ReadHeaderFieldASCIIValue(decapitalize: false);
 					this.ContentLength = MessageBuffer.ParseHeaderFieldValueAsLong(value);
 					break;

@@ -346,16 +346,16 @@ namespace MAPE.Core {
 
 			this.bodyLength = 0;
 
-
 			// free resources for header buffering
-			Action<byte[]> release = (block) => {
-				try {
-					ComponentFactory.FreeMemoryBlock(block);
-				} catch {
-					// continue
+			headerBuffer.ForEach(
+				(block) => {
+					try {
+						ComponentFactory.FreeMemoryBlock(block);
+					} catch {
+						// continue
+					}
 				}
-			};
-			headerBuffer.ForEach(release);
+			);
 			headerBuffer.Clear();
 
 			this.currentMemoryBlock = null;
@@ -364,7 +364,7 @@ namespace MAPE.Core {
 			this.localIndex = 0;
 
 			// misc
-			this.stockStringBuf.Clear();
+			Debug.Assert(this.stockStringBuf.Length == 0);
 
 			return;
 		}
@@ -386,14 +386,18 @@ namespace MAPE.Core {
 			} else {
 				// read the next item
 				StringBuilder stringBuf = this.stockStringBuf;
-				stringBuf.Clear();
-				if (lastItem) {
-					ReadHeaderASCIIToCRLF(stringBuf, decapitalize);
-					endOfLine = true;
-				} else {
-					endOfLine = ReadHeaderASCIITo(SP, stringBuf, decapitalize);
+				Debug.Assert(stringBuf.Length == 0);
+				try {
+					if (lastItem) {
+						ReadHeaderASCIIToCRLF(stringBuf, decapitalize);
+						endOfLine = true;
+					} else {
+						endOfLine = ReadHeaderASCIITo(SP, stringBuf, decapitalize);
+					}
+					item = stringBuf.ToString();
+				} finally {
+					stringBuf.Clear();
 				}
-				item = stringBuf.ToString();
 			}
 
 			// check status of the line
@@ -411,17 +415,27 @@ namespace MAPE.Core {
 
 		public string ReadHeaderFieldName(byte firstByte) {
 			StringBuilder stringBuf = this.stockStringBuf;
-			bool endOfLine = ReadHeaderASCIITo(Colon, stringBuf, decapitalize: true, firstByte: firstByte);
-			if (endOfLine) {
-				throw CreateBadRequestException();
+			Debug.Assert(stringBuf.Length == 0);
+			try {
+				bool endOfLine = ReadHeaderASCIITo(Colon, stringBuf, decapitalize: true, firstByte: firstByte);
+				if (endOfLine) {
+					throw CreateBadRequestException();
+				}
+				return stringBuf.ToString();
+			} finally {
+				stringBuf.Clear();
 			}
-			return stringBuf.ToString();
 		}
 
 		public string ReadHeaderFieldASCIIValue(bool decapitalize) {
 			StringBuilder stringBuf = this.stockStringBuf;
-			ReadHeaderASCIIToCRLF(stringBuf, decapitalize);
-			return stringBuf.ToString();
+			Debug.Assert(stringBuf.Length == 0);
+			try {
+				ReadHeaderASCIIToCRLF(stringBuf, decapitalize);
+				return stringBuf.ToString();
+			} finally {
+				stringBuf.Clear();
+			}
 		}
 
 		public bool SkipHeaderField(byte firstByte) {
@@ -573,6 +587,7 @@ namespace MAPE.Core {
 			// Note that bodyLength == -1 means the chunked body
 			if (this.bodyLength == 0) {
 				// no body
+				output.Flush();
 				return;
 			}
 			Debug.Assert(this.bodyLength != -1 || this.bodyStream != null);
@@ -581,6 +596,7 @@ namespace MAPE.Core {
 			// Note the media where the body is stored depends on its size.  
 			if (this.bodyStream != null) {
 				// body is stored in the stream (large body or chunked body)
+				this.bodyStream.Seek(0, SeekOrigin.Begin);
 				this.bodyStream.CopyTo(output);
 			} else {
 				Debug.Assert(0 <= this.bodyLength && this.bodyLength <= int.MaxValue);
@@ -594,6 +610,7 @@ namespace MAPE.Core {
 					output.Write(this.currentMemoryBlock, this.localIndex, bodyLengthInInt);
 				}
 			}
+			output.Flush();
 
 			return;
 		}
