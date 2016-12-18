@@ -89,32 +89,38 @@ namespace MAPE.Core {
 		#region methods
 
 		public void Start() {
-			lock (this) {
-				// state checks
-				Listener[] listeners = this.listeners;
-				if (listeners != null) {
-					// already started
-					return;
-				}
-				TraceInformation("Starting...");
-
-				// create listeners
-				listeners = CreateListeners();
-				Action<Listener> start = (listener) => {
-					try {
-						listener.Start();
-					} catch (Exception) {
-						// log
-						// continue
+			try {
+				lock (this) {
+					// state checks
+					Listener[] listeners = this.listeners;
+					if (listeners != null) {
+						// already started
+						return;
 					}
-				};
+					TraceInformation("Starting...");
 
-				// start listeners
-				Parallel.ForEach(listeners, start);
-				this.listeners = listeners;
+					// create listeners
+					listeners = CreateListeners();
 
-				// update its state
-				TraceInformation("Started.");
+					// start listeners
+					Parallel.ForEach(
+						listeners,
+						(listener) => {
+							try {
+								listener.Start();
+							} catch {
+								// continue
+							}
+						}
+					);
+
+					// update its state
+					this.listeners = listeners;
+					TraceInformation("Started.");
+				}
+			} catch (Exception exception) {
+				TraceError($"Fail to start: {exception.Message}");
+				throw;
 			}
 
 			return;
@@ -122,58 +128,66 @@ namespace MAPE.Core {
 
 		public bool Stop(int millisecondsTimeout = 0) {
 			bool stopConfirmed = false;
-			lock (this) {
-				// state checks
-				Listener[] listeners = this.listeners;
-				this.listeners = null;
-				if (listeners == null) {
-					// already stopped
-					return true;
-				}
-				TraceInformation("Stopping...");
-
-				// stop listening
-				Action<Listener> stop = (listener) => {
-					try {
-						listener.Stop();
-					} catch {
-						// ToDo: log
-						// continue
+			try {
+				lock (this) {
+					// state checks
+					Listener[] listeners = this.listeners;
+					this.listeners = null;
+					if (listeners == null) {
+						// already stopped
+						return true;
 					}
-				};
-				Parallel.ForEach(listeners, stop);
+					TraceInformation("Stopping...");
 
-				// stop connections
-				ConnectionCollection connections = this.connections;
-				this.connections = null;
-				if (connections != null) {
-					connections.StopAll();
-				}
+					// stop listening
+					Parallel.ForEach(
+						listeners,
+						(listener) => {
+							try {
+								listener.Stop();
+							} catch {
+								// continue
+							}
+						}
+					);
 
-				// wait for the completion of the tasks
-				// Note that -1 timeout means 'Infinite'.
-				if (millisecondsTimeout != 0) {
-					List<Task> tasks = new List<Task>();
-					tasks.AddRange(TaskingComponent.GetActiveTaskList(listeners));
+					// stop connections
+					ConnectionCollection connections = this.connections;
+					this.connections = null;
 					if (connections != null) {
-						tasks.AddRange(connections.GetActiveTaskList());
+						connections.StopAll();
 					}
 
-					stopConfirmed = Task.WaitAll(tasks.ToArray(), millisecondsTimeout);
+					// wait for the completion of the tasks
+					// Note that -1 timeout means 'Infinite'.
+					if (millisecondsTimeout != 0) {
+						List<Task> tasks = new List<Task>();
+						tasks.AddRange(TaskingComponent.GetActiveTaskList(listeners));
+						if (connections != null) {
+							tasks.AddRange(connections.GetActiveTaskList());
+						}
+
+						stopConfirmed = Task.WaitAll(tasks.ToArray(), millisecondsTimeout);
+					}
+
+					// dispose listeners
+					Parallel.ForEach(
+						listeners,
+						(listener) => {
+							try {
+								listener.Dispose();
+							} catch {
+								// continue
+							}
+						}
+					);
+
+					// log
+					TraceInformation(stopConfirmed ? "Stopped." : "Requested to stop, but did not comfirm actual stop.");
 				}
-
-				// dispose listeners
-				Action<Listener> dispose = (listener) => {
-					try {
-						listener.Dispose();
-					} catch {
-						// continue
-					}
-				};
-				Parallel.ForEach(listeners, dispose);
-
-				// log
-				TraceInformation(stopConfirmed? "Stopped.": "Requested to stop, but not comfirm actual stop.");
+			} catch (Exception exception) {
+				TraceError($"Fail to stop: {exception.Message}");
+				throw;
 			}
 
 			return stopConfirmed;

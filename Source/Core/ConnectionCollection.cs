@@ -94,15 +94,16 @@ namespace MAPE.Core {
 			lock (this) {
 				List<Connection> connectionList = this.connectionList;
 				if (0 < connectionList.Count) {
-					Action<Connection> stop = (connection) => {
-						try {
-							connection.StopCommunication();
-						} catch {
-							// ToDo: log
-							// continue
+					Parallel.ForEach(
+						connectionList,
+						(connection) => {
+							try {
+								connection.StopCommunication();
+							} catch {
+								// continue
+							}
 						}
-					};
-					Parallel.ForEach(connectionList, stop);
+					);
 				}
 			}
 

@@ -26,7 +26,18 @@ namespace MAPE.Core {
 		#endregion
 
 
+		#region data synchronized by classLocker
+
+		private static object classLocker = new object();
+
+		private static int nextId = 0;
+
+		#endregion
+
+
 		#region data - synchronized by locking this
+
+		private int id = 0;
 
 		private TcpClient client = null;
 
@@ -81,6 +92,9 @@ namespace MAPE.Core {
 				this.owner = owner;
 				Debug.Assert(this.client == null);
 				Debug.Assert(this.server == null);
+				lock (classLocker) {
+					this.id = nextId++;
+				}
 			}
 
 			return;
@@ -118,74 +132,88 @@ namespace MAPE.Core {
 				throw new ArgumentNullException(nameof(client));
 			}
 
-			// update its state
-			lock (this) {
-				// state checks
-				if (this.owner == null) {
-					throw new ObjectDisposedException(this.ObjectName);
-				}
-				TraceInformation("Starting...");
+			try {
+				lock (this) {
+					// log
+					TraceInformation($"Starting for {client.Client.RemoteEndPoint.ToString()} ...");
 
-				Task communicatingTask = this.Task;
-				if (communicatingTask != null) {
-					throw new InvalidOperationException("It already started communication.");
-				}
-				communicatingTask = new Task(Communicate);
-				communicatingTask.ContinueWith(
-					(t) => {
-						TraceInformation("Stopped.");
-						this.ObjectName = ObjectBaseName;
-						this.owner.OnConnectionCompleted(this);
+					// state checks
+					if (this.owner == null) {
+						throw new ObjectDisposedException(this.ObjectName);
 					}
-				);
-				this.Task = communicatingTask;
 
-				this.ObjectName = $"{ObjectBaseName}({client.Client.RemoteEndPoint.ToString()})";
-				Debug.Assert(this.client == null);
-				this.client = client;
+					Task communicatingTask = this.Task;
+					if (communicatingTask != null) {
+						throw new InvalidOperationException("It already started communication.");
+					}
+					communicatingTask = new Task(Communicate);
+					communicatingTask.ContinueWith(
+						(t) => {
+							TraceInformation("Stopped.");
+							this.ObjectName = ObjectBaseName;
+							this.owner.OnConnectionCompleted(this);
+						}
+					);
+					this.Task = communicatingTask;
 
-				// start communicating task
-				communicatingTask.Start();
+					this.ObjectName = $"{ObjectBaseName} <{this.id}>";
+					Debug.Assert(this.client == null);
+					this.client = client;
 
-				// log
-				TraceInformation("Started.");
+					// start communicating task
+					communicatingTask.Start();
+
+					// log
+					TraceInformation("Started.");
+				}
+			} catch (Exception exception) {
+				TraceError($"Fail to start: {exception.Message}");
+				throw;
 			}
 
 			return;
 		}
 
 		public bool StopCommunication(int millisecondsTimeout = 0) {
-			Task communicatingTask;
-			lock (this) {
-				// state checks
-				if (this.owner == null) {
-					throw new ObjectDisposedException(this.ObjectName);
-				}
-
-				communicatingTask = this.Task;
-				if (communicatingTask == null) {
-					// already stopped
-					return true;
-				}
-				TraceInformation("Stopping...");
-
-				// force the connections to close
-				// It will cause exceptions on I/O in communicating thread.
-				if (this.client != null) {
-					this.client.Close();
-					this.client = null;
-				}
-				if (this.server != null) {
-					this.server.Close();
-					this.client = null;
-				}
-			}
-
-			// wait for the completion of the listening task
-			// Note that -1 timeout means 'Infinite'.
 			bool stopConfirmed = false;
-			if (millisecondsTimeout != 0) {
-				stopConfirmed = communicatingTask.Wait(millisecondsTimeout);
+			try {
+				Task communicatingTask;
+				lock (this) {
+					// state checks
+					if (this.owner == null) {
+						throw new ObjectDisposedException(this.ObjectName);
+					}
+
+					communicatingTask = this.Task;
+					if (communicatingTask == null) {
+						// already stopped
+						return true;
+					}
+					TraceInformation("Stopping...");
+
+					// force the connections to close
+					// It will cause exceptions on I/O in communicating thread.
+					if (this.client != null) {
+						this.client.Close();
+						this.client = null;
+					}
+					if (this.server != null) {
+						this.server.Close();
+						this.client = null;
+					}
+				}
+
+				// wait for the completion of the listening task
+				// Note that -1 timeout means 'Infinite'.
+				if (millisecondsTimeout != 0) {
+					stopConfirmed = communicatingTask.Wait(millisecondsTimeout);
+				}
+
+				// log
+				// "Stopped." will be logged in the continuation of the communicating task. See StartCommunication().
+			} catch (Exception exception) {
+				TraceError($"Fail to stop: {exception.Message}");
+				throw;
 			}
 
 			return stopConfirmed;
@@ -211,8 +239,11 @@ namespace MAPE.Core {
 					server = proxy.OpenServerConnection(client);
 					openServerError = null;
 				} catch (Exception exception) {
+					TraceWarning($"Fail to connect the server: {exception.Message}");
+					TraceWarning($"Sending an error response to the client.");
 					server = null;
 					openServerError = exception;
+					// continue
 				}
 				this.server = server;
 			}
@@ -228,8 +259,10 @@ namespace MAPE.Core {
 							CommunicateInternal(clientStream, serverStream);
 						}
 					}
-
 				}
+			} catch (Exception exception) {
+				TraceError($"Fail to communicate: {exception.Message}");
+				throw;
 			} finally {
 				lock (this) {
 					this.server = null;
