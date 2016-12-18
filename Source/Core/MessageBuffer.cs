@@ -16,21 +16,32 @@ namespace MAPE.Core {
 	public class MessageBuffer: IDisposable {
 		#region types
 
-		public struct Modification {
+		public struct Span {
 			#region data
+
+			public static readonly Span ZeroToZero = new Span(0, 0);
 
 			public readonly int Start;
 
 			public readonly int End;
 
-			public readonly Func<MessageBuffer, bool> Handler;
+			#endregion
+
+
+			#region properties
+
+			public bool IsZeroToZero {
+				get {
+					return this.Start == 0 && this.End == 0;
+				}
+			}
 
 			#endregion
 
 
 			#region creation and disposal
 
-			public Modification(int start, int end, Func<MessageBuffer, bool> handler) {
+			public Span(int start, int end) {
 				// argument checks
 				if (start < 0) {
 					throw new ArgumentOutOfRangeException(nameof(start));
@@ -43,6 +54,78 @@ namespace MAPE.Core {
 				// initialize members
 				this.Start = start;
 				this.End = end;
+
+				return;
+			}
+
+			public Span(Span src) {
+				// initialize members
+				this.Start = src.Start;
+				this.End = src.End;
+
+				return;
+			}
+
+			#endregion
+		}
+
+		public struct Modification {
+			#region data
+
+			public static readonly Modification Limit = new Modification(int.MaxValue, int.MaxValue, null);
+
+
+			public readonly Span Span;
+
+			public readonly Func<MessageBuffer, bool> Handler;
+
+			#endregion
+
+
+			#region properties
+
+			public int Start {
+				get {
+					return this.Span.Start;
+				}
+			}
+
+			public int End {
+				get {
+					return this.Span.End;
+				}
+			}
+
+			public int Length {
+				get {
+					return this.Span.End - this.Span.Start;
+				}
+			}
+
+			#endregion
+
+
+			#region creation and disposal
+
+			public Modification(int start, int end, Func<MessageBuffer, bool> handler) {
+				// argument checks
+				Debug.Assert(0 <= start);
+				Debug.Assert(start <= end);
+				// handler can be null
+
+				// initialize members
+				this.Span = new Span(start, end);
+				this.Handler = handler;
+
+				return;
+			}
+
+			public Modification(Span span, Func<MessageBuffer, bool> handler) {
+				// argument checks
+				// handler can be null
+
+				// initialize members
+				this.Span = span;
 				this.Handler = handler;
 
 				return;
@@ -221,6 +304,28 @@ namespace MAPE.Core {
 			throw new Exception();
 		}
 
+		public static bool IsValidModifications(IEnumerable<Modification> modifications) {
+			if (modifications == null) {
+				// null is valid
+				return true;
+			}
+
+			// Modifications must be sorted, and their spans must not be overlapped.
+			int last = 0;
+			foreach (Modification modification in modifications) {
+				if (modification.Start < last) {
+					return false;
+				}
+
+				// from definition of Modification structure, Start <= End
+				Debug.Assert(modification.Start <= modification.End);
+
+				last = modification.End;
+			}
+
+			return true;
+		}
+
 		public static Version ParseVersion(string value) {
 			// argument checks
 			if (value == null) {
@@ -369,7 +474,7 @@ namespace MAPE.Core {
 			return;
 		}
 
-		public string ReadStartLineItem(bool skipItem, bool decapitalize, bool lastItem) {
+		public string ReadSpaceSeparatedItem(bool skipItem, bool decapitalize, bool lastItem) {
 			string item;
 
 			// read or skip the next item
@@ -554,7 +659,109 @@ namespace MAPE.Core {
 		#region methods - write
 
 		public void WriteHeader(IEnumerable<Modification> modifications) {
-			throw new NotImplementedException();
+			// argument checks
+			if (modifications == null) {
+				// call the simpler implementation
+				WriteHeader();
+				return;
+			}
+			// Modifications must be sorted, and their spans must not be overlapped.
+			// This check is omitted in Release build
+			// because, in most case, modifications are sorted naturally
+			// in this processing framework.
+			Debug.Assert(IsValidModifications(modifications));
+
+			// write header bytes with specified modifications
+			using (IEnumerator<byte[]> i = this.headerBuffer.GetEnumerator()) {
+				int current = 0;
+				byte[] memoryBlock = null;
+				int offset = 0;
+				int limit = 0;
+
+				Func<bool> getNextMemoryBlock = () => {
+					if (i.MoveNext()) {
+						memoryBlock = i.Current;
+						offset = 0;
+						limit = (memoryBlock == this.currentMemoryBlock) ? this.localIndex : memoryBlock.Length;
+						return true;
+					} else {
+						memoryBlock = null;
+						offset = 0;
+						limit = 0;
+						return false;
+					}
+				};
+
+				Action<int> write = (writeCount) => {
+					Debug.Assert(memoryBlock != null);
+					Debug.Assert(0 <= offset && offset < limit);
+					Debug.Assert(offset <= limit - writeCount);
+					this.output.Write(memoryBlock, offset, writeCount);
+				};
+
+				Action<int> skip = (skipCount) => {
+					Debug.Assert(memoryBlock != null);
+					Debug.Assert(0 <= offset && offset < limit);
+					Debug.Assert(offset <= limit - skipCount);
+				};
+
+				Func<int, Action<int>, bool> handleTo = (end, handler) => {
+					int backlog = end - current;
+					while (0 < backlog) {
+						// calculate the count to be handled bytes on the memory block
+						int writeCount = limit - offset;
+						if (writeCount == 0) {
+							// no more bytes to be handled
+							// get the next memory block
+							if (getNextMemoryBlock() == false) {
+								// end of header data
+								current = end - backlog;
+								return true;
+							}
+							writeCount = limit - offset;
+						}
+						if (backlog < writeCount) {
+							writeCount = backlog;
+						}
+
+						// handle the bytes
+						handler(writeCount);
+						offset += writeCount;
+						backlog -= writeCount;						
+					}
+					current = end;
+
+					return false;
+				};
+
+				Func<int, bool> writeTo = (end) => {
+					return handleTo(end, write);
+				};
+
+				Func<int, bool> skipTo = (end) => {
+					return handleTo(end, skip);
+				};
+
+
+				// handle each span to be modified
+				foreach (Modification modification in modifications) {
+					if (modification.Handler != null) {
+						if (writeTo(modification.Start)) {
+							break;
+						}
+						if (modification.Handler(this)) {
+							// modified
+							skipTo(modification.End);
+						} else {
+							// won't modified
+							// write this span in the next iteration
+						}
+					}
+				}
+				writeTo(int.MaxValue);
+			}
+
+			return;
 		}
 
 		public void WriteHeader() {
@@ -567,12 +774,15 @@ namespace MAPE.Core {
 			byte[] currentMemoryBlock = this.currentMemoryBlock;
 			Debug.Assert(currentMemoryBlock != null);
 			foreach (byte[] memoryBlock in this.headerBuffer) {
+				int readCount;
 				if (memoryBlock != currentMemoryBlock) {
-					output.Write(memoryBlock, 0, memoryBlock.Length);
+					// not the last memory block
+					readCount = memoryBlock.Length;
 				} else {
 					// the last memory block
-					output.Write(memoryBlock, 0, this.localIndex);
+					readCount = this.localIndex;
 				}
+				output.Write(memoryBlock, 0, readCount);
 			}
 
 			return;
@@ -615,48 +825,22 @@ namespace MAPE.Core {
 			return;
 		}
 
+		public void Write(byte[] data, bool appendNewLine = false) {
+			if (data != null && 0 < data.Length) {
+				this.output.Write(data, 0, data.Length);
+			}
+			if (appendNewLine) {
+				this.output.WriteByte(CR);
+				this.output.WriteByte(LF);
+			}
+
+			return;
+		}
+
 		#endregion
 
 
 		#region privates - general
-
-		private void FillHeaderBuffer() {
-			// state checks
-			Debug.Assert(this.input != null);
-			Debug.Assert(this.headerBuffer != null);
-			Debug.Assert(this.localIndex == this.localLimit);
-
-			// alloc a new memory block if the current block is full
-			byte[] memoryBlock = this.currentMemoryBlock;
-			Debug.Assert(memoryBlock != null || this.headerBuffer.Count == 0);
-			if (memoryBlock == null || memoryBlock.Length <= this.localLimit) {
-				// calculate the next lineBase
-				int nextBase = (memoryBlock == null) ? 0 : this.currentMemoryBlockBase + memoryBlock.Length;
-
-				// allocate a new memory block
-				memoryBlock = ComponentFactory.AllocMemoryBlock();
-				this.headerBuffer.Add(memoryBlock);
-
-				// update the header buffer state
-				this.currentMemoryBlock = memoryBlock;
-				this.currentMemoryBlockBase = nextBase;
-				this.localLimit = 0;
-				this.localIndex = 0;
-			}
-
-			// read bytes from the input
-			Debug.Assert(memoryBlock != null && this.localLimit < memoryBlock.Length);
-			int readCount = this.input.Read(memoryBlock, this.localLimit, memoryBlock.Length - this.localLimit);
-			if (readCount <= 0) {
-				// unexpected end of stream
-				throw CreateBadRequestException();
-			}
-
-			// update the data limit
-			this.localLimit += readCount;
-
-			return;
-		}
 
 		private static void AppendByteAsASCII(StringBuilder stringBuf, byte b) {
 			// argument checks
@@ -693,6 +877,48 @@ namespace MAPE.Core {
 
 
 		#region privates - read
+
+		private void FillHeaderBuffer() {
+			// state checks
+			Debug.Assert(this.input != null);
+			Debug.Assert(this.headerBuffer != null);
+			Debug.Assert(this.localIndex == this.localLimit);
+
+			// alloc a new memory block if the current block is full
+			byte[] memoryBlock = this.currentMemoryBlock;
+			Debug.Assert(memoryBlock != null || this.headerBuffer.Count == 0);
+			if (memoryBlock == null || memoryBlock.Length <= this.localLimit) {
+				// calculate the next lineBase
+				int nextBase = (memoryBlock == null) ? 0 : this.currentMemoryBlockBase + memoryBlock.Length;
+
+				// allocate a new memory block
+				memoryBlock = ComponentFactory.AllocMemoryBlock();
+				this.headerBuffer.Add(memoryBlock);
+
+				// update the header buffer state
+				this.currentMemoryBlock = memoryBlock;
+				this.currentMemoryBlockBase = nextBase;
+				this.localLimit = 0;
+				this.localIndex = 0;
+			}
+
+			// read bytes from the input
+			Debug.Assert(memoryBlock != null && this.localLimit < memoryBlock.Length);
+			int readCount = this.input.Read(memoryBlock, this.localLimit, memoryBlock.Length - this.localLimit);
+			if (readCount <= 0) {
+				// The end of a stream is invalid except at the beginning of a HttpMessage
+				if (this.CurrentHeaderIndex == 0) {
+					throw new EndOfStreamException();
+				} else {
+					throw CreateBadRequestException();
+				}
+			}
+
+			// update the data limit
+			this.localLimit += readCount;
+
+			return;
+		}
 
 		private byte ReadHeaderByte() {
 			// fill new bytes if no more unread byte

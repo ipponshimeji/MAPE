@@ -25,6 +25,11 @@ namespace MAPE.Core {
 			protected set;
 		}
 
+		public MessageBuffer.Span EndOfHeaderFields {
+			get;
+			protected set;
+		}
+
 		#endregion
 
 
@@ -44,8 +49,7 @@ namespace MAPE.Core {
 		public Message() {
 			// initialize members
 			this.messageBuffer = new MessageBuffer();
-			this.Version = null;
-			this.ContentLength = 0;
+			ResetThisClassLevelMessageProperties();
 
 			return;
 		}
@@ -96,29 +100,53 @@ namespace MAPE.Core {
 
 		#region methods - public
 
-		public void Read() {
-			// state checks
-			MessageBuffer messageBuffer = this.messageBuffer;
-			Debug.Assert(messageBuffer.CanRead);
+		public bool Read() {
+			bool read = false;
+			try {
+				// state checks
+				MessageBuffer messageBuffer = this.messageBuffer;
+				Debug.Assert(messageBuffer.CanRead);
 
-			// read a message
-			ScanStartLine(messageBuffer);
-			bool emptyLine;
-			do {
-				emptyLine = ScanHeaderField(messageBuffer);
-			} while (emptyLine == false);
-			ScanBody(messageBuffer);
+				// clear current contents
+				ResetMessageProperties();
+				messageBuffer.ResetBuffer();
 
-			return;
+				// read a message
+
+				// start line
+				ScanStartLine(messageBuffer);
+
+				// header fields
+				bool emptyLine;
+				do {
+					emptyLine = ScanHeaderField(messageBuffer);
+				} while (emptyLine == false);
+				int endOfHeaderIndex = messageBuffer.CurrentHeaderIndex - 2;    // subtract empty line bytes
+				this.EndOfHeaderFields = new MessageBuffer.Span(endOfHeaderIndex, endOfHeaderIndex);
+
+				// body
+				ScanBody(messageBuffer);
+
+				// result
+				read = true;	// completed
+			} catch (EndOfStreamException) {
+				Debug.Assert(read == false);
+				// continue
+			}
+
+			return read;
 		}
 
-		public void Write() {
+		public void Write(IEnumerable<MessageBuffer.Modification> modifications = null) {
+			// argument checks
+			// modifications can be null
+
 			// state checks
 			MessageBuffer messageBuffer = this.messageBuffer;
-			Debug.Assert(messageBuffer.CanRead);
+			Debug.Assert(messageBuffer.CanWrite);
 
 			// write a message
-			WriteHeader(messageBuffer);
+			WriteHeader(messageBuffer, modifications);
 			WriteBody(messageBuffer);
 
 			return;
@@ -131,8 +159,7 @@ namespace MAPE.Core {
 
 		protected virtual void ResetMessageProperties() {
 			// reset message properties
-			this.ContentLength = 0;
-			this.Version = null;
+			ResetThisClassLevelMessageProperties();
 
 			return;
 		}
@@ -220,12 +247,13 @@ namespace MAPE.Core {
 			return;
 		}
 
-		protected virtual void WriteHeader(MessageBuffer messageBuffer) {
+		protected virtual void WriteHeader(MessageBuffer messageBuffer, IEnumerable<MessageBuffer.Modification> modifications) {
 			// argument checks
 			Debug.Assert(messageBuffer != null);
+			// modifications can be null
 
 			// write message header
-			messageBuffer.WriteHeader();
+			messageBuffer.WriteHeader(modifications);
 		}
 
 		protected virtual void WriteBody(MessageBuffer messageBuffer) {
@@ -241,32 +269,14 @@ namespace MAPE.Core {
 
 		#region privates
 
-#if false
-		private void ScanContentLength(StringBuilder workingBuf) {
-			// argument checks
-			Debug.Assert(workingBuf != null);
-
-			workingBuf.Clear();
-			ReadASCIIBefore(Separators.CRLF, workingBuf);
-
-			this.ContentLength = long.Parse(workingBuf.ToString(), System.Globalization.NumberStyles.Integer);
-		}
-
-		private void ScanTransferEncoding(StringBuilder workingBuf) {
-			// argument checks
-			Debug.Assert(workingBuf != null);
-
-			workingBuf.Clear();
-			ReadASCIIBefore(Separators.CRLF, workingBuf);
-			string value = workingBuf.ToString().Trim();    // ToDo: remove tab
-			if (value.EndsWith("chunked", StringComparison.OrdinalIgnoreCase)) {
-				// ToDo: not exact
-				this.ContentLength = -1;
-			}
+		private void ResetThisClassLevelMessageProperties() {
+			// reset message properties of this class level
+			this.Version = null;
+			this.ContentLength = 0;
+			this.EndOfHeaderFields = MessageBuffer.Span.ZeroToZero;
 
 			return;
 		}
-#endif
 
 		#endregion
 	}

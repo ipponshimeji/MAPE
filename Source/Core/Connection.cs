@@ -43,6 +43,8 @@ namespace MAPE.Core {
 
 		private TcpClient server = null;
 
+		private byte[] proxyCredential = null;
+
 		#endregion
 
 
@@ -92,6 +94,7 @@ namespace MAPE.Core {
 				this.owner = owner;
 				Debug.Assert(this.client == null);
 				Debug.Assert(this.server == null);
+				Debug.Assert(this.proxyCredential == null);
 				lock (classLocker) {
 					this.id = nextId++;
 				}
@@ -112,6 +115,7 @@ namespace MAPE.Core {
 				}
 
 				// uninitialize members
+				Debug.Assert(this.proxyCredential == null);
 				Debug.Assert(this.server == null);
 				Debug.Assert(this.client == null);
 				this.owner = null;
@@ -222,6 +226,59 @@ namespace MAPE.Core {
 		#endregion
 
 
+		#region overridables
+
+		protected virtual MessageBuffer.Modification[] GetModification(int repeatCount, Request request, Response response) {
+			// argument checks
+			if (request == null) {
+				throw new ArgumentNullException(nameof(request));
+			}
+			if (response == null && repeatCount != 0) {
+				throw new ArgumentNullException(nameof(response));
+			}
+			// ToDo: too many repeat check
+
+			// ToDo: thread protection
+			byte[] overridingProxyCredential;
+			if (response == null) {
+				// first request
+				if (request.ProxyAuthorizationSpan.IsZeroToZero == false) {
+					// the client specified Proxy-Authorization
+					overridingProxyCredential = null;
+				} else {
+					overridingProxyCredential = this.proxyCredential;
+					if (overridingProxyCredential == null) {
+						overridingProxyCredential = this.Proxy.GetProxyCredential(null, Proxy.CredentialNecessity.IfPossible);
+					}
+				}
+			} else {
+				// re-sending request
+				if (response.StatusCode == 407) {
+					overridingProxyCredential = this.Proxy.GetProxyCredential(null, Proxy.CredentialNecessity.NeedToUpdate);
+				} else {
+					// no need to resending
+					overridingProxyCredential = null;
+				}
+			}
+
+			MessageBuffer.Modification[] m;
+			if (overridingProxyCredential == null) {
+				m = null;
+			} else {
+				m = new MessageBuffer.Modification[] {
+					new MessageBuffer.Modification(
+						request.ProxyAuthorizationSpan.IsZeroToZero? request.EndOfHeaderFields: request.ProxyAuthorizationSpan,
+						(mb) => { mb.Write(overridingProxyCredential); return true; }	
+					)
+				};
+			}
+
+			return m;
+		}
+
+		#endregion
+
+
 		#region privates
 
 		private void Communicate() {
@@ -266,6 +323,7 @@ namespace MAPE.Core {
 				throw;
 			} finally {
 				lock (this) {
+					this.proxyCredential = null;
 					this.server = null;
 					this.client = null;
 				}
@@ -296,10 +354,20 @@ namespace MAPE.Core {
 			try {
 				Response response = componentFactory.AllocResponse(serverStream, clientStream);
 				try {
-					request.Read();
-					request.Write();
-					response.Read();
-					response.Write();
+					MessageBuffer.Modification[] modifications;
+					while (request.Read()) {
+						int repeatCount = 0;
+						modifications = GetModification(repeatCount, request, response);
+						do {
+							request.Write(modifications);
+							response.Read();
+							++repeatCount;
+							modifications = GetModification(repeatCount, request, response);
+						} while (modifications != null);
+						response.Write();
+					}
+				} catch {
+					// ToDo: send error response to client
 				} finally {
 					componentFactory.ReleaseResponse(response);
 				}

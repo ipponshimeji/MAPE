@@ -4,11 +4,23 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 
 
 namespace MAPE.Core {
     public class Proxy: Component {
+		#region types
+
+		public enum CredentialNecessity {
+			IfPossible,
+			Necessary,
+			NeedToUpdate,
+		}
+
+		#endregion
+
+
 		#region constants
 
 		public const string ObjectBaseName = "Proxy";
@@ -29,9 +41,17 @@ namespace MAPE.Core {
 
 		private int serverPort;
 
+		private byte[] proxyCredential;
+
 		private Listener[] listeners;
 
 		private ConnectionCollection connections;
+
+
+		public Func<string, NetworkCredential> CredentialCallback {
+			get;
+			set;
+		} = null;
 
 		#endregion
 
@@ -61,7 +81,8 @@ namespace MAPE.Core {
 			// ToDo: give server info from config
 			this.componentFactory = componentFactory;
 			this.serverName = "localhost";	// ToDo: just for test
-			this.serverPort = 8080;			// ToDo: just for test
+			this.serverPort = 8080;         // ToDo: just for test
+			this.proxyCredential = null;
 			this.listeners = null;
 			this.connections = null;
 
@@ -242,6 +263,35 @@ namespace MAPE.Core {
 			return new TcpClient(this.serverName, this.serverPort);
 		}
 
+		public byte[] GetProxyCredential(string proxyAuthenticateValue, CredentialNecessity necessity) {
+			// currently proxyAuthenticateValue is not inspected.
+			// This method just returns Basic credentials if it is available
+			byte[] credential;
+			lock (this) {
+				credential = this.proxyCredential;
+			}
+
+			switch (necessity) {
+				case CredentialNecessity.IfPossible:
+					break;
+				case CredentialNecessity.Necessary:
+					if (credential == null) {
+						credential = UpdateProxyCredential("realm");	// ToDo: realm
+						// may be still null
+					}
+					break;
+				case CredentialNecessity.NeedToUpdate:
+					credential = UpdateProxyCredential("realm");    // ToDo: realm
+					// may be still null
+					break;
+				default:
+					credential = null;
+					break;
+			}
+
+			return credential;
+		}
+
 		#endregion
 
 
@@ -255,6 +305,32 @@ namespace MAPE.Core {
 			};
 
 			return listeners;
+		}
+
+		private byte[] UpdateProxyCredential(string realm) {
+			// state checks
+			Func<string, NetworkCredential> credentialCallback;
+			lock (this) {
+				credentialCallback = this.CredentialCallback;
+			}
+			if (credentialCallback == null) {
+				return null;
+			}
+
+			NetworkCredential credential = credentialCallback(realm);
+			if (credential == null) {
+				return null;
+			}
+
+			return CreateBasicAuthorizationCredential(credential);
+		}
+
+		private static byte[] CreateBasicAuthorizationCredential(NetworkCredential credential) {
+			// ToDo: encoding of key is UTF-8? or I must escape specail/non-ASCII char?
+			string raw = string.Concat(credential.UserName, ":", credential.Password);
+			string key = Convert.ToBase64String(Encoding.ASCII.GetBytes(raw));
+
+			return Encoding.ASCII.GetBytes($"Proxy-Authorization: Basic {key}");
 		}
 
 		#endregion

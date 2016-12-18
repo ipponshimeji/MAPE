@@ -16,6 +16,16 @@ namespace MAPE.Core {
 			protected set;
 		}
 
+		public MessageBuffer.Span ProxyAuthenticateSpan {
+			get;
+			protected set;
+		}
+
+		public string ProxyAuthenticateValue {
+			get;
+			protected set;
+		}
+
 		#endregion
 
 
@@ -23,7 +33,7 @@ namespace MAPE.Core {
 
 		public Response(): base() {
 			// initialize members
-			this.StatusCode = 0;
+			ResetThisClassLevelMessageProperties();
 
 			return;
 		}
@@ -35,6 +45,7 @@ namespace MAPE.Core {
 
 		protected override void ResetMessageProperties() {
 			// reset this class level
+			ResetThisClassLevelMessageProperties();
 
 			// reset the base class level
 			base.ResetMessageProperties();
@@ -45,9 +56,9 @@ namespace MAPE.Core {
 			Debug.Assert(messageBuffer != null);
 
 			// read items
-			string version = messageBuffer.ReadStartLineItem(skipItem: false, decapitalize: false, lastItem: false);
-			string statusCode = messageBuffer.ReadStartLineItem(skipItem: false, decapitalize: false, lastItem: false);
-			messageBuffer.ReadStartLineItem(skipItem: true, decapitalize: false, lastItem: true);
+			string version = messageBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
+			string statusCode = messageBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
+			messageBuffer.ReadSpaceSeparatedItem(skipItem: true, decapitalize: false, lastItem: true);
 
 			// set message properties
 			this.Version = MessageBuffer.ParseVersion(version);
@@ -68,10 +79,28 @@ namespace MAPE.Core {
 		protected override void ScanHeaderFieldValue(MessageBuffer messageBuffer, string decapitalizedFieldName, int startIndex) {
 			switch (decapitalizedFieldName) {
 				case "proxy-authenticate":
+					// save its span, but value is unnecessary
+					this.ProxyAuthenticateValue = messageBuffer.ReadHeaderFieldASCIIValue(false);
+					this.ProxyAuthenticateSpan = new MessageBuffer.Span(startIndex, messageBuffer.CurrentHeaderIndex);
+					break;
 				default:
 					base.ScanHeaderFieldValue(messageBuffer, decapitalizedFieldName, startIndex);
 					break;
 			}
+		}
+
+		#endregion
+
+
+		#region privates
+
+		private void ResetThisClassLevelMessageProperties() {
+			// reset message properties of this class level
+			this.StatusCode = 0;
+			this.ProxyAuthenticateSpan = MessageBuffer.Span.ZeroToZero;
+			this.ProxyAuthenticateValue = null;
+
+			return;
 		}
 
 		#endregion

@@ -16,6 +16,11 @@ namespace MAPE.Core {
 			protected set;
 		}
 
+		public MessageBuffer.Span ProxyAuthorizationSpan {
+			get;
+			protected set;
+		}
+
 		#endregion
 
 
@@ -23,7 +28,7 @@ namespace MAPE.Core {
 
 		public Request(): base() {
 			// initialize members
-			this.Method = null;
+			ResetThisClassLevelMessageProperties();
 
 			return;
 		}
@@ -35,7 +40,7 @@ namespace MAPE.Core {
 
 		protected override void ResetMessageProperties() {
 			// reset this class level
-			this.Method = null;
+			ResetThisClassLevelMessageProperties();
 
 			// reset the base class level
 			base.ResetMessageProperties();
@@ -46,9 +51,9 @@ namespace MAPE.Core {
 			Debug.Assert(messageBuffer != null);
 
 			// read items
-			string method = messageBuffer.ReadStartLineItem(skipItem: false, decapitalize: false, lastItem: false);
-			messageBuffer.ReadStartLineItem(skipItem: true, decapitalize: false, lastItem: false);
-			string version = messageBuffer.ReadStartLineItem(skipItem: false, decapitalize: false, lastItem: true);
+			string method = messageBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
+			messageBuffer.ReadSpaceSeparatedItem(skipItem: true, decapitalize: false, lastItem: false);
+			string version = messageBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: true);
 
 			// set message properties
 			this.Method = method;
@@ -69,10 +74,27 @@ namespace MAPE.Core {
 		protected override void ScanHeaderFieldValue(MessageBuffer messageBuffer, string decapitalizedFieldName, int startIndex) {
 			switch (decapitalizedFieldName) {
 				case "proxy-authorization":
+					// save its span, but value is unnecessary
+					messageBuffer.SkipHeaderField();
+					this.ProxyAuthorizationSpan = new MessageBuffer.Span(startIndex, messageBuffer.CurrentHeaderIndex);
+					break;
 				default:
 					base.ScanHeaderFieldValue(messageBuffer, decapitalizedFieldName, startIndex);
 					break;
 			}
+		}
+
+		#endregion
+
+
+		#region privates
+
+		private void ResetThisClassLevelMessageProperties() {
+			// reset message properties of this class level
+			this.Method = null;
+			this.ProxyAuthorizationSpan = MessageBuffer.Span.ZeroToZero;
+
+			return;
 		}
 
 		#endregion
