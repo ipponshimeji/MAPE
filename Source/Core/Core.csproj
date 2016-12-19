@@ -45,8 +45,12 @@
   <ItemGroup>
     <Compile Include="ComponentFactory.cs" />
     <Compile Include="CommandBase.cs" />
+    <Compile Include="Configuration.cs" />
     <Compile Include="InstanceCache.cs" />
     <Compile Include="Component.cs" />
+    <Compile Include="CharScanningAdapter.cs" />
+    <Compile Include="ScanningAdapter.cs" />
+    <Compile Include="ListenerConfiguration.cs" />
     <Compile Include="TaskingComponent.cs" />
     <Compile Include="MessageBuffer.cs" />
     <Compile Include="Response.cs" />
