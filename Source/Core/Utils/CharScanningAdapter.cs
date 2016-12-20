@@ -5,7 +5,7 @@ using System.IO;
 using System.Text;
 
 
-namespace MAPE.Core {
+namespace MAPE.Utils {
 	public class CharScanningAdapter: ScanningAdapter<char> {
 		#region data
 

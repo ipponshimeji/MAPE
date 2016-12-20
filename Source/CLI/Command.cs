@@ -1,23 +1,25 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using MAPE.Windows;
 
 
 namespace CLI {
-	class Command: WindowsCommand {
+	class Command: CLICommandForWindows {
 		#region entry point
 
 		static void Main(string[] args) {
-			try {
-				using (Command command = new Command()) {
-					command.Run(args);
-				}
-			} catch (Exception exception) {
-				Console.Error.WriteLine(exception);
+			using (Command command = new Command()) {
+				command.Run(args);
 			}
 
+			return;
+		}
+
+		#endregion
+
+
+		#region creation and disposal
+
+		public Command(): base(new ComponentFactoryForWindows()) {
 			return;
 		}
 

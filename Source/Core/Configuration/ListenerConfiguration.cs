@@ -4,11 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
-using System.Threading.Tasks;
+using MAPE.Utils;
 
 
-namespace MAPE.Core {
+namespace MAPE.Configuration {
 	public class ListenerConfiguration {
 		#region types
 
@@ -47,6 +46,8 @@ namespace MAPE.Core {
 
 
 		#region constants
+
+		public const int DefaultPort = 8888;
 
 		public const int DefaultBacklog = 8;
 
@@ -114,6 +115,14 @@ namespace MAPE.Core {
 			// initialize members
 			this.endPoint = endPoint;
 			this.backlog = backlog;
+
+			return;
+		}
+
+		public ListenerConfiguration() {
+			// initialize members to default values
+			this.endPoint = new IPEndPoint(IPAddress.Loopback, DefaultPort);
+			this.backlog = DefaultBacklog;
 
 			return;
 		}
@@ -199,8 +208,31 @@ namespace MAPE.Core {
 			}
 		}
 
+		public static string DnsEndPointToString(DnsEndPoint endPoint) {
+			// argument checks
+			if (endPoint == null) {
+				throw new ArgumentNullException(nameof(endPoint));
+			}
+
+			return string.Concat($"{endPoint.Host}:{endPoint.Port}");
+		}
+
+
 		public static bool AreEqualParameterNames(string name1, string name2) {
 			return string.Compare(name1, name2, StringComparison.InvariantCultureIgnoreCase) == 0;
+		}
+
+		#endregion
+
+
+		#region overrides
+
+		public override string ToString() {
+			if (this.backlog == DefaultBacklog) {
+				return this.endPoint.ToString();
+			} else {
+				return $"{this.endPoint},backlog={this.backlog}";
+			}
 		}
 
 		#endregion

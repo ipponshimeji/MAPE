@@ -8,7 +8,7 @@ using System.Net.Sockets;
 using System.Text;
 
 
-namespace MAPE.Core {
+namespace MAPE.Http {
 	public abstract class Message: IDisposable {
 		#region data
 

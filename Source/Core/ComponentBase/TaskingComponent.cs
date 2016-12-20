@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 
 
-namespace MAPE.Core {
+namespace MAPE.ComponentBase {
 	public abstract class TaskingComponent: Component {
 		#region data - synchronized by locking this
 

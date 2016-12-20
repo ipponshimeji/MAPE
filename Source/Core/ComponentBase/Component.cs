@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Diagnostics;
+using MAPE.Utils;
 
 
-namespace MAPE.Core {
+namespace MAPE.ComponentBase {
 	public abstract class Component: IDisposable {
 		#region data
 
@@ -38,17 +39,17 @@ namespace MAPE.Core {
 
 		[Conditional("TRACE")]
 		public void TraceInformation(string message) {
-			Trace.TraceInformation(FormatTraceMessage(message));
+			Logger.TraceInformation(FormatTraceMessage(message));
 		}
 
 		[Conditional("TRACE")]
 		public void TraceWarning(string message) {
-			Trace.TraceWarning(FormatTraceMessage(message));
+			Logger.TraceWarning(FormatTraceMessage(message));
 		}
 
 		[Conditional("TRACE")]
 		public void TraceError(string message) {
-			Trace.TraceError(FormatTraceMessage(message));
+			Logger.TraceError(FormatTraceMessage(message));
 		}
 
 		#endregion

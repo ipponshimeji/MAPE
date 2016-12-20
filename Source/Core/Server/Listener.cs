@@ -1,20 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using MAPE.ComponentBase;
+using MAPE.Configuration;
 
 
-namespace MAPE.Core {
+namespace MAPE.Server {
 	public class Listener: TaskingComponent {
 		#region constants
 
 		public const string ObjectBaseName = "Listener";
-
-		public const int DefaultBackLog = 8;
 
 		#endregion
 
@@ -28,32 +26,79 @@ namespace MAPE.Core {
 
 		#region data - synchronized by locking this
 
-		private TcpListener listener;
+		private IPEndPoint endPoint;
 
-		private int backLog;
+		private int backlog;
+
+		private TcpListener tcpListener;
+
+		#endregion
+
+
+		#region properties
+
+		public Proxy Owner {
+			get {
+				return this.owner;
+			}
+		}
+
+		public IPEndPoint EndPoint {
+			get {
+				return this.endPoint;
+			}
+			set {
+				EnsureNotListeningAndSetProperty(value, ref this.endPoint);
+			}
+		}
+
+		public int Backlog {
+			get {
+				return this.backlog;
+			}
+			set {
+				EnsureNotListeningAndSetProperty(value, ref this.backlog);
+			}
+		}
+
+		public bool IsListening {
+			get {
+				return this.tcpListener != null;
+			}
+		}
+
+		public bool IsDisposed {
+			get {
+				return this.endPoint == null;
+			}
+		}
 
 		#endregion
 
 
 		#region creation and disposal
 
-		public Listener(Proxy owner, IPEndPoint endPoint, int backLog = DefaultBackLog) {
+		public Listener(Proxy owner, ListenerConfiguration config = null) {
 			// argument checks
 			if (owner == null) {
 				throw new ArgumentNullException(nameof(owner));
 			}
-			if (endPoint == null) {
-				throw new ArgumentNullException(nameof(endPoint));
-			}
-			if (backLog < 0) {
-				throw new ArgumentOutOfRangeException(nameof(backLog));
-			}
+			// config can be null
 
 			// initialize members
-			this.ObjectName = $"{ObjectBaseName} ({endPoint.ToString()})";
 			this.owner = owner;
-			this.listener = new TcpListener(endPoint);
-			this.backLog = backLog;
+			if (config != null) {
+				this.endPoint = config.EndPoint;
+				this.backlog = config.Backlog;
+			} else {
+				// set default values
+				this.endPoint = new IPEndPoint(IPAddress.Loopback, ListenerConfiguration.DefaultPort);
+				this.backlog = ListenerConfiguration.DefaultBacklog;
+			}
+			Debug.Assert(this.endPoint != null);
+			this.tcpListener = null;
+
+			this.ObjectName = $"{ObjectBaseName} ({endPoint.ToString()})";
 
 			return;
 		}
@@ -64,9 +109,8 @@ namespace MAPE.Core {
 
 			// clear the listener
 			lock (this) {
-				this.listener = null;
-				// listeningTask will be cleard at this.Task
-				// see the prop getter of ListeningTask
+				Debug.Assert(this.tcpListener == null);
+				this.endPoint = null;
 			}
 
 			return;
@@ -81,8 +125,7 @@ namespace MAPE.Core {
 			try {
 				lock (this) {
 					// state checks
-					TcpListener listener = this.listener;
-					if (listener == null) {
+					if (this.IsDisposed) {
 						throw new ObjectDisposedException(this.ObjectName);
 					}
 
@@ -94,17 +137,22 @@ namespace MAPE.Core {
 					TraceInformation("Starting...");
 
 					// start listening
+					Debug.Assert(this.endPoint != null);
+					TcpListener tcpListener = new TcpListener(this.endPoint);
+					Debug.Assert(this.tcpListener == null);
+					this.tcpListener = tcpListener;
 					try {
 						listeningTask = new Task(Listen, TaskCreationOptions.LongRunning);
-						listener.Start(this.backLog);
+						tcpListener.Start(this.backlog);
 						listeningTask.Start();
+						this.Task = listeningTask;
 					} catch {
-						listener.Stop();
+						this.tcpListener = null;
+						tcpListener.Stop();
 						throw;
 					}
 
-					// update its state
-					this.Task = listeningTask;
+					// log
 					TraceInformation("Started.");
 				}
 			} catch (Exception exception) {
@@ -121,21 +169,22 @@ namespace MAPE.Core {
 				Task listeningTask;
 				lock (this) {
 					// state checks
-					TcpListener listener = this.listener;
-					if (listener == null) {
+					if (this.IsDisposed) {
+						Debug.Assert(this.tcpListener == null);
 						throw new ObjectDisposedException(this.ObjectName);
 					}
 
 					listeningTask = this.Task;
 					if (listeningTask == null) {
 						// already stopped
+						Debug.Assert(this.tcpListener == null);
 						return true;
 					}
 					TraceInformation("Stopping...");
 
 					// stop listening
 					try {
-						listener.Stop();
+						this.tcpListener.Stop();
 					} catch {
 						// continue
 					}
@@ -157,6 +206,34 @@ namespace MAPE.Core {
 			return stopConfirmed;
 		}
 
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <remarks>
+		/// This method is not thread-safe.
+		/// Call this method inside lock(this) scope.
+		/// </remarks>
+		protected void EnsureNotListening() {
+			if (this.tcpListener != null) {
+				throw new InvalidOperationException("This opeeration is not available while the object is listening.");
+			}
+
+			return;
+		}
+
+		protected void EnsureNotListeningAndSetProperty<T>(T value, ref T fieldRef) {
+			lock (this) {
+				// state checks
+				// The property cannot be changed while the object is listening. 
+				EnsureNotListening();
+
+				fieldRef = value;
+			}
+
+			return;
+		}
+
 		#endregion
 
 
@@ -164,13 +241,13 @@ namespace MAPE.Core {
 
 		private void Listen() {
 			// state checks
-			TcpListener listener;
 			Proxy owner;
+			TcpListener tcpListener;
 			lock (this) {
-				listener = this.listener;
 				owner = this.owner;
+				tcpListener = this.tcpListener;
 			}
-			if (listener == null) {
+			if (tcpListener == null) {
 				// may be disposed immediately after Start() call
 				return;
 			}
@@ -178,7 +255,7 @@ namespace MAPE.Core {
 			// start accept loop
 			try {
 				do {
-					TcpClient client = listener.AcceptTcpClient();
+					TcpClient client = tcpListener.AcceptTcpClient();
 					try {
 						TraceInformation($"Accepted from {client.Client.RemoteEndPoint.ToString()}. Creating a Connection.");
 						owner.OnAccept(client);
@@ -189,8 +266,13 @@ namespace MAPE.Core {
 					}
 				} while (true);
 			} catch (Exception) {
-				// ToDo: log if not stopping
+				// ToDo: log if not stopping normally
 				;
+			}
+
+			// update state
+			lock (this) {
+				this.tcpListener = null;
 			}
 
 			// log

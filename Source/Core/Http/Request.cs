@@ -7,7 +7,7 @@ using System.Net.Http;
 using System.Text;
 
 
-namespace MAPE.Core {
+namespace MAPE.Http {
 	public class Request: Message {
 		#region data
 

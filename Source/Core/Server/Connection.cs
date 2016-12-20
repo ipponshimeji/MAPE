@@ -8,9 +8,11 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using MAPE.ComponentBase;
+using MAPE.Http;
 
 
-namespace MAPE.Core {
+namespace MAPE.Server {
     public class Connection: TaskingComponent {
 		#region constants
 
@@ -248,13 +250,13 @@ namespace MAPE.Core {
 				} else {
 					overridingProxyCredential = this.proxyCredential;
 					if (overridingProxyCredential == null) {
-						overridingProxyCredential = this.Proxy.GetProxyCredential(null, Proxy.CredentialNecessity.IfPossible);
+						overridingProxyCredential = this.Proxy.GetProxyCredential(null, false);
 					}
 				}
 			} else {
 				// re-sending request
 				if (response.StatusCode == 407) {
-					overridingProxyCredential = this.Proxy.GetProxyCredential(null, Proxy.CredentialNecessity.NeedToUpdate);
+					overridingProxyCredential = this.Proxy.GetProxyCredential(response.ProxyAuthenticateValue, true);
 				} else {
 					// no need to resending
 					overridingProxyCredential = null;
@@ -349,6 +351,7 @@ namespace MAPE.Core {
 			Debug.Assert(clientStream != null);
 			Debug.Assert(serverStream != null);
 
+			bool tunnelMode = false;
 			ComponentFactory componentFactory = this.ComponentFactory;
 			Request request = componentFactory.AllocRequest(clientStream, serverStream);
 			try {
@@ -357,7 +360,7 @@ namespace MAPE.Core {
 					MessageBuffer.Modification[] modifications;
 					while (request.Read()) {
 						int repeatCount = 0;
-						modifications = GetModification(repeatCount, request, response);
+						modifications = GetModification(repeatCount, request, null);
 						do {
 							request.Write(modifications);
 							response.Read();
@@ -365,14 +368,33 @@ namespace MAPE.Core {
 							modifications = GetModification(repeatCount, request, response);
 						} while (modifications != null);
 						response.Write();
+						if (request.Method == "CONNECT" && response.StatusCode == 200) {
+							tunnelMode = true;
+							break;
+						}
 					}
 				} catch {
 					// ToDo: send error response to client
+					byte[] bytes = Encoding.ASCII.GetBytes("HTTP/1.1 400 Bad Request\r\n\r\n");
+					clientStream.Write(bytes, 0, bytes.Length);
 				} finally {
 					componentFactory.ReleaseResponse(response);
 				}
 			} finally {
 				componentFactory.ReleaseRequest(request);
+			}
+
+			if (tunnelMode) {
+				byte[] upBuf = ComponentFactory.AllocMemoryBlock();
+				try {
+					byte[] downBuf = ComponentFactory.AllocMemoryBlock();
+					try {
+					} finally {
+						ComponentFactory.FreeMemoryBlock(downBuf);
+					}
+				} finally {
+					ComponentFactory.FreeMemoryBlock(upBuf);
+				}
 			}
 		}
 

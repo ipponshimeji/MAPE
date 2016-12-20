@@ -7,9 +7,10 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using MAPE.ComponentBase;
 
 
-namespace MAPE.Core {
+namespace MAPE.Server {
     public class ConnectionCollection {
 		#region data
 

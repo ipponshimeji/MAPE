@@ -4,9 +4,13 @@ using System.IO;
 using System.Net;
 using System.Linq;
 using System.Text;
+using MAPE.ComponentBase;
+using MAPE.Configuration;
+using MAPE.Http;
+using MAPE.Server;
 
 
-namespace MAPE.Core {
+namespace MAPE {
     public class ComponentFactory {
 		#region types
 
@@ -214,12 +218,16 @@ namespace MAPE.Core {
 
 		#region methods
 
-		public virtual Proxy CreateProxy() {
-			return new Proxy(this);
+		public virtual ProxyConfiguration CreateProxyConfiguration() {
+			return new ProxyConfiguration(this);
 		}
 
-		public virtual Listener CreateListener(Proxy owner, IPEndPoint endPoint, int backLog = Listener.DefaultBackLog) {
-			return new Listener(owner, endPoint, backLog);
+		public virtual Proxy CreateProxy(ProxyConfiguration config) {
+			return new Proxy(config);
+		}
+
+		public virtual Listener CreateListener(Proxy owner, ListenerConfiguration config) {
+			return new Listener(owner, config);
 		}
 
 		public virtual ConnectionCollection CreateConnectionCollection(Proxy owner) {

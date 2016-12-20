@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 
 
-namespace MAPE.Core {
+namespace MAPE.Http {
 	/// <summary>
 	/// 
 	/// </summary>
@@ -650,6 +650,7 @@ namespace MAPE.Core {
 		}
 
 		public void SkipChunkedBody() {
+			MAPE.Utils.Logger.TraceError("Chunked body is not supported now.");
 			throw new NotImplementedException();
 		}
 

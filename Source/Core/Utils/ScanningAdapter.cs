@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 
 
-namespace MAPE.Core {
+namespace MAPE.Utils {
 	public class ScanningAdapter<T> {
 		#region data
 
@@ -99,6 +99,7 @@ namespace MAPE.Core {
 						return false;
 					}
 				}
+				t = this.Current;
 			}
 
 			return true;
@@ -124,6 +125,7 @@ namespace MAPE.Core {
 						return false;
 					}
 				}
+				t = this.Current;
 			}
 
 			return true;

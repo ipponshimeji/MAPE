@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 
 
-namespace MAPE.Core {
+namespace MAPE.ComponentBase {
 	/// <summary>
 	/// The class to cache instances so that instances are be reused easily.
 	/// It may prevent 'garbage' increasing and frequent GC if the target
