@@ -255,6 +255,7 @@ namespace MAPE.Server {
 				}
 			} else {
 				// re-sending request
+				TraceInformation($"Response: {response.StatusCode}");
 				if (response.StatusCode == 407) {
 					overridingProxyCredential = this.Proxy.GetProxyCredential(response.ProxyAuthenticateValue, true);
 				} else {
@@ -320,6 +321,9 @@ namespace MAPE.Server {
 					}
 				}
 				TraceInformation("Communication completed.");
+			} catch (EndOfStreamException) {
+				// the end of communication
+				// continue
 			} catch (Exception exception) {
 				TraceError($"Fail to communicate: {exception.Message}");
 				throw;
@@ -385,16 +389,32 @@ namespace MAPE.Server {
 			}
 
 			if (tunnelMode) {
-				byte[] upBuf = ComponentFactory.AllocMemoryBlock();
-				try {
-					byte[] downBuf = ComponentFactory.AllocMemoryBlock();
-					try {
-					} finally {
-						ComponentFactory.FreeMemoryBlock(downBuf);
+				Task.Run(() => { Tunnel(componentFactory, serverStream, clientStream); });
+				Tunnel(componentFactory, clientStream, serverStream);
+			}
+		}
+
+		private static void Tunnel(ComponentFactory componentFactory, Stream input, Stream output) {
+			// argument checks
+			Debug.Assert(componentFactory != null);
+			Debug.Assert(input != null);
+			Debug.Assert(output != null);
+
+			byte[] buf = ComponentFactory.AllocMemoryBlock();
+			try {
+				int readCount;
+				do {
+					readCount = input.Read(buf, 0, buf.Length);
+					if (readCount <= 0) {
+						// the end of stream
+						break;
 					}
-				} finally {
-					ComponentFactory.FreeMemoryBlock(upBuf);
-				}
+					output.Write(buf, 0, readCount);
+				} while (true);
+			} finally {
+				ComponentFactory.FreeMemoryBlock(buf);
+				input.Close();
+				output.Close();
 			}
 		}
 

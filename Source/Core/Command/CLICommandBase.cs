@@ -68,6 +68,16 @@ namespace MAPE.Command {
 
 		#region overrides/overridables - execution
 
+		public override void Run(string[] args) {
+			ColorCodedConsoleTraceListener traceListener = new ColorCodedConsoleTraceListener(true);
+			Trace.Listeners.Add(traceListener);
+			try {
+				base.Run(args);
+			} finally {
+				Trace.Listeners.Remove(traceListener);
+			}
+		}
+
 		public override void Execute(ProxyConfiguration proxyConfiguration) {
 			// argument checks
 			Debug.Assert(proxyConfiguration != null);

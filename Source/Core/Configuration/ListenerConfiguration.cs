@@ -42,6 +42,23 @@ namespace MAPE.Configuration {
 			#endregion
 		}
 
+		public static class ParameterNames {
+			#region constants
+
+			public const string Backlog = "backlog";
+
+			#endregion
+
+
+			#region methods
+
+			public static bool AreEqual(string name1, string name2) {
+				return string.Compare(name1, name2, StringComparison.InvariantCultureIgnoreCase) == 0;
+			}
+
+			#endregion
+		}
+
 		#endregion
 
 
@@ -50,11 +67,6 @@ namespace MAPE.Configuration {
 		public const int DefaultPort = 8888;
 
 		public const int DefaultBacklog = 8;
-
-
-		// parameter name
-
-		public const string BacklogParameterName = "backlog";
 
 		#endregion
 
@@ -130,7 +142,7 @@ namespace MAPE.Configuration {
 		#endregion
 
 
-		#region methods
+		#region methods - ListenerConfiguration
 
 		/// <summary>
 		/// 
@@ -139,21 +151,21 @@ namespace MAPE.Configuration {
 		/// <returns></returns>
 		/// <remarks>
 		/// IPv6 address should be put in square brackets.
-		/// ex. [::]
+		/// ex. [::1]
 		/// </remarks>
 		public static ListenerConfiguration Parse(string str) {
 			// argument checks
-			if (string.IsNullOrEmpty(str)) {
+			if (str == null) {
 				throw new ArgumentNullException(nameof(str));
 			}
 
-			// extract DnsEndPoint from the string
+			// extract a ListenerConfiguration instance from the string
 			ListenerConfiguration instance;
 			using (IEnumerator<char> enumerator = str.GetEnumerator()) {
 				ScanningAdapter scanner = new ScanningAdapter(enumerator);
 
 				instance = Extract(scanner);	// may be null
-				if (scanner.HasMoreData) {
+				if (instance == null || scanner.HasMoreData) {
 					throw CreateFormatException();
 				}
 			}
@@ -163,11 +175,11 @@ namespace MAPE.Configuration {
 
 		public static ListenerConfiguration[] ParseMultiple(string str) {
 			// argument checks
-			if (string.IsNullOrEmpty(str)) {
+			if (str == null) {
 				throw new ArgumentNullException(nameof(str));
 			}
 
-			// extract config from the str
+			// extract ListenerConfiguration instances from the string
 			List<ListenerConfiguration> list = new List<ListenerConfiguration>();
 			using (IEnumerator<char> enumerator = str.GetEnumerator()) {
 				ScanningAdapter scanner = new ScanningAdapter(enumerator);
@@ -181,26 +193,29 @@ namespace MAPE.Configuration {
 			return list.ToArray();
 		}
 
+		#endregion
+
+
+		#region methods - DnsEndPoint
+
 		public static DnsEndPoint ParseDnsEndPoint(string str) {
 			// argument checks
-			if (string.IsNullOrEmpty(str)) {
+			if (str == null) {
 				throw new ArgumentNullException(nameof(str));
 			}
 
-			// extract DnsEndPoint from the string
+			// extract host and port
 			string host;
 			int port;
 			using (IEnumerator<char> enumerator = str.GetEnumerator()) {
 				ScanningAdapter scanner = new ScanningAdapter(enumerator); 
 
-				if (ExtractEndPoint(scanner, out host, out port) == false) {
-					return null;
-				}
-				if (scanner.HasMoreData) {
+				if (ExtractEndPoint(scanner, out host, out port) == false || scanner.HasMoreData) {
 					throw CreateFormatException();
 				}
 			}
 
+			// create a DnsEndPoint instance
 			try {
 				return new DnsEndPoint(host, port);
 			} catch (ArgumentException) {
@@ -214,12 +229,7 @@ namespace MAPE.Configuration {
 				throw new ArgumentNullException(nameof(endPoint));
 			}
 
-			return string.Concat($"{endPoint.Host}:{endPoint.Port}");
-		}
-
-
-		public static bool AreEqualParameterNames(string name1, string name2) {
-			return string.Compare(name1, name2, StringComparison.InvariantCultureIgnoreCase) == 0;
+			return $"{endPoint.Host}:{endPoint.Port}";
 		}
 
 		#endregion
@@ -288,7 +298,7 @@ namespace MAPE.Configuration {
 					}
 
 					// handle parameters
-					if (AreEqualParameterNames(paramName, BacklogParameterName)) {
+					if (ParameterNames.AreEqual(paramName, ParameterNames.Backlog)) {
 						if (paramValue != null) {
 							backlog = int.Parse(paramValue);
 							if (backlog < 0) {

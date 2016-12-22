@@ -12,18 +12,6 @@ using MAPE.Configuration;
 
 namespace MAPE.Server {
     public class Proxy: Component {
-		#region types
-
-		// ToDo: remove
-		public enum CredentialNecessity {
-			IfPossible,
-			Necessary,
-			NeedToUpdate,
-		}
-
-		#endregion
-
-
 		#region constants
 
 		public const string ObjectBaseName = "Proxy";
@@ -42,9 +30,9 @@ namespace MAPE.Server {
 
 		private DnsEndPoint server;
 
-		private NetworkCredential serverCredential;
-
 		private CredentialPersistence serverCredentialPersistence;
+
+		private NetworkCredential serverCredential;
 
 		private Func<string, NetworkCredential> credentialCallback;
 
@@ -115,18 +103,24 @@ namespace MAPE.Server {
 
 		#region creation and disposal
 
-		public Proxy(ProxyConfiguration config) {
+		public Proxy(ProxyConfiguration config = null) {
 			// argument checks
-			if (config == null) {
-				throw new ArgumentNullException(nameof(config));
-			}
+			// config can be null
 
 			// initialize members
 			this.ObjectName = ObjectBaseName;
-			this.componentFactory = config.ComponentFactory;
-			this.server = config.Proxy;
-			this.serverCredentialPersistence = config.ProxyCredentialPersistence;
-			this.serverCredential = (this.serverCredentialPersistence == CredentialPersistence.Persistent)? config.ProxyCredential: null;
+			if (config != null) {
+				this.componentFactory = config.ComponentFactory;
+				this.server = config.Proxy;
+				this.serverCredentialPersistence = config.ProxyCredentialPersistence;
+				this.serverCredential = (this.serverCredentialPersistence == CredentialPersistence.Persistent) ? config.ProxyCredential : null;
+			} else {
+				// initialize to default settings
+				this.componentFactory = new ComponentFactory();
+				this.server = null;
+				this.serverCredentialPersistence = CredentialPersistence.Process;
+				this.serverCredential = null;
+			}
 			this.credentialCallback = null;
 			this.listeners = new List<Listener>();
 			this.isListening = false;
@@ -135,14 +129,18 @@ namespace MAPE.Server {
 			// add listeners
 			// add the main listener
 			// If config.MainListener is null, default setting is applied.
-			this.listeners.Add(this.componentFactory.CreateListener(this, config.MainListener));
-			if (config.AdditionalListeners != null) {
-				Listener[] additionalListeners = (
-					from listenerConfig in config.AdditionalListeners
-					where listenerConfig != null
-					select this.componentFactory.CreateListener(this, listenerConfig)
-				).ToArray();
-				this.listeners.AddRange(additionalListeners);
+			if (config != null) {
+				this.listeners.Add(this.componentFactory.CreateListener(this, config.MainListener));
+				if (config.AdditionalListeners != null && 0 < config.AdditionalListeners.Length) {
+					Listener[] additionalListeners = (
+						from listenerConfig in config.AdditionalListeners
+						where listenerConfig != null
+						select this.componentFactory.CreateListener(this, listenerConfig)
+					).ToArray();
+					this.listeners.AddRange(additionalListeners);
+				}
+			} else {
+				this.listeners.Add(this.componentFactory.CreateListener(this, null));
 			}
 
 			return;
@@ -156,10 +154,10 @@ namespace MAPE.Server {
 			lock (this) {
 				Debug.Assert(this.connections == null);
 				Debug.Assert(this.isListening == false);
-				List<Listener> listeners = this.listeners;
+				List<Listener> temp = this.listeners;
 				this.listeners = null;
-				if (listeners != null) {
-					listeners.ForEach(
+				if (temp != null) {
+					temp.ForEach(
 						(listener) => {
 							try {
 								listener.Dispose();
@@ -195,24 +193,32 @@ namespace MAPE.Server {
 
 					IReadOnlyList<Listener> listeners = this.listeners;
 					if (listeners == null || listeners.Count <= 0) {
-						throw new InvalidOperationException();
+						throw new ObjectDisposedException(this.ObjectName);
+					}
+					if (this.listeners.Count <= 0) {
+						throw new InvalidOperationException("No listening end point is specified.");
 					}
 					if (this.Server == null) {
-						throw new InvalidOperationException();
+						throw new InvalidOperationException("No server end point is specified.");
 					}
 					TraceInformation("Starting...");
 
 					// start listeners
+					int activeCount = 0;
 					Parallel.ForEach(
 						listeners,
 						(listener) => {
 							try {
 								listener.Start();
+								++activeCount;
 							} catch {
 								// continue
 							}
 						}
 					);
+					if (activeCount <= 0) {
+						throw new Exception("No active listener.");
+					}
 
 					// update its state
 					this.isListening = true;
@@ -351,7 +357,15 @@ namespace MAPE.Server {
 			Debug.Assert(this.Server != null);
 
 			// ToDo: cache ip address?
-			return new TcpClient(this.Server.Host, this.Server.Port);
+			TcpClient server = new TcpClient();
+			try {
+				server.Connect(this.Server.Host, this.Server.Port);
+			} catch {
+				server.Close();
+				throw;
+			}
+
+			return server;
 		}
 
 		public byte[] GetProxyCredential(string proxyAuthenticateValue, bool needUpdate) {

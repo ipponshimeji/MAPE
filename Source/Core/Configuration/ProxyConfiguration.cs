@@ -7,7 +7,6 @@ using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using MAPE.Utils;
 using MAPE.Server;
 
@@ -26,6 +25,8 @@ namespace MAPE.Configuration {
 			public const string Proxy = "Proxy";
 
 			public const string ProxyUserName = "ProxyUserName";
+
+			public const string ProxyCredentialPersistence = "ProxyCredentialPersistence";
 
 			public const string ProtectedProxyPassword = "ProtectedProxyPassword";
 
@@ -79,6 +80,7 @@ namespace MAPE.Configuration {
 
 		public NetworkCredential ProxyCredential {
 			get {
+				// unprotect the password
 				string protectedPassword = this.protectedProxyPassword;
 				string password = (protectedPassword == null) ? null : UnprotectPassword(protectedPassword);
 
@@ -99,13 +101,13 @@ namespace MAPE.Configuration {
 
 			// initialize members
 			this.componentFactory = componentFactory;
-			this.ConfigFilePath = null;
-			this.MainListener = null;		// use default
-			this.AdditionalListeners = null;
-			this.Proxy = null;              // auto
+			this.ConfigFilePath = null;			// use default config file
+			this.MainListener = null;			// use default
+			this.AdditionalListeners = null;	// no additional listener
+			this.Proxy = null;					// not specified
 			this.ProxyCredentialPersistence = CredentialPersistence.Process;
-			this.ProxyUserName = null;
-			this.protectedProxyPassword = null;
+			this.ProxyUserName = null;			// no user name
+			this.protectedProxyPassword = null;	// no password
 
 			return;
 		}
@@ -118,6 +120,7 @@ namespace MAPE.Configuration {
 		public void LoadConfiguration(string configFilePath = null) {
 			// argument checks
 			if (configFilePath == null) {
+				// use default config file
 				configFilePath = GetDefaultConfigurationFilePath();
 			}
 
@@ -126,8 +129,7 @@ namespace MAPE.Configuration {
 			foreach (KeyValueConfigurationElement appSetting in config.AppSettings.Settings) {
 				Parameter setting = new Parameter(appSetting.Key, appSetting.Value);
 				if (LoadSetting(setting) == false) {
-					// ToDo: message
-					Logger.TraceWarning($"Unknown setting {appSetting.Key}. Ignored.");
+					Logger.TraceWarning($"ConfigurationFile '{configFilePath}': The setting '{setting.Name}' is unrecognized. It is ignored.");
 				}
 			}
 
@@ -143,7 +145,7 @@ namespace MAPE.Configuration {
 				configFilePath = this.ConfigFilePath;
 				if (configFilePath == null) {
 					// no config file opened currently
-					throw new InvalidOperationException();
+					throw new InvalidOperationException("No configuration file is opened now.");
 				}
 			}
 
@@ -151,7 +153,7 @@ namespace MAPE.Configuration {
 			System.Configuration.Configuration config = OpenConfiguration(configFilePath);
 			var appSettings = config.AppSettings.Settings;
 
-			appSettings.Clear();
+			appSettings.Clear();	// ToDo: this emits a clear element in the config file
 			WriteSettings((key, value) => { appSettings.Add(key, value); });
 			config.Save();
 
@@ -166,6 +168,7 @@ namespace MAPE.Configuration {
 		public void SetProxyPassword(string value) {
 			// argument checks
 			// value can null
+			// an empty string is normalized to null
 			if (string.IsNullOrEmpty(value)) {
 				value = null;
 			}
@@ -179,8 +182,8 @@ namespace MAPE.Configuration {
 		#region overridables
 
 		public virtual string GetDefaultConfigurationFilePath() {
-			// %APPDATA%\MAPE\mape.config
-			string baseFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+			// %LOCALAPPDATA%\MAPE\mape.config
+			string baseFolderPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
 			return Path.Combine(baseFolderPath, @"MAPE\mape.config");
 		}
 
@@ -192,9 +195,12 @@ namespace MAPE.Configuration {
 				this.AdditionalListeners = ListenerConfiguration.ParseMultiple(setting.Value);
 			} else if (setting.IsName(Names.Proxy)) {
 				this.Proxy = ListenerConfiguration.ParseDnsEndPoint(setting.Value);
+			} else if (setting.IsName(Names.ProxyCredentialPersistence)) {
+				this.ProxyCredentialPersistence = (CredentialPersistence)Enum.Parse(typeof(CredentialPersistence), setting.Value, true);
 			} else if (setting.IsName(Names.ProxyUserName)) {
 				this.ProxyUserName = setting.Value;
 			} else if (setting.IsName(Names.ProtectedProxyPassword)) {
+				// an empty string is normalize to null
 				if (setting.IsNullOrEmptyValue == false) {
 					this.protectedProxyPassword = setting.Value;
 				} else {
@@ -202,6 +208,7 @@ namespace MAPE.Configuration {
 				}
 				this.ProxyCredentialPersistence = CredentialPersistence.Persistent;
 			} else if (setting.IsName(Names.ProxyPassword)) {
+				// load only (plain password is not written to configuration file) 
 				if (setting.IsNullOrEmptyValue == false) {
 					this.protectedProxyPassword = ProtectPassword(setting.Value);
 				}
@@ -212,17 +219,16 @@ namespace MAPE.Configuration {
 			return handled;
 		}
 
-		public virtual void WriteSettings(Action<string, string> add) {
+		public virtual void WriteSettings(Action<string, string> adder) {
 			// argument checks
-			Debug.Assert(add != null);
+			Debug.Assert(adder != null);
 
 			// write settings
-			string value;
 
 			// MainListener
 			if (this.MainListener != null) {
-				value = this.MainListener.ToString();
-				add(Names.MainListener, value);
+				string value = this.MainListener.ToString();
+				adder(Names.MainListener, value);
 			}
 
 			// AdditionalListeners
@@ -231,26 +237,28 @@ namespace MAPE.Configuration {
 					from listener in this.AdditionalListeners
 					select listener.ToString()
 				).ToArray();
-				value = string.Join(";", values);
-				add(Names.AdditionalListeners, value);
+				string value = string.Join(";", values);
+				adder(Names.AdditionalListeners, value);
 			}
 
 			// Proxy
 			if (this.Proxy != null) {
-				value = ListenerConfiguration.DnsEndPointToString(this.Proxy);
-				add(Names.Proxy, value);
+				string value = ListenerConfiguration.DnsEndPointToString(this.Proxy);
+				adder(Names.Proxy, value);
 			}
 
-			// ProxyUserName, ProxyPassword
+			// ProxyCredentialPersistence, ProxyUserName, ProtectedProxyPassword
 			if (this.ProxyCredentialPersistence == CredentialPersistence.Persistent) {
 				if (this.ProxyUserName != null) {
-					add(Names.ProxyUserName, this.ProxyUserName);
+					adder(Names.ProxyUserName, this.ProxyUserName);
 				}
-				// Note that password should be saved in encrypted mode.
+				// Note that the plain password should be saved.
 				// That is, do not save the 'ProxyPassword' setting. 
 				if (this.protectedProxyPassword != null) {
-					add(Names.ProtectedProxyPassword, this.protectedProxyPassword);
+					adder(Names.ProtectedProxyPassword, this.protectedProxyPassword);
 				}
+			} else {
+				adder(Names.ProxyCredentialPersistence, this.ProxyCredentialPersistence.ToString());
 			}
 
 			return;
@@ -266,7 +274,7 @@ namespace MAPE.Configuration {
 			Debug.Assert(string.IsNullOrEmpty(configFilePath) == false);
 
 			// open configuration
-			// We use ExeConfigFile mapping because here we need only one-layer config.
+			// We use ExeConfigFile mapping because we need only one-layer config here.
 			ExeConfigurationFileMap fileMap = new ExeConfigurationFileMap();
 			fileMap.ExeConfigFilename = configFilePath;
 			return ConfigurationManager.OpenMappedExeConfiguration(fileMap, ConfigurationUserLevel.None);
@@ -277,8 +285,8 @@ namespace MAPE.Configuration {
 			Debug.Assert(password != null);
 
 			// encrypt the password by ProtectedData API
-			// The encryption key is specific to the current user.
-			// The value encrypted by other user does not work.
+			// The password is encrypted with the key of the current user.
+			// The protected value transfered from other machine or user cannot be decrypted.
 			byte[] bytes = ProtectedData.Protect(Encoding.UTF8.GetBytes(password), entropy, DataProtectionScope.CurrentUser);
 			return Convert.ToBase64String(bytes);
 		}
@@ -287,7 +295,7 @@ namespace MAPE.Configuration {
 			// argument checks
 			Debug.Assert(encryptedPassword != null);
 
-			// decrypt the password by ProtectedData
+			// decrypt the password by ProtectedData API.
 			byte[] bytes = ProtectedData.Unprotect(Convert.FromBase64String(encryptedPassword), entropy, DataProtectionScope.CurrentUser);
 			return Encoding.UTF8.GetString(bytes);
 		}
