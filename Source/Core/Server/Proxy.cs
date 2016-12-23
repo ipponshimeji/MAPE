@@ -36,6 +36,8 @@ namespace MAPE.Server {
 
 		private Func<string, NetworkCredential> credentialCallback;
 
+		private int retryCount;
+
 		private List<Listener> listeners;
 
 		private bool isListening;
@@ -80,6 +82,15 @@ namespace MAPE.Server {
 			}
 		}
 
+		public int RetryCount {
+			get {
+				return this.retryCount;
+			}
+			set {
+				EnsureNotListeningAndSetProperty(value, ref this.retryCount);
+			}
+		}
+
 		public IReadOnlyList<Listener> Listeners {
 			get {
 				return this.listeners;
@@ -114,12 +125,14 @@ namespace MAPE.Server {
 				this.server = config.Proxy;
 				this.serverCredentialPersistence = config.ProxyCredentialPersistence;
 				this.serverCredential = (this.serverCredentialPersistence == CredentialPersistence.Persistent) ? config.ProxyCredential : null;
+				this.retryCount = config.RetryCount;
 			} else {
 				// initialize to default settings
 				this.componentFactory = new ComponentFactory();
 				this.server = null;
 				this.serverCredentialPersistence = CredentialPersistence.Process;
 				this.serverCredential = null;
+				this.retryCount = ProxyConfiguration.DefaultRetryCount;
 			}
 			this.credentialCallback = null;
 			this.listeners = new List<Listener>();
@@ -166,8 +179,7 @@ namespace MAPE.Server {
 							}
 						}
 					);
-					this.listeners.Clear();
-					this.listeners = null;
+					temp.Clear();
 				}
 				this.credentialCallback = null;
 				this.serverCredential = null;
@@ -201,7 +213,7 @@ namespace MAPE.Server {
 					if (this.Server == null) {
 						throw new InvalidOperationException("No server end point is specified.");
 					}
-					TraceInformation("Starting...");
+					LogInformation("Starting...");
 
 					// start listeners
 					int activeCount = 0;
@@ -222,10 +234,10 @@ namespace MAPE.Server {
 
 					// update its state
 					this.isListening = true;
-					TraceInformation("Started.");
+					LogInformation("Started.");
 				}
 			} catch (Exception exception) {
-				TraceError($"Fail to start: {exception.Message}");
+				LogError($"Fail to start: {exception.Message}");
 				throw;
 			}
 
@@ -241,7 +253,7 @@ namespace MAPE.Server {
 						// already stopped
 						return true;
 					}
-					TraceInformation("Stopping...");
+					LogInformation("Stopping...");
 
 					// stop listening
 					IReadOnlyList<Listener> listeners = this.listeners;
@@ -276,12 +288,21 @@ namespace MAPE.Server {
 						stopConfirmed = Task.WaitAll(tasks.ToArray(), millisecondsTimeout);
 					}
 
-					// log
+					// update its state
 					this.isListening = false;
-					TraceInformation(stopConfirmed ? "Stopped." : "Requested to stop, but did not comfirm actual stop.");
+					if (stopConfirmed) {
+						LogInformation("Stopped.");
+					} else {
+						string message = "Requested to stop, but did not comfirm actual stop.";
+						if (millisecondsTimeout == 0) {
+							LogInformation(message);
+						} else {
+							LogWarning(message);
+						}
+					}
 				}
 			} catch (Exception exception) {
-				TraceError($"Fail to stop: {exception.Message}");
+				LogError($"Fail to stop: {exception.Message}");
 				throw;
 			}
 
@@ -398,7 +419,7 @@ namespace MAPE.Server {
 			string raw = string.Concat(credential.UserName, ":", credential.Password);
 			string key = Convert.ToBase64String(Encoding.ASCII.GetBytes(raw));
 
-			return Encoding.ASCII.GetBytes($"Proxy-Authorization: Basic {key}");
+			return Encoding.ASCII.GetBytes($"Proxy-Authorization: Basic {key}\r\n");
 		}
 
 		#endregion

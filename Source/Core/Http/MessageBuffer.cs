@@ -650,7 +650,7 @@ namespace MAPE.Http {
 		}
 
 		public void SkipChunkedBody() {
-			MAPE.Utils.Logger.TraceError("Chunked body is not supported now.");
+			MAPE.Utils.Logger.LogError("Chunked body is not supported now.");
 			throw new NotImplementedException();
 		}
 
@@ -761,6 +761,7 @@ namespace MAPE.Http {
 				}
 				writeTo(int.MaxValue);
 			}
+			this.output.Flush();
 
 			return;
 		}

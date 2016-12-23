@@ -69,12 +69,13 @@ namespace MAPE.Command {
 		#region overrides/overridables - execution
 
 		public override void Run(string[] args) {
-			ColorCodedConsoleTraceListener traceListener = new ColorCodedConsoleTraceListener(true);
-			Trace.Listeners.Add(traceListener);
+			// connect a ColorCodedConsoleTraceListener during its execution to show log in the console
+			ColorConsoleTraceListener traceListener = new ColorConsoleTraceListener(true);
+			Logger.Source.Listeners.Add(traceListener);
 			try {
 				base.Run(args);
 			} finally {
-				Trace.Listeners.Remove(traceListener);
+				Logger.Source.Listeners.Remove(traceListener);
 			}
 		}
 

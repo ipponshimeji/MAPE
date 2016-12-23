@@ -3,10 +3,10 @@ using System.Diagnostics;
 
 
 namespace MAPE.Utils {
-	public class ColorCodedConsoleTraceListener: ConsoleTraceListener {
+	public class ColorConsoleTraceListener: ConsoleTraceListener {
 		#region creation and disposal
 
-		public ColorCodedConsoleTraceListener(bool useErrorStream) : base(useErrorStream) {
+		public ColorConsoleTraceListener(bool useErrorStream) : base(useErrorStream) {
 		}
 
 		#endregion

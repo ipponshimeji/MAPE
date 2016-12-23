@@ -32,8 +32,17 @@ namespace MAPE.Configuration {
 
 			public const string ProxyPassword = "ProxyPassword";
 
+			public const string RetryCount = "RetryCount";
+
 			#endregion
 		}
+
+		#endregion
+
+
+		#region constants
+
+		public const int DefaultRetryCount = 2;		// original try + 2 retries = 3 tries
 
 		#endregion
 
@@ -59,6 +68,8 @@ namespace MAPE.Configuration {
 
 		private string protectedProxyPassword;
 
+		private int retryCount;
+
 		#endregion
 
 
@@ -75,6 +86,20 @@ namespace MAPE.Configuration {
 				}
 
 				this.componentFactory = value;
+			}
+		}
+
+		public int RetryCount {
+			get {
+				return this.retryCount;
+			}
+			set {
+				// argument checks
+				if (value < 0) {
+					throw new ArgumentOutOfRangeException(nameof(value));
+				}
+
+				this.retryCount = value;
 			}
 		}
 
@@ -107,7 +132,8 @@ namespace MAPE.Configuration {
 			this.Proxy = null;					// not specified
 			this.ProxyCredentialPersistence = CredentialPersistence.Process;
 			this.ProxyUserName = null;			// no user name
-			this.protectedProxyPassword = null;	// no password
+			this.protectedProxyPassword = null; // no password
+			this.retryCount = DefaultRetryCount;
 
 			return;
 		}
@@ -129,7 +155,7 @@ namespace MAPE.Configuration {
 			foreach (KeyValueConfigurationElement appSetting in config.AppSettings.Settings) {
 				Parameter setting = new Parameter(appSetting.Key, appSetting.Value);
 				if (LoadSetting(setting) == false) {
-					Logger.TraceWarning($"ConfigurationFile '{configFilePath}': The setting '{setting.Name}' is unrecognized. It is ignored.");
+					Logger.LogWarning($"ConfigurationFile '{configFilePath}': The setting '{setting.Name}' is unrecognized. It is ignored.");
 				}
 			}
 
@@ -212,6 +238,8 @@ namespace MAPE.Configuration {
 				if (setting.IsNullOrEmptyValue == false) {
 					this.protectedProxyPassword = ProtectPassword(setting.Value);
 				}
+			} else if (setting.IsName(Names.RetryCount)) {
+				this.RetryCount = int.Parse(setting.Value);
 			} else {
 				handled = false;   // not handled
 			}
@@ -259,6 +287,11 @@ namespace MAPE.Configuration {
 				}
 			} else {
 				adder(Names.ProxyCredentialPersistence, this.ProxyCredentialPersistence.ToString());
+			}
+
+			// RetryCount
+			if (this.RetryCount != DefaultRetryCount) {
+				adder(Names.RetryCount, this.RetryCount.ToString());
 			}
 
 			return;

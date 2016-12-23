@@ -10,10 +10,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using MAPE.ComponentBase;
 using MAPE.Http;
-
+using MAPE.Utils;
 
 namespace MAPE.Server {
-    public class Connection: TaskingComponent {
+    public class Connection: TaskingComponent, ICommunicationOwner {
 		#region constants
 
 		public const string ObjectBaseName = "Connection";
@@ -40,6 +40,8 @@ namespace MAPE.Server {
 		#region data - synchronized by locking this
 
 		private int id = 0;
+
+		private int retryCount;
 
 		private TcpClient client = null;
 
@@ -94,6 +96,7 @@ namespace MAPE.Server {
 
 				// initialize members
 				this.owner = owner;
+				this.retryCount = owner.Owner.RetryCount;
 				Debug.Assert(this.client == null);
 				Debug.Assert(this.server == null);
 				Debug.Assert(this.proxyCredential == null);
@@ -141,7 +144,7 @@ namespace MAPE.Server {
 			try {
 				lock (this) {
 					// log
-					TraceInformation($"Starting for {client.Client.RemoteEndPoint.ToString()} ...");
+					LogInformation($"Starting for {client.Client.RemoteEndPoint.ToString()} ...");
 
 					// state checks
 					if (this.owner == null) {
@@ -154,11 +157,11 @@ namespace MAPE.Server {
 					}
 					communicatingTask = new Task(Communicate);
 					communicatingTask.ContinueWith(
-						(t) => {
-							TraceInformation("Stopped.");
+(Action<Task>)((t) => {
+							base.LogInformation((string)"Stopped.");
 							this.ObjectName = ObjectBaseName;
 							this.owner.OnConnectionCompleted(this);
-						}
+						})
 					);
 					this.Task = communicatingTask;
 
@@ -170,10 +173,10 @@ namespace MAPE.Server {
 					communicatingTask.Start();
 
 					// log
-					TraceInformation("Started.");
+					LogInformation("Started.");
 				}
 			} catch (Exception exception) {
-				TraceError($"Fail to start: {exception.Message}");
+				LogError($"Fail to start: {exception.Message}");
 				throw;
 			}
 
@@ -195,17 +198,19 @@ namespace MAPE.Server {
 						// already stopped
 						return true;
 					}
-					TraceInformation("Stopping...");
+					LogInformation("Stopping...");
 
 					// force the connections to close
 					// It will cause exceptions on I/O in communicating thread.
-					if (this.client != null) {
-						this.client.Close();
-						this.client = null;
-					}
 					if (this.server != null) {
-						this.server.Close();
-						this.client = null;
+						Socket socket = this.server.Client;
+						socket.Shutdown(SocketShutdown.Both);
+						socket.Disconnect(false);
+					}
+					if (this.client != null) {
+						Socket socket = this.client.Client;
+						socket.Shutdown(SocketShutdown.Both);
+						socket.Disconnect(false);
 					}
 				}
 
@@ -218,7 +223,7 @@ namespace MAPE.Server {
 				// log
 				// "Stopped." will be logged in the continuation of the communicating task. See StartCommunication().
 			} catch (Exception exception) {
-				TraceError($"Fail to stop: {exception.Message}");
+				LogError($"Fail to stop: {exception.Message}");
 				throw;
 			}
 
@@ -230,15 +235,12 @@ namespace MAPE.Server {
 
 		#region overridables
 
-		protected virtual MessageBuffer.Modification[] GetModification(int repeatCount, Request request, Response response) {
+		protected virtual MessageBuffer.Modification[] GetModifications(Request request, Response response) {
 			// argument checks
 			if (request == null) {
 				throw new ArgumentNullException(nameof(request));
 			}
-			if (response == null && repeatCount != 0) {
-				throw new ArgumentNullException(nameof(response));
-			}
-			// ToDo: too many repeat check
+			// response may be null
 
 			// ToDo: thread protection
 			byte[] overridingProxyCredential;
@@ -255,7 +257,6 @@ namespace MAPE.Server {
 				}
 			} else {
 				// re-sending request
-				TraceInformation($"Response: {response.StatusCode}");
 				if (response.StatusCode == 407) {
 					overridingProxyCredential = this.Proxy.GetProxyCredential(response.ProxyAuthenticateValue, true);
 				} else {
@@ -282,6 +283,67 @@ namespace MAPE.Server {
 		#endregion
 
 
+		#region ICommunicationOwner - for Communication class only
+
+		ComponentFactory ICommunicationOwner.ComponentFactory {
+			get {
+				return this.ComponentFactory;
+			}
+		}
+
+		ILogger ICommunicationOwner.Logger {
+			get {
+				return this;
+			}
+		}
+
+		MessageBuffer.Modification[] ICommunicationOwner.GetModifications(int repeatCount, Request request, Response response) {
+			// argument checks
+			if (request == null) {
+				throw new ArgumentNullException(nameof(request));
+			}
+			if (response == null && repeatCount != 0) {
+				throw new ArgumentNullException(nameof(response));
+			}
+
+			// log
+			if (response == null) {
+				LogInformation($"Request {request.Method}");
+			} else {
+				int statusCode = response.StatusCode;
+				string message = $"Response {statusCode.ToString()}";
+				if (statusCode < 300) {
+					LogInformation(message);
+				} else if (statusCode < 400 || statusCode == 407) {
+					LogWarning(message);
+				} else {
+					LogError(message);
+				}
+			}
+
+			// retry checks
+			MessageBuffer.Modification[] modifications = null;
+			if (repeatCount <= this.retryCount) {
+				// get actual modifications
+				modifications = GetModifications(request, response);
+			}
+
+			// log
+			if (modifications == null) {
+				// the response will be sent to the client
+				LogInformation("Responded.");
+			}
+
+			return modifications;
+		}
+
+		void ICommunicationOwner.OnError(Exception exception) {
+			StopCommunication();
+		}
+
+		#endregion
+
+
 		#region privates
 
 		private void Communicate() {
@@ -299,8 +361,8 @@ namespace MAPE.Server {
 					server = proxy.OpenServerConnection(client);
 					openServerError = null;
 				} catch (Exception exception) {
-					TraceWarning($"Fail to connect the server: {exception.Message}");
-					TraceWarning($"Sending an error response to the client.");
+					LogWarning($"Fail to connect the server: {exception.Message}");
+					LogWarning($"Sending an error response to the client.");
 					server = null;
 					openServerError = exception;
 					// continue
@@ -308,25 +370,26 @@ namespace MAPE.Server {
 				this.server = server;
 			}
 
+			// communicate
 			try {
 				using (NetworkStream clientStream = this.client.GetStream()) {
 					if (openServerError != null) {
-						using (NetworkStream serverStream = server.GetStream()) {
-							RespondServerConnectionError(clientStream, openServerError);
-						}
+						// the case that server connection is not available
+						RespondServerConnectionError(clientStream, openServerError);
 					} else {
 						using (NetworkStream serverStream = server.GetStream()) {
-							CommunicateInternal(clientStream, serverStream);
+							Communication.Communicate(this, clientStream, serverStream);
 						}
 					}
 				}
-				TraceInformation("Communication completed.");
+				LogInformation("Communication completed.");
 			} catch (EndOfStreamException) {
 				// the end of communication
 				// continue
 			} catch (Exception exception) {
-				TraceError($"Fail to communicate: {exception.Message}");
-				throw;
+				// A 400 (Bad Request) error has been sent to client at this point. 
+				LogError($"Fail to communicate: {exception.Message}");
+				// continue
 			} finally {
 				lock (this) {
 					this.proxyCredential = null;
@@ -348,74 +411,6 @@ namespace MAPE.Server {
 			}
 
 			return;
-		}
-
-		private void CommunicateInternal(Stream clientStream, Stream serverStream) {
-			// argument checks
-			Debug.Assert(clientStream != null);
-			Debug.Assert(serverStream != null);
-
-			bool tunnelMode = false;
-			ComponentFactory componentFactory = this.ComponentFactory;
-			Request request = componentFactory.AllocRequest(clientStream, serverStream);
-			try {
-				Response response = componentFactory.AllocResponse(serverStream, clientStream);
-				try {
-					MessageBuffer.Modification[] modifications;
-					while (request.Read()) {
-						int repeatCount = 0;
-						modifications = GetModification(repeatCount, request, null);
-						do {
-							request.Write(modifications);
-							response.Read();
-							++repeatCount;
-							modifications = GetModification(repeatCount, request, response);
-						} while (modifications != null);
-						response.Write();
-						if (request.Method == "CONNECT" && response.StatusCode == 200) {
-							tunnelMode = true;
-							break;
-						}
-					}
-				} catch {
-					// ToDo: send error response to client
-					byte[] bytes = Encoding.ASCII.GetBytes("HTTP/1.1 400 Bad Request\r\n\r\n");
-					clientStream.Write(bytes, 0, bytes.Length);
-				} finally {
-					componentFactory.ReleaseResponse(response);
-				}
-			} finally {
-				componentFactory.ReleaseRequest(request);
-			}
-
-			if (tunnelMode) {
-				Task.Run(() => { Tunnel(componentFactory, serverStream, clientStream); });
-				Tunnel(componentFactory, clientStream, serverStream);
-			}
-		}
-
-		private static void Tunnel(ComponentFactory componentFactory, Stream input, Stream output) {
-			// argument checks
-			Debug.Assert(componentFactory != null);
-			Debug.Assert(input != null);
-			Debug.Assert(output != null);
-
-			byte[] buf = ComponentFactory.AllocMemoryBlock();
-			try {
-				int readCount;
-				do {
-					readCount = input.Read(buf, 0, buf.Length);
-					if (readCount <= 0) {
-						// the end of stream
-						break;
-					}
-					output.Write(buf, 0, readCount);
-				} while (true);
-			} finally {
-				ComponentFactory.FreeMemoryBlock(buf);
-				input.Close();
-				output.Close();
-			}
 		}
 
 		private void RespondServerConnectionError(Stream clientStream, Exception error) {

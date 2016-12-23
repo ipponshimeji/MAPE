@@ -46,7 +46,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Command\CLICommandBase.cs" />
-    <Compile Include="Utils\ColorCodedConsoleTraceListener.cs" />
+    <Compile Include="Http\ICommunicationOwner.cs" />
+    <Compile Include="Http\Communication.cs" />
+    <Compile Include="Utils\ColorConsoleTraceListener.cs" />
+    <Compile Include="Utils\ILogger.cs" />
     <Compile Include="Utils\Parameter.cs" />
     <Compile Include="Server\CredentialPersistence.cs" />
     <Compile Include="Utils\Logger.cs" />

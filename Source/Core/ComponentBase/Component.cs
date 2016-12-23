@@ -4,7 +4,7 @@ using MAPE.Utils;
 
 
 namespace MAPE.ComponentBase {
-	public abstract class Component: IDisposable {
+	public abstract class Component: IDisposable, ILogger {
 		#region data
 
 		/// <summary>
@@ -31,25 +31,31 @@ namespace MAPE.ComponentBase {
 		#endregion
 
 
+		#region ILogger
+
+		public void LogError(string message) {
+			Logger.LogError(FormatTraceMessage(message));
+		}
+
+		public void LogWarning(string message) {
+			Logger.LogWarning(FormatTraceMessage(message));
+		}
+
+		public void LogInformation(string message) {
+			Logger.LogInformation(FormatTraceMessage(message));
+		}
+
+		public void LogVerbose(string message) {
+			Logger.LogVerbose(FormatTraceMessage(message));
+		}
+
+		#endregion
+
+
 		#region methods - logging
 
 		public string FormatTraceMessage(string message) {
 			return string.Concat(DateTime.Now, " [", this.ObjectName, "] ", message);
-		}
-
-		[Conditional("TRACE")]
-		public void TraceInformation(string message) {
-			Logger.TraceInformation(FormatTraceMessage(message));
-		}
-
-		[Conditional("TRACE")]
-		public void TraceWarning(string message) {
-			Logger.TraceWarning(FormatTraceMessage(message));
-		}
-
-		[Conditional("TRACE")]
-		public void TraceError(string message) {
-			Logger.TraceError(FormatTraceMessage(message));
 		}
 
 		#endregion
