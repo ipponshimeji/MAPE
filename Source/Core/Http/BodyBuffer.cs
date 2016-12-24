@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,8 @@ namespace MAPE.Http {
 
 		private long bodyLength;
 
+		private bool chunking;
+
 		#endregion
 
 
@@ -44,6 +47,7 @@ namespace MAPE.Http {
 			this.headerBuffer = null;
 			this.bodyStream = null;
 			this.bodyLength = 0;
+			this.chunking = false;
 
 			return;
 		}
@@ -74,6 +78,7 @@ namespace MAPE.Http {
 			// set the headerBuffer
 			this.headerBuffer = headerBuffer;
 			// the buffer state should be 'reset' state 
+			Debug.Assert(this.chunking == false);
 			Debug.Assert(this.bodyLength == 0);
 			Debug.Assert(this.bodyStream == null);
 			Debug.Assert(this.Limit == 0);
@@ -112,7 +117,7 @@ namespace MAPE.Http {
 
 			// state checks
 			HeaderBuffer headerBuffer = this.headerBuffer;
-			if (headerBuffer != null) {
+			if (headerBuffer == null) {
 				throw new InvalidOperationException();
 			}
 			if (this.bodyLength != 0) {
@@ -191,8 +196,69 @@ namespace MAPE.Http {
 		}
 
 		public void SkipChunkedBody() {
-			MAPE.Utils.Logger.LogError("Chunked body is not supported now.");
-			throw new NotImplementedException();
+			// skip the body storing its bytes 
+			this.bodyStream = CreateTempFileStream();
+			this.chunking = true;	// enter chunking mode
+			try {
+				// in chunking mode
+				StringBuilder stringBuf = new StringBuilder();
+
+				Func<int> readChunkSizeLine = () => {
+					// read chunk-size
+					stringBuf.Clear();
+					bool endOfLine = ReadASCIITo(SP, HTAB, SemiColon, stringBuf, decapitalize: false);
+					string stringValue = stringBuf.ToString();
+
+					// skip the rest of chunk-size line
+					if (endOfLine == false) {
+						SkipToCRLF();
+					}
+
+					// parse chunk-size
+					int intValue;
+					if (int.TryParse(stringValue, NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out intValue) == false) {
+						throw CreateBadRequestException();
+					}
+
+					return intValue;
+				};
+
+
+				// copy body bytes in the header buffer to this buffer
+				byte[] memoryBlock = EnsureMemoryBlockAllocated();
+				CopyFrom(this.headerBuffer, this.headerBuffer.Next, this.headerBuffer.Limit - this.headerBuffer.Next);
+
+				// skip chunked data
+				int chunkSize;
+				while (0 < (chunkSize = readChunkSizeLine())) {
+					// skip chunk-data + CRLF
+					Skip(chunkSize);
+					if (ReadNextByte() != CR || ReadNextByte() != LF) {
+						throw CreateBadRequestException();
+					}
+				}
+
+				// skip trailer-part + CRLF
+				while (SkipToCRLF() == false) {
+					;
+				}
+
+				// flush the data currently on the memoryBlock
+				this.bodyStream.Write(memoryBlock, 0, this.Next);
+				this.bodyLength += this.Next;
+			} catch {
+				this.bodyLength = 0;
+				Stream temp = this.bodyStream;
+				this.bodyStream = null;
+				if (temp != null) {
+					temp.Dispose();
+				}
+				throw;
+			} finally {
+				this.chunking = false;
+			}
+
+			return;
 		}
 
 		#endregion
@@ -250,6 +316,7 @@ namespace MAPE.Http {
 
 		public override void ResetBuffer() {
 			// reset this class level
+			this.chunking = false;
 			this.bodyLength = 0;
 			Stream temp = this.bodyStream;
 			this.bodyStream = null;
@@ -259,6 +326,17 @@ namespace MAPE.Http {
 
 			// reset the base class level
 			base.ResetBuffer();
+		}
+
+		protected override byte[] UpdateMemoryBlock(byte[] currentMemoryBlock) {
+			if (this.chunking && currentMemoryBlock != null) {
+				// flush the bytes in the currentMemoryBlock to the bodyStream 
+				Debug.Assert(this.bodyStream != null);
+				this.bodyStream.Write(currentMemoryBlock, 0, this.Limit);
+				this.bodyLength += this.Limit;
+			}
+
+			return base.UpdateMemoryBlock(currentMemoryBlock);
 		}
 
 		protected override int ReadBytes(byte[] buffer, int offset, int count) {

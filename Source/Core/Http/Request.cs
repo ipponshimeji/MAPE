@@ -16,6 +16,11 @@ namespace MAPE.Http {
 			protected set;
 		}
 
+		public string Host {
+			get;
+			protected set;
+		}
+
 		public MessageBuffer.Span ProxyAuthorizationSpan {
 			get;
 			protected set;
@@ -64,6 +69,8 @@ namespace MAPE.Http {
 
 		protected override bool IsInterestingHeaderFieldFirstChar(char decapitalizedFirstChar) {
 			switch (decapitalizedFirstChar) {
+				case 'h':   // possibly "host"
+					return true;
 				case 'p':   // possibly "proxy-authorization"
 					return true;
 				default:
@@ -73,6 +80,10 @@ namespace MAPE.Http {
 
 		protected override void ScanHeaderFieldValue(HeaderBuffer headerBuffer, string decapitalizedFieldName, int startOffset) {
 			switch (decapitalizedFieldName) {
+				case "host":
+					// save its value, but its span is unnecessary
+					this.Host = HeaderBuffer.TrimHeaderFieldValue(headerBuffer.ReadFieldASCIIValue(false));
+					break;
 				case "proxy-authorization":
 					// save its span, but its value is unnecessary
 					headerBuffer.SkipField();
@@ -92,6 +103,7 @@ namespace MAPE.Http {
 		private void ResetThisClassLevelMessageProperties() {
 			// reset message properties of this class level
 			this.Method = null;
+			this.Host = null;
 			this.ProxyAuthorizationSpan = MessageBuffer.Span.ZeroToZero;
 
 			return;

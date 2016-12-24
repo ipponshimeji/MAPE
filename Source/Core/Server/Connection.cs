@@ -157,7 +157,7 @@ namespace MAPE.Server {
 					}
 					communicatingTask = new Task(Communicate);
 					communicatingTask.ContinueWith(
-(Action<Task>)((t) => {
+						(Action<Task>)((t) => {
 							base.LogInformation((string)"Stopped.");
 							this.ObjectName = ObjectBaseName;
 							this.owner.OnConnectionCompleted(this);
@@ -309,7 +309,7 @@ namespace MAPE.Server {
 
 			// log
 			if (response == null) {
-				LogInformation($"Request {request.Method}");
+				LogInformation($"Request {request.Method} to '{request.Host}'");
 			} else {
 				int statusCode = response.StatusCode;
 				string message = $"Response {statusCode.ToString()}";
@@ -338,8 +338,23 @@ namespace MAPE.Server {
 			return modifications;
 		}
 
-		void ICommunicationOwner.OnError(Exception exception) {
-			StopCommunication();
+		void ICommunicationOwner.OnClose(bool downstream, Exception error) {
+			if (error != null) {
+				StopCommunication();
+			} else {
+				lock (this) {
+					if (this.server != null) {
+						Socket socket = this.server.Client;
+						socket.Shutdown(downstream? SocketShutdown.Receive: SocketShutdown.Send);
+					}
+					if (this.client != null) {
+						Socket socket = this.client.Client;
+						socket.Shutdown(downstream ? SocketShutdown.Send : SocketShutdown.Receive);
+					}
+				}
+			}
+
+			return;
 		}
 
 		#endregion
@@ -376,7 +391,8 @@ namespace MAPE.Server {
 				using (NetworkStream clientStream = this.client.GetStream()) {
 					if (openServerError != null) {
 						// the case that server connection is not available
-						RespondServerConnectionError(clientStream, openServerError);
+						Response.RespondSimpleError(clientStream, 500, "Not Connected to Actual Proxy");
+						LogError($"Cannot connect to the actual proxy '{this.Proxy.Server.Host}:{this.Proxy.Server.Port}'.");
 					} else {
 						using (NetworkStream serverStream = server.GetStream()) {
 							Communication.Communicate(this, clientStream, serverStream);
@@ -412,24 +428,6 @@ namespace MAPE.Server {
 			}
 
 			return;
-		}
-
-		private void RespondServerConnectionError(Stream clientStream, Exception error) {
-			// argument checks
-			Debug.Assert(clientStream != null);
-
-			ComponentFactory componentFactory = this.ComponentFactory;
-			Request request = componentFactory.AllocRequest(clientStream, null);
-			try {
-				Response response = componentFactory.AllocResponse(null, clientStream);
-				try {
-					// ToDo: log, and respond the error to the client
-				} finally {
-					componentFactory.ReleaseResponse(response);
-				}
-			} finally {
-				componentFactory.ReleaseRequest(request);
-			}
 		}
 
 		#endregion

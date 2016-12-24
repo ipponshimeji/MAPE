@@ -15,6 +15,6 @@ namespace MAPE.Http {
 
 		IEnumerable<MessageBuffer.Modification> GetModifications(int repeatCount, Request request, Response response);
 
-		void OnError(Exception exception);
+		void OnClose(bool downstream, Exception error);
 	}
 }

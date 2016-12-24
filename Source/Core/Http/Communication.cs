@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using MAPE.Utils;
@@ -53,10 +54,12 @@ namespace MAPE.Http {
 							break;
 						}
 					}
-				} catch {
-					// ToDo: send error response to client
-					byte[] bytes = Encoding.ASCII.GetBytes("HTTP/1.1 400 Bad Request\r\n\r\n");
-					requestOutput.Write(bytes, 0, bytes.Length);
+				} catch (HttpException exception) {
+					response.RespondSimpleError(exception.StatusCode, exception.Message);
+					owner.Logger.LogError($"Responded Error {exception.StatusCode}.");
+				} catch (Exception) {
+					response.RespondSimpleError((int)HttpStatusCode.InternalServerError, "Internal Server Error");
+					owner.Logger.LogError($"Responded Error {(int)HttpStatusCode.InternalServerError}.");
 				} finally {
 					componentFactory.ReleaseResponse(response);
 				}
@@ -68,6 +71,7 @@ namespace MAPE.Http {
 			if (tunnelingMode) {
 				owner.Logger.LogInformation("Move to tunneling mode.");
 				Tunnel(owner, requestInput, requestOutput, responseInput, responseOutput);
+				owner.Logger.LogInformation("Complete tunneling mode.");
 			}
 
 			return;
@@ -101,42 +105,50 @@ namespace MAPE.Http {
 			Debug.Assert(responseInput != null);
 			Debug.Assert(responseOutput != null);
 
-			Task upTask = Task.Run(() => { Forward(owner, responseInput, responseOutput); });
-			Forward(owner, requestInput, requestOutput);
-			upTask.Wait(5000);
+			// run downstream task on another thread
+			Task upTask = Task.Run(() => { Forward(owner, responseInput, responseOutput, true); owner.Logger.LogWarning("downstream"); });
+
+			// run upstream task
+			Forward(owner, requestInput, requestOutput, false);
+			owner.Logger.LogWarning("upstream");
+
+			// join the download task
+			upTask.Wait();
 
 			return;
 		}
 
-		private static void Forward(ICommunicationOwner owner, Stream input, Stream output) {
+		private static void Forward(ICommunicationOwner owner, Stream input, Stream output, bool downstream) {
 			// argument checks
 			Debug.Assert(owner != null);
 			Debug.Assert(input != null);
 			Debug.Assert(output != null);
 
 			// forward bytes from the input to the output
+			Exception error = null;
+			byte[] buf = ComponentFactory.AllocMemoryBlock();
 			try {
-				byte[] buf = ComponentFactory.AllocMemoryBlock();
-				try {
-					int readCount;
-					do {
-						readCount = input.Read(buf, 0, buf.Length);
-						if (readCount <= 0) {
-							// the end of stream
-							break;
-						}
-						output.Write(buf, 0, readCount);
-					} while (true);
-				} finally {
-					ComponentFactory.FreeMemoryBlock(buf);
-				}
+				do {
+					int readCount = input.Read(buf, 0, buf.Length);
+					if (readCount <= 0) {
+						// the end of stream
+						break;
+					}
+					output.Write(buf, 0, readCount);
+					output.Flush();
+				} while (true);
 			} catch (EndOfStreamException) {
 				// continue
 			} catch (Exception exception) {
+				error = exception;
 				owner.Logger.LogError($"Communication terminated: {exception.Message}");
-				owner.OnError(exception);
 				// continue
+			} finally {
+				ComponentFactory.FreeMemoryBlock(buf);
 			}
+
+			// notify the owner of the closing 
+			owner.OnClose(downstream, error);
 
 			return;
 		}

@@ -44,6 +44,12 @@ namespace MAPE.Http {
 			}
 		}
 
+		protected Stream Output {
+			get {
+				return this.output;
+			}
+		}
+
 		#endregion
 
 

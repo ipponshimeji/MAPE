@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -36,6 +37,41 @@ namespace MAPE.Http {
 			ResetThisClassLevelMessageProperties();
 
 			return;
+		}
+
+		#endregion
+
+
+		#region methods
+
+		public static void RespondSimpleError(Stream output, int statusCode, string reasonPhrase) {
+			// argument checks
+			if (output == null) {
+				throw new ArgumentNullException(nameof(output));
+			}
+			if (output.CanWrite == false) {
+				throw new ArgumentException("It is not writable", nameof(output));
+			}
+			if (statusCode < 0 || 1000 <= statusCode) {
+				throw new ArgumentOutOfRangeException(nameof(statusCode));
+			}
+			if (reasonPhrase == null) {
+				reasonPhrase = string.Empty;
+			}
+
+			// build message bytes
+			string message = $"HTTP/1.0 {statusCode.ToString()} {reasonPhrase}\r\n\r\n";
+			byte[] messageBytes = Encoding.ASCII.GetBytes(message);
+
+			// output the message
+			output.Write(messageBytes, 0, messageBytes.Length);
+			output.Flush();
+
+			return;
+		}
+
+		public void RespondSimpleError(int statusCode, string reasonPhrase) {
+			RespondSimpleError(this.Output, statusCode, reasonPhrase);
 		}
 
 		#endregion

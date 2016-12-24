@@ -186,15 +186,17 @@ namespace MAPE.Http {
 
 		// special byte values
 
-		public const byte SP = 0x20;        // ' '
+		public const byte SP = 0x20;			// ' '
 
-		public const byte HTAB = 0x09;      // '\t'
+		public const byte HTAB = 0x09;			// '\t'
 
-		public const byte CR = 0x0D;        // '\r'
+		public const byte CR = 0x0D;			// '\r'
 
-		public const byte LF = 0x0A;        // '\n'
+		public const byte LF = 0x0A;			// '\n'
 
-		public const byte Colon = 0x3A;     // ':'
+		public const byte Colon = 0x3A;			// ':'
+
+		public const byte SemiColon = 0x3B;     // ';'
 
 
 		// misc
@@ -355,6 +357,25 @@ namespace MAPE.Http {
 			return this.memoryBlock[this.next++];
 		}
 
+		protected void Skip(int count) {
+			int backlog = count;
+			while (0 < backlog) {
+				int skipCount = this.limit - this.next;
+				if (0 < skipCount) {
+					if (backlog < skipCount) {
+						skipCount = backlog;
+					}
+					this.next += skipCount;
+				} else {
+					ReadNextByte();
+					skipCount = 1;
+				}
+				backlog -= skipCount; 
+			}
+
+			return;
+		}
+
 		protected bool SkipToCRLF(byte firstByte) {
 			bool emptyLine = true;
 			byte b = firstByte;
@@ -470,6 +491,44 @@ namespace MAPE.Http {
 
 		protected bool ReadASCIITo(byte terminator, StringBuilder stringBuf, bool decapitalize) {
 			return ReadASCIITo(terminator, stringBuf, decapitalize, ReadNextByte());
+		}
+
+		// should merge and simplify overloads? For example give terminator as a function.
+		protected bool ReadASCIITo(byte terminator1, byte terminator2, byte terminator3, StringBuilder stringBuf, bool decapitalize) {
+			// argument checks
+			Debug.Assert(terminator1 != CR && terminator1 != LF);
+			Debug.Assert(terminator2 != CR && terminator2 != LF);
+			Debug.Assert(terminator3 != CR && terminator3 != LF);
+			Debug.Assert(stringBuf != null);
+
+			// determine the way to append byte
+			Action<StringBuilder, byte> append;
+			if (decapitalize) {
+				append = AppendByteAsDecapitalizedASCII;
+			} else {
+				append = AppendByteAsASCII;
+			}
+
+			// read bytes to the terminator as ASCII chars
+			byte b = ReadNextByte();
+			do {
+				if (b == CR) {
+					do {
+						b = ReadNextByte();
+						if (b == LF) {
+							// CRLF
+							return true;
+						}
+						append(stringBuf, CR);
+					} while (b == CR);
+				}
+				if (b == terminator1 || b == terminator2 || b == terminator3) {
+					// not CRLF
+					return false;
+				}
+				append(stringBuf, b);
+				b = ReadNextByte();
+			} while (true);
 		}
 
 		protected void CopyFrom(MessageBuffer source, int offset, int count) {
