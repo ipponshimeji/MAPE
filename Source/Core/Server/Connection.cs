@@ -235,7 +235,7 @@ namespace MAPE.Server {
 
 		#region overridables
 
-		protected virtual MessageBuffer.Modification[] GetModifications(Request request, Response response) {
+		protected virtual IEnumerable<MessageBuffer.Modification> GetModifications(Request request, Response response) {
 			// argument checks
 			if (request == null) {
 				throw new ArgumentNullException(nameof(request));
@@ -258,6 +258,7 @@ namespace MAPE.Server {
 			} else {
 				// re-sending request
 				if (response.StatusCode == 407) {
+					// the current credential seems to be invalid
 					overridingProxyCredential = this.Proxy.GetProxyCredential(response.ProxyAuthenticateValue, true);
 				} else {
 					// no need to resending
@@ -265,11 +266,11 @@ namespace MAPE.Server {
 				}
 			}
 
-			MessageBuffer.Modification[] m;
+			MessageBuffer.Modification[] modifications;
 			if (overridingProxyCredential == null) {
-				m = null;
+				modifications = null;
 			} else {
-				m = new MessageBuffer.Modification[] {
+				modifications = new MessageBuffer.Modification[] {
 					new MessageBuffer.Modification(
 						request.ProxyAuthorizationSpan.IsZeroToZero? request.EndOfHeaderFields: request.ProxyAuthorizationSpan,
 						(mb) => { mb.Write(overridingProxyCredential); return true; }	
@@ -277,7 +278,7 @@ namespace MAPE.Server {
 				};
 			}
 
-			return m;
+			return modifications;
 		}
 
 		#endregion
@@ -297,7 +298,7 @@ namespace MAPE.Server {
 			}
 		}
 
-		MessageBuffer.Modification[] ICommunicationOwner.GetModifications(int repeatCount, Request request, Response response) {
+		IEnumerable<MessageBuffer.Modification> ICommunicationOwner.GetModifications(int repeatCount, Request request, Response response) {
 			// argument checks
 			if (request == null) {
 				throw new ArgumentNullException(nameof(request));
@@ -322,7 +323,7 @@ namespace MAPE.Server {
 			}
 
 			// retry checks
-			MessageBuffer.Modification[] modifications = null;
+			IEnumerable<MessageBuffer.Modification> modifications = null;
 			if (repeatCount <= this.retryCount) {
 				// get actual modifications
 				modifications = GetModifications(request, response);

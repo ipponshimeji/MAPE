@@ -51,40 +51,40 @@ namespace MAPE.Http {
 			base.ResetMessageProperties();
 		}
 
-		protected override void ScanStartLine(MessageBuffer messageBuffer) {
+		protected override void ScanStartLine(HeaderBuffer headerBuffer) {
 			// argument checks
-			Debug.Assert(messageBuffer != null);
+			Debug.Assert(headerBuffer != null);
 
 			// read items
-			string version = messageBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
-			string statusCode = messageBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
-			messageBuffer.ReadSpaceSeparatedItem(skipItem: true, decapitalize: false, lastItem: true);
+			string version = headerBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
+			string statusCode = headerBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
+			headerBuffer.ReadSpaceSeparatedItem(skipItem: true, decapitalize: false, lastItem: true);
 
 			// set message properties
-			this.Version = MessageBuffer.ParseVersion(version);
-			this.StatusCode = MessageBuffer.ParseStatusCode(statusCode);
+			this.Version = HeaderBuffer.ParseVersion(version);
+			this.StatusCode = HeaderBuffer.ParseStatusCode(statusCode);
 
 			return;
 		}
 
 		protected override bool IsInterestingHeaderFieldFirstChar(char decapitalizedFirstChar) {
 			switch (decapitalizedFirstChar) {
-				case 'p':
+				case 'p':   // possibly "proxy-authenticate"
 					return true;
 				default:
 					return base.IsInterestingHeaderFieldFirstChar(decapitalizedFirstChar);
 			}
 		}
 
-		protected override void ScanHeaderFieldValue(MessageBuffer messageBuffer, string decapitalizedFieldName, int startIndex) {
+		protected override void ScanHeaderFieldValue(HeaderBuffer headerBuffer, string decapitalizedFieldName, int startOffset) {
 			switch (decapitalizedFieldName) {
 				case "proxy-authenticate":
-					// save its span, but value is unnecessary
-					this.ProxyAuthenticateValue = messageBuffer.ReadHeaderFieldASCIIValue(false);
-					this.ProxyAuthenticateSpan = new MessageBuffer.Span(startIndex, messageBuffer.CurrentHeaderIndex);
+					// save its span and value
+					this.ProxyAuthenticateValue = headerBuffer.ReadFieldASCIIValue(false);
+					this.ProxyAuthenticateSpan = new MessageBuffer.Span(startOffset, headerBuffer.CurrentOffset);
 					break;
 				default:
-					base.ScanHeaderFieldValue(messageBuffer, decapitalizedFieldName, startIndex);
+					base.ScanHeaderFieldValue(headerBuffer, decapitalizedFieldName, startOffset);
 					break;
 			}
 		}

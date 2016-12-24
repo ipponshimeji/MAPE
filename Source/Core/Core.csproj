@@ -46,8 +46,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Command\CLICommandBase.cs" />
+    <Compile Include="Http\BodyBuffer.cs" />
+    <Compile Include="Http\HttpException.cs" />
+    <Compile Include="Http\HeaderBuffer.cs" />
     <Compile Include="Http\ICommunicationOwner.cs" />
     <Compile Include="Http\Communication.cs" />
+    <Compile Include="Http\MessageBuffer.cs" />
     <Compile Include="Utils\ColorConsoleTraceListener.cs" />
     <Compile Include="Utils\ILogger.cs" />
     <Compile Include="Utils\Parameter.cs" />
@@ -62,7 +66,6 @@
     <Compile Include="Utils\ScanningAdapter.cs" />
     <Compile Include="Configuration\ListenerConfiguration.cs" />
     <Compile Include="ComponentBase\TaskingComponent.cs" />
-    <Compile Include="Http\MessageBuffer.cs" />
     <Compile Include="Http\Response.cs" />
     <Compile Include="Http\Request.cs" />
     <Compile Include="Http\Message.cs" />

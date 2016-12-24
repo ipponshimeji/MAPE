@@ -46,40 +46,40 @@ namespace MAPE.Http {
 			base.ResetMessageProperties();
 		}
 
-		protected override void ScanStartLine(MessageBuffer messageBuffer) {
+		protected override void ScanStartLine(HeaderBuffer headerBuffer) {
 			// argument checks
-			Debug.Assert(messageBuffer != null);
+			Debug.Assert(headerBuffer != null);
 
 			// read items
-			string method = messageBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
-			messageBuffer.ReadSpaceSeparatedItem(skipItem: true, decapitalize: false, lastItem: false);
-			string version = messageBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: true);
+			string method = headerBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
+			headerBuffer.ReadSpaceSeparatedItem(skipItem: true, decapitalize: false, lastItem: false);
+			string version = headerBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: true);
 
 			// set message properties
 			this.Method = method;
-			this.Version = MessageBuffer.ParseVersion(version);
+			this.Version = HeaderBuffer.ParseVersion(version);
 
 			return;
 		}
 
 		protected override bool IsInterestingHeaderFieldFirstChar(char decapitalizedFirstChar) {
 			switch (decapitalizedFirstChar) {
-				case 'p':
+				case 'p':   // possibly "proxy-authorization"
 					return true;
 				default:
 					return base.IsInterestingHeaderFieldFirstChar(decapitalizedFirstChar);
 			}
 		}
 
-		protected override void ScanHeaderFieldValue(MessageBuffer messageBuffer, string decapitalizedFieldName, int startIndex) {
+		protected override void ScanHeaderFieldValue(HeaderBuffer headerBuffer, string decapitalizedFieldName, int startOffset) {
 			switch (decapitalizedFieldName) {
 				case "proxy-authorization":
-					// save its span, but value is unnecessary
-					messageBuffer.SkipHeaderField();
-					this.ProxyAuthorizationSpan = new MessageBuffer.Span(startIndex, messageBuffer.CurrentHeaderIndex);
+					// save its span, but its value is unnecessary
+					headerBuffer.SkipField();
+					this.ProxyAuthorizationSpan = new MessageBuffer.Span(startOffset, headerBuffer.CurrentOffset);
 					break;
 				default:
-					base.ScanHeaderFieldValue(messageBuffer, decapitalizedFieldName, startIndex);
+					base.ScanHeaderFieldValue(headerBuffer, decapitalizedFieldName, startOffset);
 					break;
 			}
 		}

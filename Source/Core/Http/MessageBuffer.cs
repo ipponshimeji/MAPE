@@ -3,18 +3,67 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 
 
 namespace MAPE.Http {
-	/// <summary>
-	/// 
-	/// </summary>
-	/// <remarks>
-	/// The instance of this class is not thread-safe.
-	/// </remarks>
-	public class MessageBuffer: IDisposable {
+	public abstract class MessageBuffer: IDisposable {
 		#region types
+
+		public struct Modifier {
+			#region data
+
+			public readonly Stream output;
+
+			#endregion
+
+
+			#region creation and disposal
+
+			public Modifier(Stream output) {
+				// argument checks
+				Debug.Assert(output != null);
+
+				// initialize members
+				this.output = output;
+
+				return;
+			}
+
+			#endregion
+
+
+			#region methods
+
+			public void Write(byte[] data, bool appendCRLF = false) {
+				// write data
+				if (data != null && 0 < data.Length) {
+					this.output.Write(data, 0, data.Length);
+				}
+				if (appendCRLF) {
+					this.output.WriteByte(CR);
+					this.output.WriteByte(LF);
+				}
+
+				return;
+			}
+
+			public void WriteASCIIString(string str, bool appendCRLF = false) {
+				// write data
+				byte[] data;
+				if (string.IsNullOrEmpty(str)) {
+					data = null;
+				} else {
+					data = Encoding.ASCII.GetBytes(str);
+				}
+				Write(data, appendCRLF);
+
+				return;
+			}
+
+			#endregion
+		}
 
 		public struct Span {
 			#region data
@@ -49,7 +98,6 @@ namespace MAPE.Http {
 				if (end < start) {
 					throw new ArgumentOutOfRangeException(nameof(end));
 				}
-				// handler can be null
 
 				// initialize members
 				this.Start = start;
@@ -72,12 +120,9 @@ namespace MAPE.Http {
 		public struct Modification {
 			#region data
 
-			public static readonly Modification Limit = new Modification(int.MaxValue, int.MaxValue, null);
-
-
 			public readonly Span Span;
 
-			public readonly Func<MessageBuffer, bool> Handler;
+			public readonly Func<Modifier, bool> Handler;
 
 			#endregion
 
@@ -107,7 +152,7 @@ namespace MAPE.Http {
 
 			#region creation and disposal
 
-			public Modification(int start, int end, Func<MessageBuffer, bool> handler) {
+			public Modification(int start, int end, Func<Modifier, bool> handler) {
 				// argument checks
 				Debug.Assert(0 <= start);
 				Debug.Assert(start <= end);
@@ -120,7 +165,7 @@ namespace MAPE.Http {
 				return;
 			}
 
-			public Modification(Span span, Func<MessageBuffer, bool> handler) {
+			public Modification(Span span, Func<Modifier, bool> handler) {
 				// argument checks
 				// handler can be null
 
@@ -139,18 +184,15 @@ namespace MAPE.Http {
 
 		#region constants
 
-		public const int BodyStreamThreshold = 1024 * 1024;     // 1M
-
-
 		// special byte values
 
 		public const byte SP = 0x20;        // ' '
 
 		public const byte HTAB = 0x09;      // '\t'
 
-		public const byte CR = 0x0D;		// '\r'
+		public const byte CR = 0x0D;        // '\r'
 
-		public const byte LF = 0x0A;		// '\n'
+		public const byte LF = 0x0A;        // '\n'
 
 		public const byte Colon = 0x3A;     // ':'
 
@@ -166,65 +208,43 @@ namespace MAPE.Http {
 
 		#region data
 
-		private static readonly char[] WS = new char[] { (char)SP, (char)HTAB };	// SP, HTAB
+		private byte[] memoryBlock;
 
+		private int limit;
 
-		// general
-
-		private Stream input = null;
-
-		private Stream output = null;
-
-		private StringBuilder stockStringBuf = new StringBuilder();
-
-
-		// header
-
-		private List<byte[]> headerBuffer = new List<byte[]>();
-
-		private byte[] currentMemoryBlock = null;
-
-		private int currentMemoryBlockBase = 0;
-
-		private int localLimit = 0;
-
-		private int localIndex = 0;
-
-
-		// body
-
-		private long bodyLength = 0;
-
-		private byte[] bodyBuffer = null;
-
-		private Stream bodyStream = null;
+		private int next;
 
 		#endregion
 
 
 		#region properties
 
-		public bool IsStreamAttached {
+		public int Limit {
 			get {
-				return this.input != null || this.output != null;
+				return this.limit;
 			}
 		}
 
-		public bool CanRead {
+		public int Next {
 			get {
-				return this.input != null;
+				return this.next;
 			}
 		}
 
-		public bool CanWrite {
+		public int Margin {
 			get {
-				return this.output != null;
+				byte[] memoryBlock = this.memoryBlock;
+				if (memoryBlock == null) {
+					throw new InvalidOperationException();
+				}
+
+				return memoryBlock.Length - this.limit;
 			}
 		}
 
-		public int CurrentHeaderIndex {
+		protected byte[] MemoryBlock {
 			get {
-				return this.currentMemoryBlockBase + this.localIndex;
+				return this.memoryBlock;
 			}
 		}
 
@@ -234,74 +254,33 @@ namespace MAPE.Http {
 		#region creation and disposal
 
 		public MessageBuffer() {
-		}
-
-		public void Dispose() {
-			// detach streams
-			DetachStreams();
-
-			// clear all resources
-			this.stockStringBuf = null;
-			this.headerBuffer = null;
+			// initialize members
+			this.memoryBlock = null;
+			this.limit = 0;
+			this.next = 0;
 
 			return;
 		}
 
-		/// <summary>
-		/// </summary>
-		/// <param name="input"></param>
-		/// <param name="output"></param>
-		/// <remarks>
-		/// This object does not own the ownership of <paramref name="input"/> and <paramref name="output"/> .
-		/// That is, this object does not Dispose them in its Detach() call.
-		/// </remarks>
-		public void AttachStreams(Stream input, Stream output) {
-			// argument checks
-			if (input == null && output == null) {
-				throw new ArgumentException($"'{nameof(input)}' or '{nameof(output)}' must be non-null.");
-			}
-
+		public virtual void Dispose() {
 			// state checks
-			if (this.IsStreamAttached) {
-				throw new InvalidOperationException("This object is already attached streams.");
-			}
-			Debug.Assert(this.input == null && this.output == null);
-			// the buffer state should be 'reset' state 
-			Debug.Assert(this.currentMemoryBlockBase == 0 && this.localLimit == 0 && this.localIndex == 0);
-
-			// set input and output
-			this.input = input;
-			this.output = output;
-
-			return;
-		}
-
-		public void DetachStreams() {
-			// state checks
-			if (this.IsStreamAttached == false) {
-				// nothing to do
-				return;
-			}
-
-			// do not dispose input and output, just clear them
-			// This object does not own the ownership of them.
-			this.output = null;
-			this.input = null;
-
-			// reset the buffer state
-			ResetBuffer();
-
-			return;
+			// Its resources have been cleared at this point.
+			// Because derived class level implementations clear their resources
+			// before they call this class level implementation,
+			// and it includes indirect ResetBuffer() call. 
+			// See the derived class implementations (HeaderBuffer.Dispose() and BodyBuffer.Dispose()).
+			Debug.Assert(this.next == 0);
+			Debug.Assert(this.limit == 0);
+			Debug.Assert(this.memoryBlock == null);
 		}
 
 		#endregion
 
 
-		#region methods - utilities
+		#region methods
 
-		public static Exception CreateBadRequestException() {
-			// ToDo: Exception Type
-			throw new Exception();
+		public static HttpException CreateBadRequestException() {
+			return new HttpException(HttpStatusCode.BadRequest);
 		}
 
 		public static bool IsValidModifications(IEnumerable<Modification> modifications) {
@@ -310,9 +289,10 @@ namespace MAPE.Http {
 				return true;
 			}
 
-			// Modifications must be sorted, and their spans must not be overlapped.
+			// Modifications must be sorted and their spans must not be overlapped.
 			int last = 0;
 			foreach (Modification modification in modifications) {
+				// Is its span overlapped with the previous span?
 				if (modification.Start < last) {
 					return false;
 				}
@@ -326,621 +306,62 @@ namespace MAPE.Http {
 			return true;
 		}
 
-		public static Version ParseVersion(string value) {
-			// argument checks
-			if (value == null) {
-				throw new ArgumentNullException(nameof(value));
-			}
-			if (value.StartsWith(VersionPrefix) == false) {
-				// invalid syntax
-				throw CreateBadRequestException();
+
+		protected byte[] EnsureMemoryBlockAllocated() {
+			byte[] memoryBlock = this.memoryBlock;
+			if (memoryBlock == null) {
+				memoryBlock = UpdateMemoryBlock(null);
+				this.memoryBlock = memoryBlock;
+				Debug.Assert(this.limit == 0);
+				Debug.Assert(this.next == 0);
 			}
 
-			// parse HTTP-version
-			// This parsing does not check strict syntax.
-			// This is enough for our use.
-			Version version;
-			if (Version.TryParse(value.Substring(VersionPrefix.Length), out version) == false) {
-				throw CreateBadRequestException();
-			}
-
-			return version;
+			return memoryBlock;
 		}
 
-		public static int ParseStatusCode(string value) {
-			// argument checks
-			if (value == null) {
-				throw new ArgumentNullException(nameof(value));
-			}
-
-			// parse status-code
-			// This parsing does not check strict syntax.
-			// This is enough for our use.
-			int statusCode;
-			if (int.TryParse(value, out statusCode) == false) {
-				throw CreateBadRequestException();
-			}
-
-			return statusCode;
-		}
-
-		public static string TrimHeaderFieldValue(string fieldValue) {
-			// argument checks
-			if (fieldValue == null) {
-				throw new ArgumentNullException(nameof(fieldValue));
-			}
-
-			return fieldValue.Trim(WS);
-		}
-
-		public static long ParseHeaderFieldValueAsLong(string fieldValue) {
-			// argument checks
-			if (fieldValue == null) {
-				throw new ArgumentNullException(nameof(fieldValue));
-			}
-			fieldValue = TrimHeaderFieldValue(fieldValue);
-
-			// parse the field value as long
-			// This parsing does not check strict syntax.
-			// This is enough for our use.
-			long value;
-			if (long.TryParse(fieldValue, out value) == false) {
-				throw CreateBadRequestException();
-			}
-
-			return value;
-		}
-
-		public static bool IsChunkedSpecified(string decapitalizedFieldValue) {
-			// argument checks
-			if (decapitalizedFieldValue == null) {
-				throw new ArgumentNullException(nameof(decapitalizedFieldValue));
-			}
-			decapitalizedFieldValue = TrimHeaderFieldValue(decapitalizedFieldValue);
-
-			// check whether 'chunked' is specified at the last of the fieldValue
-			// This parsing does not check strict syntax.
-			// This is enough for our use.
-			if (decapitalizedFieldValue.EndsWith(ChunkedTransferCoding)) {
-				int prevIndex = decapitalizedFieldValue.Length - ChunkedTransferCoding.Length - 1;
-				if (prevIndex < 0) {
-					return true;
-				}
-				switch (decapitalizedFieldValue[prevIndex]) {
-					case (char)SP:
-					case (char)HTAB:
-					case (char)Colon:
-					case ',':
-						return true;
-				}
-			}
-
-			return false;
-		}
-
-		#endregion
-
-
-		#region methods - read
-
-		public void ResetBuffer() {
+		protected void FillBuffer(int count) {
 			// state checks
-			List<byte[]> headerBuffer = this.headerBuffer;
-			if (headerBuffer == null) {
-				// nothing to do
-				return;
+			byte[] memoryBlock = EnsureMemoryBlockAllocated();
+
+			int offset = this.limit;
+			if (count < 0 || memoryBlock.Length - offset < count) {
+				throw new ArgumentOutOfRangeException(nameof(count));
 			}
+			int newLimit = this.limit + count;
 
-			// free resources for body buffering
-			Stream stream = this.bodyStream;
-			this.bodyStream = null;
-			if (stream != null) {
-				try {
-					stream.Dispose();
-				} catch {
-					// continue
-				}
-			}
-
-			byte[] memoryBlock = this.bodyBuffer;
-			this.bodyBuffer = null;
-			if (memoryBlock != null) {
-				ComponentFactory.FreeMemoryBlock(memoryBlock);
-				memoryBlock = null;
-			}
-
-			this.bodyLength = 0;
-
-			// free resources for header buffering
-			headerBuffer.ForEach(
-				(block) => {
-					try {
-						ComponentFactory.FreeMemoryBlock(block);
-					} catch {
-						// continue
-					}
-				}
-			);
-			headerBuffer.Clear();
-
-			this.currentMemoryBlock = null;
-			this.currentMemoryBlockBase = 0;
-			this.localLimit = 0;
-			this.localIndex = 0;
-
-			// misc
-			Debug.Assert(this.stockStringBuf.Length == 0);
-
-			return;
-		}
-
-		public string ReadSpaceSeparatedItem(bool skipItem, bool decapitalize, bool lastItem) {
-			string item;
-
-			// read or skip the next item
-			bool endOfLine;
-			if (skipItem) {
-				// skip the next item
-				if (lastItem) {
-					SkipHeaderToCRLF();
-					endOfLine = true;
-				} else {
-					endOfLine = SkipHeaderTo(SP);
-				}
-				item = null;
-			} else {
-				// read the next item
-				StringBuilder stringBuf = this.stockStringBuf;
-				Debug.Assert(stringBuf.Length == 0);
-				try {
-					if (lastItem) {
-						ReadHeaderASCIIToCRLF(stringBuf, decapitalize);
-						endOfLine = true;
-					} else {
-						endOfLine = ReadHeaderASCIITo(SP, stringBuf, decapitalize);
-					}
-					item = stringBuf.ToString();
-				} finally {
-					stringBuf.Clear();
-				}
-			}
-
-			// check status of the line
-			if (endOfLine && lastItem == false) {
-				// this item should not be the last one in the start line 
-				throw CreateBadRequestException();
-			}
-
-			return item;
-		}
-
-		public byte ReadHeaderFieldNameFirstByte() {
-			return ReadHeaderByte();
-		}
-
-		public string ReadHeaderFieldName(byte firstByte) {
-			StringBuilder stringBuf = this.stockStringBuf;
-			Debug.Assert(stringBuf.Length == 0);
-			try {
-				bool endOfLine = ReadHeaderASCIITo(Colon, stringBuf, decapitalize: true, firstByte: firstByte);
-				if (endOfLine) {
-					throw CreateBadRequestException();
-				}
-				return stringBuf.ToString();
-			} finally {
-				stringBuf.Clear();
-			}
-		}
-
-		public string ReadHeaderFieldASCIIValue(bool decapitalize) {
-			StringBuilder stringBuf = this.stockStringBuf;
-			Debug.Assert(stringBuf.Length == 0);
-			try {
-				ReadHeaderASCIIToCRLF(stringBuf, decapitalize);
-				return stringBuf.ToString();
-			} finally {
-				stringBuf.Clear();
-			}
-		}
-
-		public bool SkipHeaderField(byte firstByte) {
-			return SkipHeaderToCRLF(firstByte);
-		}
-
-		public bool SkipHeaderField() {
-			return SkipHeaderToCRLF();
-		}
-
-		public void SkipBody(long contentLength) {
-			// argument checks
-			if (contentLength < 0) {
-				// Note contentLength == -1 means that the body is chunked.
-				// Use SkipChunkedBody() for chunked body.
-				throw new ArgumentOutOfRangeException(nameof(contentLength));
-			}
-
-			// state checks
-			Debug.Assert(this.CanRead);
-
-			Func<byte[], int, int> read = (buf, offset) => {
-				Debug.Assert(offset < buf.Length);
-				int readCount = this.input.Read(buf, offset, buf.Length - offset);
-				if (readCount <= 0) {
-					// unexpected end of stream
-					throw CreateBadRequestException();
-				}
+			// read bytes from the input until the requested count of bytes are read 		
+			while (offset < newLimit) {
+				int readCount = ReadBytes(memoryBlock, offset, newLimit - offset);
+				Debug.Assert(0 < readCount);    // ReadBytes() throws an exception at end of stream 
 				offset += readCount;
-				return offset;
-			};
-
-			// select media to store body depending on its size 
-			byte[] bodyBuffer = null;
-			Stream bodyStream = null;
-			try {
-				byte[] currentMemoryBlock = this.currentMemoryBlock;
-				Debug.Assert(currentMemoryBlock != null);
-				if (contentLength <= currentMemoryBlock.Length - this.localIndex) {
-					// The body can be stored in the rest of header buffer.
-
-					// read body into the header buffer
-					int offset = this.localLimit;
-					int limit = this.localIndex + (int)contentLength;
-					while (offset < limit) {
-						offset = read(currentMemoryBlock, offset);
-					}
-				} else {
-					bodyBuffer = ComponentFactory.AllocMemoryBlock();
-					if (contentLength <= bodyBuffer.Length) {
-						// The body can be stored in a memory block.
-						int limit = (int)contentLength;
-
-						// copy the body bytes in the header buffer
-						int offset = this.localLimit - this.localIndex;
-						if (0 < offset) {
-							Buffer.BlockCopy(currentMemoryBlock, this.localIndex, bodyBuffer, 0, offset);
-						}
-
-						// read body into the bodyBuffer 
-						while (offset < limit) {
-							offset = read(bodyBuffer, offset);
-						}
-					} else {
-						// The body is stored in a stream.
-						if (contentLength <= BodyStreamThreshold) {
-							// use memory stream
-							Debug.Assert(contentLength <= int.MaxValue);
-							bodyStream = new MemoryStream((int)contentLength);
-						} else {
-							// user temp file stream
-							bodyStream = CreateTempFileStream();
-						}
-
-						// write the body bytes in the header buffer into the stream
-						long amount = 0;
-						int count = this.localLimit - this.localIndex;
-						if (0 < count) {
-							bodyStream.Write(currentMemoryBlock, this.localIndex, count);
-							amount += count;
-						}
-
-						// write body into the stream 
-						while (amount < contentLength) {
-							count = read(bodyBuffer, 0);
-							bodyStream.Write(bodyBuffer, 0, count);
-							amount += count;
-						}
-					}
-				}
-
-				this.bodyLength = contentLength;
-				this.bodyBuffer = bodyBuffer;
-				this.bodyStream = bodyStream;
-			} catch {
-				this.bodyLength = 0;
-				if (bodyStream != null) {
-					bodyStream.Dispose();
-				}
-				if (bodyBuffer != null) {
-					ComponentFactory.FreeMemoryBlock(bodyBuffer);
-				}
-				throw;
 			}
+			Debug.Assert(offset == newLimit);
+
+			// update its state
+			this.limit = newLimit;
 
 			return;
 		}
 
-		public void SkipChunkedBody() {
-			MAPE.Utils.Logger.LogError("Chunked body is not supported now.");
-			throw new NotImplementedException();
-		}
-
-		#endregion
-
-
-		#region methods - write
-
-		public void WriteHeader(IEnumerable<Modification> modifications) {
-			// argument checks
-			if (modifications == null) {
-				// call the simpler implementation
-				WriteHeader();
-				return;
+		protected byte ReadNextByte() {
+			// fill bytes if no more unread byte
+			if (this.limit <= this.next) {
+				UpdateBuffer();
+				// Note that this.memoryBlock, this.limit and this.next may be changed.
 			}
-			// Modifications must be sorted, and their spans must not be overlapped.
-			// This check is omitted in Release build
-			// because, in most case, modifications are sorted naturally
-			// in this processing framework.
-			Debug.Assert(IsValidModifications(modifications));
-
-			// write header bytes with specified modifications
-			using (IEnumerator<byte[]> i = this.headerBuffer.GetEnumerator()) {
-				int current = 0;
-				byte[] memoryBlock = null;
-				int offset = 0;
-				int limit = 0;
-
-				Func<bool> getNextMemoryBlock = () => {
-					if (i.MoveNext()) {
-						memoryBlock = i.Current;
-						offset = 0;
-						limit = (memoryBlock == this.currentMemoryBlock) ? this.localIndex : memoryBlock.Length;
-						return true;
-					} else {
-						memoryBlock = null;
-						offset = 0;
-						limit = 0;
-						return false;
-					}
-				};
-
-				Action<int> write = (writeCount) => {
-					Debug.Assert(memoryBlock != null);
-					Debug.Assert(0 <= offset && offset < limit);
-					Debug.Assert(offset <= limit - writeCount);
-					this.output.Write(memoryBlock, offset, writeCount);
-				};
-
-				Action<int> skip = (skipCount) => {
-					Debug.Assert(memoryBlock != null);
-					Debug.Assert(0 <= offset && offset < limit);
-					Debug.Assert(offset <= limit - skipCount);
-				};
-
-				Func<int, Action<int>, bool> handleTo = (end, handler) => {
-					int backlog = end - current;
-					while (0 < backlog) {
-						// calculate the count to be handled bytes on the memory block
-						int writeCount = limit - offset;
-						if (writeCount == 0) {
-							// no more bytes to be handled
-							// get the next memory block
-							if (getNextMemoryBlock() == false) {
-								// end of header data
-								current = end - backlog;
-								return true;
-							}
-							writeCount = limit - offset;
-						}
-						if (backlog < writeCount) {
-							writeCount = backlog;
-						}
-
-						// handle the bytes
-						handler(writeCount);
-						offset += writeCount;
-						backlog -= writeCount;						
-					}
-					current = end;
-
-					return false;
-				};
-
-				Func<int, bool> writeTo = (end) => {
-					return handleTo(end, write);
-				};
-
-				Func<int, bool> skipTo = (end) => {
-					return handleTo(end, skip);
-				};
-
-
-				// handle each span to be modified
-				foreach (Modification modification in modifications) {
-					if (modification.Handler != null) {
-						if (writeTo(modification.Start)) {
-							break;
-						}
-						if (modification.Handler(this)) {
-							// modified
-							skipTo(modification.End);
-						} else {
-							// won't modified
-							// write this span in the next iteration
-						}
-					}
-				}
-				writeTo(int.MaxValue);
-			}
-			this.output.Flush();
-
-			return;
-		}
-
-		public void WriteHeader() {
-			// state checks
-			Debug.Assert(this.CanWrite);
-			Stream output = this.output;
-			Debug.Assert(output != null);
-
-			// write header part simply
-			byte[] currentMemoryBlock = this.currentMemoryBlock;
-			Debug.Assert(currentMemoryBlock != null);
-			foreach (byte[] memoryBlock in this.headerBuffer) {
-				int readCount;
-				if (memoryBlock != currentMemoryBlock) {
-					// not the last memory block
-					readCount = memoryBlock.Length;
-				} else {
-					// the last memory block
-					readCount = this.localIndex;
-				}
-				output.Write(memoryBlock, 0, readCount);
-			}
-
-			return;
-		}
-
-		public void WriteBody() {
-			// state checks
-			Debug.Assert(this.CanWrite);
-			Stream output = this.output;
-			Debug.Assert(output != null);
-
-			// Note that bodyLength == -1 means the chunked body
-			if (this.bodyLength == 0) {
-				// no body
-				output.Flush();
-				return;
-			}
-			Debug.Assert(this.bodyLength != -1 || this.bodyStream != null);
-
-			// write the body
-			// Note the media where the body is stored depends on its size.  
-			if (this.bodyStream != null) {
-				// body is stored in the stream (large body or chunked body)
-				this.bodyStream.Seek(0, SeekOrigin.Begin);
-				this.bodyStream.CopyTo(output);
-			} else {
-				Debug.Assert(0 <= this.bodyLength && this.bodyLength <= int.MaxValue);
-				int bodyLengthInInt = (int)this.bodyLength;
-
-				if (this.bodyBuffer != null) {
-					// body is stored in the buffer (small body)
-					output.Write(this.bodyBuffer, 0, bodyLengthInInt);
-				} else {
-					// body is stored in the rest of the header buffer (very small body)
-					output.Write(this.currentMemoryBlock, this.localIndex, bodyLengthInInt);
-				}
-			}
-			output.Flush();
-
-			return;
-		}
-
-		public void Write(byte[] data, bool appendNewLine = false) {
-			if (data != null && 0 < data.Length) {
-				this.output.Write(data, 0, data.Length);
-			}
-			if (appendNewLine) {
-				this.output.WriteByte(CR);
-				this.output.WriteByte(LF);
-			}
-
-			return;
-		}
-
-		#endregion
-
-
-		#region privates - general
-
-		private static void AppendByteAsASCII(StringBuilder stringBuf, byte b) {
-			// argument checks
-			Debug.Assert(stringBuf != null);
-
-			stringBuf.Append((char)b);
-		}
-
-		private static void AppendByteAsDecapitalizedASCII(StringBuilder stringBuf, byte b) {
-			// argument checks
-			if (0x41 <= b && b <= 0x5A) {
-				// decapitalize upper-case char
-				b += 0x20;
-			}
-
-			AppendByteAsASCII(stringBuf, b);
-		}
-
-		private static FileStream CreateTempFileStream() {
-			string tempFilePath = Path.GetTempFileName();
-			try {
-				return new FileStream(tempFilePath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 4096, FileOptions.DeleteOnClose);
-			} catch {
-				try {
-					File.Delete(tempFilePath);
-				} catch {
-					// continue
-				}
-				throw;
-			}
-		}
-
-		#endregion
-
-
-		#region privates - read
-
-		private void FillHeaderBuffer() {
-			// state checks
-			Debug.Assert(this.input != null);
-			Debug.Assert(this.headerBuffer != null);
-			Debug.Assert(this.localIndex == this.localLimit);
-
-			// alloc a new memory block if the current block is full
-			byte[] memoryBlock = this.currentMemoryBlock;
-			Debug.Assert(memoryBlock != null || this.headerBuffer.Count == 0);
-			if (memoryBlock == null || memoryBlock.Length <= this.localLimit) {
-				// calculate the next lineBase
-				int nextBase = (memoryBlock == null) ? 0 : this.currentMemoryBlockBase + memoryBlock.Length;
-
-				// allocate a new memory block
-				memoryBlock = ComponentFactory.AllocMemoryBlock();
-				this.headerBuffer.Add(memoryBlock);
-
-				// update the header buffer state
-				this.currentMemoryBlock = memoryBlock;
-				this.currentMemoryBlockBase = nextBase;
-				this.localLimit = 0;
-				this.localIndex = 0;
-			}
-
-			// read bytes from the input
-			Debug.Assert(memoryBlock != null && this.localLimit < memoryBlock.Length);
-			int readCount = this.input.Read(memoryBlock, this.localLimit, memoryBlock.Length - this.localLimit);
-			if (readCount <= 0) {
-				// The end of a stream is invalid except at the beginning of a HttpMessage
-				if (this.CurrentHeaderIndex == 0) {
-					throw new EndOfStreamException();
-				} else {
-					throw CreateBadRequestException();
-				}
-			}
-
-			// update the data limit
-			this.localLimit += readCount;
-
-			return;
-		}
-
-		private byte ReadHeaderByte() {
-			// fill new bytes if no more unread byte
-			if (this.localLimit <= this.localIndex) {
-				FillHeaderBuffer();
-				// Note that this.currentMemoryBlock, this.localIndex and this.localLimit may be changed.
-			}
-			Debug.Assert(this.localIndex < this.localLimit);
+			Debug.Assert(this.next < this.limit);
 
 			// return the next byte
-			return this.currentMemoryBlock[this.localIndex++];
+			return this.memoryBlock[this.next++];
 		}
 
-		private bool SkipHeaderToCRLF(byte firstByte) {
+		protected bool SkipToCRLF(byte firstByte) {
 			bool emptyLine = true;
 			byte b = firstByte;
 			do {
 				if (b == CR) {
 					do {
-						b = ReadHeaderByte();
+						b = ReadNextByte();
 						if (b == LF) {
 							// CRLF
 							return emptyLine;
@@ -948,26 +369,26 @@ namespace MAPE.Http {
 						emptyLine = false;
 					} while (b == CR);
 				}
-				b = ReadHeaderByte();
+				b = ReadNextByte();
 				emptyLine = false;
 			} while (true);
 		}
 
-		private bool SkipHeaderToCRLF() {
-			return SkipHeaderToCRLF(ReadHeaderByte());
+		protected bool SkipToCRLF() {
+			return SkipToCRLF(ReadNextByte());
 		}
 
-		private bool SkipHeaderTo(byte terminator) {
+		protected bool SkipTo(byte terminator) {
 			// argument checks
 			Debug.Assert(terminator != CR);
 			Debug.Assert(terminator != LF);
 
 			byte b;
 			do {
-				b = ReadHeaderByte();
+				b = ReadNextByte();
 				if (b == CR) {
 					do {
-						b = ReadHeaderByte();
+						b = ReadNextByte();
 						if (b == LF) {
 							// CRLF
 							return true;
@@ -981,7 +402,7 @@ namespace MAPE.Http {
 			} while (true);
 		}
 
-		private void ReadHeaderASCIIToCRLF(StringBuilder stringBuf, bool decapitalize) {
+		protected void ReadASCIIToCRLF(StringBuilder stringBuf, bool decapitalize) {
 			// argument checks
 			Debug.Assert(stringBuf != null);
 
@@ -993,13 +414,13 @@ namespace MAPE.Http {
 				appendByte = AppendByteAsASCII;
 			}
 
-			// read header bytes to CRLF as ASCII chars
+			// read bytes to CRLF as ASCII chars
 			byte b;
 			do {
-				b = ReadHeaderByte();
+				b = ReadNextByte();
 				if (b == CR) {
 					do {
-						b = ReadHeaderByte();
+						b = ReadNextByte();
 						if (b == LF) {
 							// CRLF
 							return;
@@ -1011,7 +432,7 @@ namespace MAPE.Http {
 			} while (true);
 		}
 
-		private bool ReadHeaderASCIITo(byte terminator, StringBuilder stringBuf, bool decapitalize, byte firstByte) {
+		protected bool ReadASCIITo(byte terminator, StringBuilder stringBuf, bool decapitalize, byte firstByte) {
 			// argument checks
 			Debug.Assert(terminator != CR);
 			Debug.Assert(terminator != LF);
@@ -1025,12 +446,12 @@ namespace MAPE.Http {
 				append = AppendByteAsASCII;
 			}
 
-			// read header bytes to the terminator as ASCII chars
+			// read bytes to the terminator as ASCII chars
 			byte b = firstByte;
 			do {
 				if (b == CR) {
 					do {
-						b = ReadHeaderByte();
+						b = ReadNextByte();
 						if (b == LF) {
 							// CRLF
 							return true;
@@ -1043,12 +464,168 @@ namespace MAPE.Http {
 					return false;
 				}
 				append(stringBuf, b);
-				b = ReadHeaderByte();
+				b = ReadNextByte();
 			} while (true);
 		}
 
-		private bool ReadHeaderASCIITo(byte terminator, StringBuilder stringBuf, bool decapitalize) {
-			return ReadHeaderASCIITo(terminator, stringBuf, decapitalize, ReadHeaderByte());
+		protected bool ReadASCIITo(byte terminator, StringBuilder stringBuf, bool decapitalize) {
+			return ReadASCIITo(terminator, stringBuf, decapitalize, ReadNextByte());
+		}
+
+		protected void CopyFrom(MessageBuffer source, int offset, int count) {
+			// argument checks
+			Debug.Assert(source != null);
+			Debug.Assert(0 <= offset && offset <= source.limit);
+			Debug.Assert(0 <= count && count <= source.limit - offset);
+			byte[] destMemoryBlock = this.memoryBlock;
+			Debug.Assert(destMemoryBlock != null);
+			Debug.Assert(count <= destMemoryBlock.Length - this.limit);
+
+			// copy bytes in the source buffer to this buffer
+			if (0 < count) {
+				byte[] sourceMemoryBlock = source.memoryBlock;
+				if (sourceMemoryBlock == null) {
+					throw new InvalidOperationException();
+				}
+
+				// copy bytes
+				System.Buffer.BlockCopy(sourceMemoryBlock, offset, destMemoryBlock, this.limit, count);
+
+				// update its state
+				this.limit += count;
+			}
+
+			return;
+		}
+
+		protected void WriteTo(Stream output, int offset, int count) {
+			// argument checks
+			Debug.Assert(output != null);
+			Debug.Assert(0 <= offset && offset <= this.limit);
+			Debug.Assert(0 <= count && count <= this.limit - offset);
+
+			// copy bytes in the source buffer to this buffer
+			if (0 < count) {
+				Debug.Assert(this.memoryBlock != null);
+				output.Write(this.memoryBlock, offset, count);
+			}
+
+			return;
+		}
+
+		#endregion
+
+
+		#region methods - accessibility bridges
+
+		/// <summary>
+		/// The bridge to call ReadBytes() on HeaderBuffer object from BodyBuffer object
+		/// bypassing accessibility control.
+		/// See BodyBuffer.ReadBytes().
+		/// </summary>
+		/// <param name="target"></param>
+		/// <param name="buffer"></param>
+		/// <param name="offset"></param>
+		/// <param name="count"></param>
+		/// <returns></returns>
+		protected static int ReadBytes(MessageBuffer target, byte[] buffer, int offset, int count) {
+			// argument checks
+			Debug.Assert(target != null);
+
+			return target.ReadBytes(buffer, offset, count);
+		}
+
+		protected static void FillBuffer(MessageBuffer target, int count) {
+			// argument checks
+			Debug.Assert(target != null);
+
+			target.FillBuffer(count);
+		}
+
+		protected static void WriteTo(MessageBuffer target, Stream output, int offset, int count) {
+			// argument checks
+			Debug.Assert(target != null);
+
+			target.WriteTo(output, offset, count);
+		}
+
+		#endregion
+
+
+		#region overridables
+
+		public virtual void ResetBuffer() {
+			// reset its buffer state
+			this.next = 0;
+			this.limit = 0;
+			byte[] temp = this.memoryBlock;
+			this.memoryBlock = null;
+			if (temp != null) {
+				ReleaseMemoryBlockOnResetBuffer(temp);
+			}
+
+			return;
+		}
+
+		protected virtual byte[] UpdateMemoryBlock(byte[] currentMemoryBlock) {
+			// by default, reuse one memory block
+			return (currentMemoryBlock != null) ? currentMemoryBlock : ComponentFactory.AllocMemoryBlock();
+		}
+
+		protected virtual void ReleaseMemoryBlockOnResetBuffer(byte[] memoryBlock) {
+			// by default, release the 'only-one' memory block
+			ComponentFactory.FreeMemoryBlock(memoryBlock);
+		}
+
+		protected abstract int ReadBytes(byte[] buffer, int offset, int count);
+
+		#endregion
+
+
+		#region privates
+
+		private void UpdateBuffer() {
+			// state checks
+			Debug.Assert(this.next == this.limit);
+
+			// update memory block if the current block is full
+			byte[] memoryBlock = this.memoryBlock;
+			if (memoryBlock == null || memoryBlock.Length <= this.limit) {
+				// update memory block (it may be replaced)
+				memoryBlock = UpdateMemoryBlock(memoryBlock);
+				this.memoryBlock = memoryBlock;
+
+				// update the state
+				this.limit = 0;
+				this.next = 0;
+			}
+
+			// read bytes from the input into the memory block
+			Debug.Assert(memoryBlock != null && this.limit < memoryBlock.Length);
+			int readCount = ReadBytes(memoryBlock, this.limit, memoryBlock.Length - this.limit);
+			Debug.Assert(0 < readCount);	// ReadBytes() throws an exception on end of stream 
+
+			// update the data limit
+			this.limit += readCount;
+
+			return;
+		}
+
+		private static void AppendByteAsASCII(StringBuilder stringBuf, byte b) {
+			// argument checks
+			Debug.Assert(stringBuf != null);
+
+			stringBuf.Append((char)b);
+		}
+
+		private static void AppendByteAsDecapitalizedASCII(StringBuilder stringBuf, byte b) {
+			// argument checks
+			// decapitalize upper-case char
+			if (0x41 <= b && b <= 0x5A) {
+				b += 0x20;
+			}
+
+			AppendByteAsASCII(stringBuf, b);
 		}
 
 		#endregion

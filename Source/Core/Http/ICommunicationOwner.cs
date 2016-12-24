@@ -13,7 +13,7 @@ namespace MAPE.Http {
 
 		ComponentFactory ComponentFactory { get; }
 
-		MessageBuffer.Modification[] GetModifications(int repeatCount, Request request, Response response);
+		IEnumerable<MessageBuffer.Modification> GetModifications(int repeatCount, Request request, Response response);
 
 		void OnError(Exception exception);
 	}

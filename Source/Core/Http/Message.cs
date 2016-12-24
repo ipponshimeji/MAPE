@@ -12,8 +12,11 @@ namespace MAPE.Http {
 	public abstract class Message: IDisposable {
 		#region data
 
-		private MessageBuffer messageBuffer;
+		private HeaderBuffer headerBuffer;
 
+		private BodyBuffer bodyBuffer;
+
+		private Stream output;
 
 		public Version Version {
 			get;
@@ -37,7 +40,7 @@ namespace MAPE.Http {
 
 		public bool IsStreamAttached {
 			get {
-				return this.messageBuffer != null && this.messageBuffer.IsStreamAttached;
+				return this.headerBuffer.CanRead || this.output != null;
 			}
 		}
 
@@ -48,14 +51,16 @@ namespace MAPE.Http {
 
 		public Message() {
 			// initialize members
-			this.messageBuffer = new MessageBuffer();
+			this.headerBuffer = new HeaderBuffer();
+			this.bodyBuffer = new BodyBuffer();
 			ResetThisClassLevelMessageProperties();
 
 			return;
 		}
 
 		public void Dispose() {
-			this.messageBuffer.Dispose();
+			this.bodyBuffer.Dispose();
+			this.headerBuffer.Dispose();
 
 			return;
 		}
@@ -79,7 +84,10 @@ namespace MAPE.Http {
 			Debug.Assert(input != null || output != null);
 
 			// attach input and output
-			this.messageBuffer.AttachStreams(input, output);
+			this.headerBuffer.AttachStream(input);
+			this.bodyBuffer.AttachStream(this.headerBuffer);
+			this.output = output;
+
 			Debug.Assert(this.ContentLength == 0);
 
 			return;
@@ -90,7 +98,9 @@ namespace MAPE.Http {
 			ResetMessageProperties();
 
 			// detach input and output
-			this.messageBuffer.DetachStreams();
+			this.output = null;
+			this.bodyBuffer.DetachStream();
+			this.headerBuffer.DetachStream();
 
 			return;
 		}
@@ -104,28 +114,30 @@ namespace MAPE.Http {
 			bool read = false;
 			try {
 				// state checks
-				MessageBuffer messageBuffer = this.messageBuffer;
-				Debug.Assert(messageBuffer.CanRead);
+				HeaderBuffer headerBuffer = this.headerBuffer;
+				Debug.Assert(headerBuffer.CanRead);
+				Debug.Assert(bodyBuffer.CanRead);
 
 				// clear current contents
 				ResetMessageProperties();
-				messageBuffer.ResetBuffer();
+				headerBuffer.ResetBuffer();
+				bodyBuffer.ResetBuffer();
 
 				// read a message
 
 				// start line
-				ScanStartLine(messageBuffer);
+				ScanStartLine(headerBuffer);
 
 				// header fields
 				bool emptyLine;
 				do {
-					emptyLine = ScanHeaderField(messageBuffer);
+					emptyLine = ScanHeaderField(headerBuffer);
 				} while (emptyLine == false);
-				int endOfHeaderIndex = messageBuffer.CurrentHeaderIndex - 2;    // subtract empty line bytes
-				this.EndOfHeaderFields = new MessageBuffer.Span(endOfHeaderIndex, endOfHeaderIndex);
+				int endOfHeaderOffset = headerBuffer.CurrentOffset - 2;    // subtract empty line bytes
+				this.EndOfHeaderFields = new HeaderBuffer.Span(endOfHeaderOffset, endOfHeaderOffset);
 
 				// body
-				ScanBody(messageBuffer);
+				ScanBody(this.bodyBuffer);
 
 				// result
 				read = true;	// completed
@@ -137,19 +149,32 @@ namespace MAPE.Http {
 			return read;
 		}
 
-		public void Write(IEnumerable<MessageBuffer.Modification> modifications = null) {
+		public void Write(Stream output, IEnumerable<MessageBuffer.Modification> modifications = null) {
 			// argument checks
+			if (output == null) {
+				throw new ArgumentNullException(nameof(output));
+			}
+			if (output.CanWrite == false) {
+				throw new ArgumentException("It is not writable", nameof(output));
+			}
 			// modifications can be null
 
-			// state checks
-			MessageBuffer messageBuffer = this.messageBuffer;
-			Debug.Assert(messageBuffer.CanWrite);
-
 			// write a message
-			WriteHeader(messageBuffer, modifications);
-			WriteBody(messageBuffer);
+			WriteHeader(output, this.headerBuffer, modifications);
+			WriteBody(output, this.bodyBuffer);
 
 			return;
+		}
+
+		public void Write(IEnumerable<MessageBuffer.Modification> modifications = null) {
+			// state checks
+			Stream output = this.output;
+			if (output == null) {
+				throw new InvalidOperationException();
+			}
+			// modifications can be null
+
+			Write(output, modifications);
 		}
 
 		#endregion
@@ -164,11 +189,11 @@ namespace MAPE.Http {
 			return;
 		}
 
-		protected abstract void ScanStartLine(MessageBuffer messageBuffer);
+		protected abstract void ScanStartLine(HeaderBuffer headerBuffer);
 
-		protected virtual bool ScanHeaderField(MessageBuffer messageBuffer) {
+		protected virtual bool ScanHeaderField(HeaderBuffer headerBuffer) {
 			// argument checks
-			Debug.Assert(messageBuffer != null);
+			Debug.Assert(headerBuffer != null);
 
 			// read the first byte
 			bool emptyLine;
@@ -177,15 +202,15 @@ namespace MAPE.Http {
 				return IsInterestingHeaderFieldFirstChar(c);
 			};
 
-			byte firstByte = messageBuffer.ReadHeaderFieldNameFirstByte();
+			byte firstByte = headerBuffer.ReadFieldNameFirstByte();
 			if (firstByte == MessageBuffer.CR || hasInterest(firstByte) == false) {
 				// no interest, just skip this line
-				emptyLine = messageBuffer.SkipHeaderField(firstByte);
+				emptyLine = headerBuffer.SkipField(firstByte);
 			} else {
 				// scan this field
-				int startIndex = messageBuffer.CurrentHeaderIndex - 1;	// Note we have already read one byte
-				string decapitalizedFieldName = messageBuffer.ReadHeaderFieldName(firstByte);
-				ScanHeaderFieldValue(messageBuffer, decapitalizedFieldName, startIndex);
+				int startOffset = headerBuffer.CurrentOffset - 1;	// Note we have already read one byte
+				string decapitalizedFieldName = headerBuffer.ReadFieldName(firstByte);
+				ScanHeaderFieldValue(headerBuffer, decapitalizedFieldName, startOffset);
 				emptyLine = false;
 			}
 
@@ -194,74 +219,77 @@ namespace MAPE.Http {
 
 		protected virtual bool IsInterestingHeaderFieldFirstChar(char decapitalizedFirstChar) {
 			switch (decapitalizedFirstChar) {
-				case 'c':
-				case 't':
+				case 'c':   // possibly "content-length"
+				case 't':   // possibly "transfer-encoding"
 					return true;
 				default:
 					return false;
 			}
 		}
 
-		protected virtual void ScanHeaderFieldValue(MessageBuffer messageBuffer, string decapitalizedFieldName, int startIndex) {
+		protected virtual void ScanHeaderFieldValue(HeaderBuffer headerBuffer, string decapitalizedFieldName, int startOffset) {
 			// argument checks
-			Debug.Assert(messageBuffer != null);
+			Debug.Assert(headerBuffer != null);
 
 			string value;
 			switch (decapitalizedFieldName) {
 				case "content-length":
-					value = messageBuffer.ReadHeaderFieldASCIIValue(decapitalize: false);
-					this.ContentLength = MessageBuffer.ParseHeaderFieldValueAsLong(value);
+					value = headerBuffer.ReadFieldASCIIValue(decapitalize: false);
+					this.ContentLength = HeaderBuffer.ParseHeaderFieldValueAsLong(value);
 					break;
 				case "transfer-encoding":
-					value = messageBuffer.ReadHeaderFieldASCIIValue(decapitalize: true);
-					if (MessageBuffer.IsChunkedSpecified(value) == false) {
+					value = headerBuffer.ReadFieldASCIIValue(decapitalize: true);
+					if (HeaderBuffer.IsChunkedSpecified(value) == false) {
 						throw MessageBuffer.CreateBadRequestException();
 					}
 					this.ContentLength = -1;	// -1 means 'chunked'
 					break;
 				default:
 					// just skip
-					messageBuffer.SkipHeaderField();
+					headerBuffer.SkipField();
 					break;
 			}
 		}
 
-		protected virtual void ScanBody(MessageBuffer messageBuffer) {
+		protected virtual void ScanBody(BodyBuffer bodyBuffer) {
 			// argument checks
-			Debug.Assert(messageBuffer != null);
+			Debug.Assert(bodyBuffer != null);
 
+			// scan body
 			switch (this.ContentLength) {
 				case -1:
 					// chunked body
-					messageBuffer.SkipChunkedBody();
+					bodyBuffer.SkipChunkedBody();
 					break;
 				case 0:
 					// no body
 					break;
 				default:
 					// simple body
-					messageBuffer.SkipBody(this.ContentLength);
+					bodyBuffer.SkipBody(this.ContentLength);
 					break;
 			}
 
 			return;
 		}
 
-		protected virtual void WriteHeader(MessageBuffer messageBuffer, IEnumerable<MessageBuffer.Modification> modifications) {
+		protected virtual void WriteHeader(Stream output, HeaderBuffer headerBuffer, IEnumerable<MessageBuffer.Modification> modifications) {
 			// argument checks
-			Debug.Assert(messageBuffer != null);
+			Debug.Assert(output != null);
+			Debug.Assert(headerBuffer != null);
 			// modifications can be null
 
 			// write message header
-			messageBuffer.WriteHeader(modifications);
+			headerBuffer.WriteHeader(output, modifications);
 		}
 
-		protected virtual void WriteBody(MessageBuffer messageBuffer) {
+		protected virtual void WriteBody(Stream output, BodyBuffer bodyBuffer) {
 			// argument checks
-			Debug.Assert(messageBuffer != null);
+			Debug.Assert(output != null);
+			Debug.Assert(bodyBuffer != null);
 
 			// write message body
-			messageBuffer.WriteBody();
+			bodyBuffer.WriteBody(output);
 		}
 
 		#endregion
@@ -273,7 +301,7 @@ namespace MAPE.Http {
 			// reset message properties of this class level
 			this.Version = null;
 			this.ContentLength = 0;
-			this.EndOfHeaderFields = MessageBuffer.Span.ZeroToZero;
+			this.EndOfHeaderFields = HeaderBuffer.Span.ZeroToZero;
 
 			return;
 		}

@@ -29,37 +29,6 @@ namespace MAPE.Http {
 				throw new ArgumentNullException(nameof(responseOutput));
 			}
 
-			CommunicateInternal(owner, requestInput, requestOutput, responseInput, responseOutput);
-		}
-
-		public static void Communicate(ICommunicationOwner owner, Stream clientStream, Stream serverStream) {
-			// argument checks
-			if (owner == null) {
-				throw new ArgumentNullException(nameof(owner));
-			}
-			if (clientStream == null) {
-				throw new ArgumentNullException(nameof(clientStream));
-			}
-			if (serverStream == null) {
-				throw new ArgumentNullException(nameof(serverStream));
-			}
-
-			CommunicateInternal(owner, clientStream, serverStream, serverStream, clientStream);
-		}
-
-		#endregion
-
-
-		#region privates
-
-		private static void CommunicateInternal(ICommunicationOwner owner, Stream requestInput, Stream requestOutput, Stream responseInput, Stream responseOutput) {
-			// argument checks
-			Debug.Assert(owner != null);
-			Debug.Assert(requestInput != null);
-			Debug.Assert(responseOutput != null);
-			Debug.Assert(responseInput != null);
-			Debug.Assert(requestOutput != null);
-
 			// process Http request/response
 			bool tunnelingMode = false;
 			ComponentFactory componentFactory = owner.ComponentFactory;
@@ -70,7 +39,7 @@ namespace MAPE.Http {
 					// process one turn
 					while (request.Read()) {
 						int repeatCount = 0;
-						MessageBuffer.Modification[] modifications = owner.GetModifications(repeatCount, request, null);
+						IEnumerable<MessageBuffer.Modification> modifications = owner.GetModifications(repeatCount, request, null);
 						do {
 							request.Write(modifications);
 							response.Read();
@@ -103,6 +72,26 @@ namespace MAPE.Http {
 
 			return;
 		}
+
+		public static void Communicate(ICommunicationOwner owner, Stream clientStream, Stream serverStream) {
+			// argument checks
+			if (owner == null) {
+				throw new ArgumentNullException(nameof(owner));
+			}
+			if (clientStream == null) {
+				throw new ArgumentNullException(nameof(clientStream));
+			}
+			if (serverStream == null) {
+				throw new ArgumentNullException(nameof(serverStream));
+			}
+
+			Communicate(owner, clientStream, serverStream, serverStream, clientStream);
+		}
+
+		#endregion
+
+
+		#region privates
 
 		private static void Tunnel(ICommunicationOwner owner, Stream requestInput, Stream requestOutput, Stream responseInput, Stream responseOutput) {
 			// argument checks
