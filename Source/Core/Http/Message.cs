@@ -114,9 +114,17 @@ namespace MAPE.Http {
 		#endregion
 
 
-		#region methods - public
+		#region methods
 
-		public bool Read() {
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <returns></returns>
+		/// <remarks>
+		/// The public version of Read() is provided by derived class, Request class and Response class,
+		/// utilizing this implementation.
+		/// </remarks>
+		protected bool Read() {
 			bool read = false;
 			try {
 				// state checks

@@ -43,7 +43,7 @@ namespace MAPE.Http {
 						IEnumerable<MessageBuffer.Modification> modifications = owner.GetModifications(repeatCount, request, null);
 						do {
 							request.Write(modifications);
-							response.Read();
+							response.Read(request);
 							++repeatCount;
 							modifications = owner.GetModifications(repeatCount, request, response);
 						} while (modifications != null);

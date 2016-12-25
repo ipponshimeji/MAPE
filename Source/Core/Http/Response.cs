@@ -12,6 +12,14 @@ namespace MAPE.Http {
 	public class Response: Message {
 		#region data
 
+		// Note that Request is not message property
+		protected Request Request { get; private set; } = null;
+
+		#endregion
+
+
+		#region data - message properties
+
 		public int StatusCode {
 			get;
 			protected set;
@@ -74,6 +82,24 @@ namespace MAPE.Http {
 			RespondSimpleError(this.Output, statusCode, reasonPhrase);
 		}
 
+		public bool Read(Request request) {
+			// argument
+			// request can be null
+
+			// state checks
+			if (this.Request != null) {
+				throw new InvalidOperationException("This object is reading now.");
+			}
+
+			// set this.Request during reading message.
+			this.Request = request;
+			try {
+				return base.Read();
+			} finally {
+				this.Request = null;
+			}
+		}
+
 		#endregion
 
 
@@ -114,6 +140,14 @@ namespace MAPE.Http {
 
 		protected override void ScanHeaderFieldValue(HeaderBuffer headerBuffer, string decapitalizedFieldName, int startOffset) {
 			switch (decapitalizedFieldName) {
+				case "content-length":
+				case "transfer-encoding":
+					// Do not parse these header fields in response of HEAD method
+					// otherwise it will be blocked to try to read body stream after this.
+					if (this.Request?.Method != "HEAD") {
+						base.ScanHeaderFieldValue(headerBuffer, decapitalizedFieldName, startOffset);
+					}
+					break;
 				case "proxy-authenticate":
 					// save its span and value
 					this.ProxyAuthenticateValue = headerBuffer.ReadFieldASCIIValue(false);
@@ -135,6 +169,8 @@ namespace MAPE.Http {
 			this.StatusCode = 0;
 			this.ProxyAuthenticateSpan = MessageBuffer.Span.ZeroToZero;
 			this.ProxyAuthenticateValue = null;
+
+			// Note that this.Request is not message property.
 
 			return;
 		}

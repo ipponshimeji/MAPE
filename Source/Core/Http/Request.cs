@@ -41,6 +41,15 @@ namespace MAPE.Http {
 		#endregion
 
 
+		#region methods
+
+		public new bool Read() {
+			return base.Read();
+		}
+
+		#endregion
+
+
 		#region overrides/overridables
 
 		protected override void ResetMessageProperties() {
