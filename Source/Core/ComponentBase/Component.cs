@@ -33,6 +33,14 @@ namespace MAPE.ComponentBase {
 
 		#region ILogger
 
+		public bool IsLogged(TraceEventType eventType) {
+			return Logger.IsLogged(eventType);
+		}
+
+		public void LogCritical(string message) {
+			Logger.LogCritical(FormatTraceMessage(message));
+		}
+
 		public void LogError(string message) {
 			Logger.LogError(FormatTraceMessage(message));
 		}
@@ -47,6 +55,14 @@ namespace MAPE.ComponentBase {
 
 		public void LogVerbose(string message) {
 			Logger.LogVerbose(FormatTraceMessage(message));
+		}
+
+		public void LogStart(string message) {
+			Logger.LogStart(FormatTraceMessage(message));
+		}
+
+		public void LogStop(string message) {
+			Logger.LogStop(FormatTraceMessage(message));
 		}
 
 		#endregion

@@ -204,16 +204,21 @@ namespace MAPE.Server {
 					}
 
 					IReadOnlyList<Listener> listeners = this.listeners;
-					if (listeners == null || listeners.Count <= 0) {
+					if (listeners == null) {
 						throw new ObjectDisposedException(this.ObjectName);
 					}
-					if (this.listeners.Count <= 0) {
+					if (listeners.Count <= 0) {
 						throw new InvalidOperationException("No listening end point is specified.");
 					}
 					if (this.Server == null) {
 						throw new InvalidOperationException("No server end point is specified.");
 					}
-					LogInformation("Starting...");
+
+					// log
+					bool verbose = IsLogged(TraceEventType.Verbose);
+					if (verbose) {
+						LogVerbose("Starting...");
+					}
 
 					// start listeners
 					int activeCount = 0;
@@ -234,7 +239,9 @@ namespace MAPE.Server {
 
 					// update its state
 					this.isListening = true;
-					LogInformation("Started.");
+					if (verbose) {
+						LogVerbose("Started.");
+					}
 				}
 			} catch (Exception exception) {
 				LogError($"Fail to start: {exception.Message}");
@@ -253,7 +260,12 @@ namespace MAPE.Server {
 						// already stopped
 						return true;
 					}
-					LogInformation("Stopping...");
+
+					// log
+					bool verbose = IsLogged(TraceEventType.Verbose);
+					if (verbose) {
+						LogVerbose("Stopping...");
+					}
 
 					// stop listening
 					IReadOnlyList<Listener> listeners = this.listeners;
@@ -291,11 +303,13 @@ namespace MAPE.Server {
 					// update its state
 					this.isListening = false;
 					if (stopConfirmed) {
-						LogInformation("Stopped.");
+						if (verbose) {
+							LogVerbose("Stopped.");
+						}
 					} else {
 						string message = "Requested to stop, but did not comfirm actual stop.";
 						if (millisecondsTimeout == 0) {
-							LogInformation(message);
+							LogVerbose(message);
 						} else {
 							LogWarning(message);
 						}

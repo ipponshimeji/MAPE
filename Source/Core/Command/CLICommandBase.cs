@@ -117,7 +117,17 @@ namespace MAPE.Command {
 			using (Proxy proxy = this.ComponentFactory.CreateProxy(proxyConfiguration)) {
 				// start the proxy
 				proxy.CredentialCallback = GetCredential;
-				proxy.Start();
+				SystemSettingSwitcherBase systemSwitcher = GetSystemSwitcher(proxy);
+				bool systemSwitched = false;
+				if (systemSwitcher == null) {
+					proxy.Start();
+				} else {
+					if (proxy.Server == null) {
+						proxy.Server = systemSwitcher.SystemProxy;
+					}
+					proxy.Start();
+					systemSwitched = systemSwitcher.Switch();
+				}
 				Console.WriteLine("Listening...");
 				Console.WriteLine("Press Ctrl+C to quit.");
 
@@ -138,6 +148,14 @@ namespace MAPE.Command {
 				}
 
 				// stop the proxy
+				if (systemSwitched) {
+					try {
+						systemSwitcher.Restore();
+					} catch (Exception exception) {
+						Console.Error.Write($"Fail to restore the previous system setting: {exception.Message}");
+						Console.Error.Write("Please restore it manually.");
+					}
+				}
 				bool completed = proxy.Stop(5000);
 				Console.WriteLine(completed? "Completed.": "Not Completed.");	// ToDo: message
 			}

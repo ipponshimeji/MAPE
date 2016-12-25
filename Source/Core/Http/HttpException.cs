@@ -7,44 +7,58 @@ using System.Runtime.Serialization;
 
 namespace MAPE.Http {
 	public class HttpException: Exception {
-		#region creation and disposal
+		#region data
 
-		public HttpException(HttpStatusCode statusCode, string message): base(message) {
-			// status code is set in this.HResult
-			this.HResult = (int)statusCode;
-		}
-
-		public HttpException(HttpStatusCode statusCode): this(statusCode, GetDefaultMessage(statusCode)) {
-		}
-
-		protected HttpException(SerializationInfo info, StreamingContext context): base(info, context) {
-		}
+		private readonly HttpStatusCode httpStatusCode;
 
 		#endregion
 
 
 		#region properties
+
+		public HttpStatusCode HttpStatusCode {
+			get {
+				return this.httpStatusCode;
+			}
+		}
 
 		public int StatusCode {
 			get {
-				return this.HResult;
-			}
-		}
-		public HttpStatusCode HttpStatusCode {
-			get {
-				return (HttpStatusCode)this.StatusCode;
+				return (int)this.httpStatusCode;
 			}
 		}
 
 		#endregion
 
 
-		#region properties
+		#region creation and disposal
+
+		public HttpException(HttpStatusCode httpStatusCode, string message): base(message) {
+			this.httpStatusCode = httpStatusCode;
+		}
+
+		public HttpException(HttpStatusCode httpStatusCode): this(httpStatusCode, GetDefaultMessage(httpStatusCode)) {
+		}
+
+		public HttpException(Exception innerException): base(GetDefaultMessage(HttpStatusCode.InternalServerError), innerException) {
+			this.httpStatusCode = HttpStatusCode.InternalServerError;
+		}
+
+		protected HttpException(SerializationInfo info, StreamingContext context): base(info, context) {
+			// ToDo: implement
+		}
+
+		#endregion
+
+
+		#region methods
 
 		public static string GetDefaultMessage(HttpStatusCode statusCode) {
 			switch (statusCode) {
 				case HttpStatusCode.BadRequest:
 					return "Bad Request";
+				case HttpStatusCode.InternalServerError:
+					return "Internal Server Error";
 				default:
 					// ToDo: should be improved?
 					return statusCode.ToString();

@@ -18,6 +18,11 @@ namespace MAPE.Http {
 
 		private Stream output;
 
+		public bool MessageRead {
+			get;
+			private set;
+		}
+
 		public Version Version {
 			get;
 			protected set;
@@ -154,6 +159,7 @@ namespace MAPE.Http {
 				ScanBody(this.bodyBuffer);
 
 				// result
+				this.MessageRead = true;
 				read = true;	// completed
 			} catch (EndOfStreamException) {
 				Debug.Assert(read == false);
@@ -313,6 +319,7 @@ namespace MAPE.Http {
 
 		private void ResetThisClassLevelMessageProperties() {
 			// reset message properties of this class level
+			this.MessageRead = false;
 			this.Version = null;
 			this.ContentLength = 0;
 			this.EndOfHeaderFields = HeaderBuffer.Span.ZeroToZero;

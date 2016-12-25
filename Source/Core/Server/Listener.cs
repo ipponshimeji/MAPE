@@ -134,7 +134,12 @@ namespace MAPE.Server {
 						// already listening
 						return;
 					}
-					LogInformation("Starting...");
+
+					// log
+					bool verbose = IsLogged(TraceEventType.Verbose);
+					if (verbose) {
+						LogVerbose("Starting...");
+					}
 
 					// start listening
 					Debug.Assert(this.endPoint != null);
@@ -153,7 +158,9 @@ namespace MAPE.Server {
 					}
 
 					// log
-					LogInformation("Started.");
+					if (verbose) {
+						LogVerbose("Started.");
+					}
 				}
 			} catch (Exception exception) {
 				LogError($"Fail to start: {exception.Message}");
@@ -180,12 +187,15 @@ namespace MAPE.Server {
 						Debug.Assert(this.tcpListener == null);
 						return true;
 					}
-					LogInformation("Stopping...");
+
+					// log
+					LogVerbose("Stopping...");
 
 					// stop listening
 					try {
 						this.tcpListener.Stop();
-					} catch {
+					} catch (Exception exception) {
+						LogVerbose($"Exception on stopping listener: {exception.Message}");
 						// continue
 					}
 				}
@@ -253,13 +263,18 @@ namespace MAPE.Server {
 			}
 
 			// start accept loop
+			bool verbose = IsLogged(TraceEventType.Verbose);
 			try {
 				do {
 					TcpClient client = tcpListener.AcceptTcpClient();
 					try {
-						LogInformation($"Accepted from {client.Client.RemoteEndPoint.ToString()}. Creating a Connection.");
-						owner.OnAccept(client);
-						LogInformation($"Connection created.");
+						if (verbose == false) {
+							owner.OnAccept(client);
+						} else {
+							LogVerbose($"Accepted from {client.Client.RemoteEndPoint.ToString()}. Creating a Connection...");
+							owner.OnAccept(client);
+							LogVerbose($"Connection created.");
+						}
 					} catch (Exception exception) {
 						LogError($"Fail to create a Connection: {exception.Message}");
 						// continue
@@ -276,7 +291,9 @@ namespace MAPE.Server {
 			}
 
 			// log
-			LogInformation("Stopped.");
+			if (verbose) {
+				LogVerbose("Stopped.");
+			}
 
 			return;
 		}

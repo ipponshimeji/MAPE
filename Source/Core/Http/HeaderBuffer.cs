@@ -518,12 +518,20 @@ namespace MAPE.Http {
 			}
 
 			// read bytes from the input
-			int readCount = this.input.Read(buffer, offset, count);
-			if (readCount <= 0) {
+			Exception error = null;
+			int readCount = 0;
+			try {
+				readCount = this.input.Read(buffer, offset, count);
+			} catch (Exception exception) {
+				error = exception;
+				// continue
+			}
+			if (error != null || readCount <= 0) {
 				// end of stream is invalid except at the beginning of a HttpMessage
 				if (this.currentMemoryBlockBaseOffset == 0 && this.Limit == 0) {
 					// the beginning of a header
 					// This is a normal end of stram, i.e. no more HttpMessage.
+					// ToDo: detailed message
 					throw new EndOfStreamException();
 				} else {
 					// unexpected end of stream

@@ -24,17 +24,19 @@ namespace MAPE.Utils {
 			ConsoleColor color;
 			switch (eventType) {
 				case TraceEventType.Critical:
-				case TraceEventType.Error:
 					color = ConsoleColor.Red;
 					break;
-				case TraceEventType.Warning:
+				case TraceEventType.Error:
 					color = ConsoleColor.Magenta;
+					break;
+				case TraceEventType.Warning:
+					color = ConsoleColor.DarkYellow;
 					break;
 				case TraceEventType.Information:
 					color = ConsoleColor.Green;
 					break;
 				case TraceEventType.Verbose:
-					color = ConsoleColor.Gray;
+					color = ConsoleColor.DarkGray;
 					break;
 				default:
 					color = currentColor;

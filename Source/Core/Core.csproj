@@ -49,6 +49,7 @@
     <Compile Include="Http\BodyBuffer.cs" />
     <Compile Include="Http\HttpException.cs" />
     <Compile Include="Http\HeaderBuffer.cs" />
+    <Compile Include="Http\CommunicationSubType.cs" />
     <Compile Include="Http\ICommunicationOwner.cs" />
     <Compile Include="Http\Communication.cs" />
     <Compile Include="Http\MessageBuffer.cs" />

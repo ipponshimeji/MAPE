@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Text;
 using MAPE.Utils;
 using MAPE.Configuration;
@@ -30,6 +31,66 @@ namespace MAPE.Command {
 			public const string RunProxy = "RunProxy";
 
 			public const string ShowUsage = "ShowUsage";
+
+			#endregion
+		}
+
+		public class SystemSettingSwitcherBase {
+			#region data
+
+			public DnsEndPoint SystemProxy { get; protected set; } = null;
+
+			#endregion
+
+
+			#region creation and disposal
+
+			public SystemSettingSwitcherBase(Proxy proxy) {
+				// inirialize members
+				this.SystemProxy = GetSystemProxy();
+
+				return;
+			}
+
+			#endregion
+
+
+			#region overridables
+
+			public virtual bool Switch() {
+				return false;	// not switched
+			}
+
+			public virtual void Restore() {
+				return;
+			}
+
+			#endregion
+
+
+			#region privates
+
+			private static DnsEndPoint GetSystemProxy() {
+				IWebProxy proxy = WebRequest.GetSystemWebProxy();
+				Func<string, DnsEndPoint> detect = (sample) => {
+					Uri sampleUri = new Uri(sample);
+					DnsEndPoint value = null;
+					if (proxy.IsBypassed(sampleUri) == false) {
+						Uri uri = proxy.GetProxy(sampleUri);
+						if (uri != sampleUri) {
+							value = new DnsEndPoint(uri.Host, uri.Port);
+						}
+					}
+					return value;
+				};
+
+				DnsEndPoint endPoint = detect("http://www.google.com/");
+				if (endPoint == null) {
+					endPoint = detect("http://www.microsoft.com/");
+				}
+
+				return endPoint;
+			}
 
 			#endregion
 		}
@@ -272,6 +333,10 @@ namespace MAPE.Command {
 		}
 
 		protected abstract void RunProxy(ProxyConfiguration proxyConfiguration);
+
+		protected virtual SystemSettingSwitcherBase GetSystemSwitcher(Proxy proxy) {
+			return new SystemSettingSwitcherBase(proxy);
+		}
 
 		#endregion
 	}

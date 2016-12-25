@@ -144,7 +144,10 @@ namespace MAPE.Server {
 			try {
 				lock (this) {
 					// log
-					LogInformation($"Starting for {client.Client.RemoteEndPoint.ToString()} ...");
+					bool verbose = IsLogged(TraceEventType.Verbose);
+					if (verbose) {
+						LogVerbose($"Starting for {client.Client.RemoteEndPoint.ToString()} ...");
+					}
 
 					// state checks
 					if (this.owner == null) {
@@ -157,11 +160,11 @@ namespace MAPE.Server {
 					}
 					communicatingTask = new Task(Communicate);
 					communicatingTask.ContinueWith(
-						(Action<Task>)((t) => {
-							base.LogInformation((string)"Stopped.");
+						(t) => {
+							base.LogVerbose("Stopped.");
 							this.ObjectName = ObjectBaseName;
 							this.owner.OnConnectionCompleted(this);
-						})
+						}
 					);
 					this.Task = communicatingTask;
 
@@ -173,7 +176,9 @@ namespace MAPE.Server {
 					communicatingTask.Start();
 
 					// log
-					LogInformation("Started.");
+					if (verbose) {
+						LogVerbose("Started.");
+					}
 				}
 			} catch (Exception exception) {
 				LogError($"Fail to start: {exception.Message}");
@@ -198,20 +203,11 @@ namespace MAPE.Server {
 						// already stopped
 						return true;
 					}
-					LogInformation("Stopping...");
+					LogVerbose("Stopping...");
 
 					// force the connections to close
 					// It will cause exceptions on I/O in communicating thread.
-					if (this.server != null) {
-						Socket socket = this.server.Client;
-						socket.Shutdown(SocketShutdown.Both);
-						socket.Disconnect(false);
-					}
-					if (this.client != null) {
-						Socket socket = this.client.Client;
-						socket.Shutdown(SocketShutdown.Both);
-						socket.Disconnect(false);
-					}
+					CloseTcpConnections();
 				}
 
 				// wait for the completion of the listening task
@@ -307,60 +303,150 @@ namespace MAPE.Server {
 				throw new ArgumentNullException(nameof(response));
 			}
 
-			// log
-			if (response == null) {
-				LogInformation($"Request {request.Method} to '{request.Host}'");
-			} else {
-				int statusCode = response.StatusCode;
-				string message = $"Response {statusCode.ToString()}";
-				if (statusCode < 300) {
-					LogInformation(message);
-				} else if (statusCode < 400 || statusCode == 407) {
-					LogWarning(message);
-				} else {
-					LogError(message);
-				}
-			}
-
 			// retry checks
 			IEnumerable<MessageBuffer.Modification> modifications = null;
 			if (repeatCount <= this.retryCount) {
 				// get actual modifications
 				modifications = GetModifications(request, response);
+			} else {
+				LogWarning("Overruns the retry count. Responding the current response.");
 			}
 
-			// log
-			if (modifications == null) {
-				// the response will be sent to the client
-				LogInformation("Responded.");
+			// log the round trip result
+			if (response != null) {
+				LogRoundTripResult(request, response, modifications != null);
 			}
 
 			return modifications;
 		}
 
-		void ICommunicationOwner.OnClose(bool downstream, Exception error) {
-			if (error != null) {
-				StopCommunication();
-			} else {
-				lock (this) {
-					if (this.server != null) {
-						Socket socket = this.server.Client;
-						socket.Shutdown(downstream? SocketShutdown.Receive: SocketShutdown.Send);
-					}
-					if (this.client != null) {
-						Socket socket = this.client.Client;
-						socket.Shutdown(downstream ? SocketShutdown.Send : SocketShutdown.Receive);
+		HttpException ICommunicationOwner.OnError(Request request, Exception exception) {
+			// argument checks
+			// request can be null
+			// exception can be null
+
+			HttpException httpException = null;
+			try {
+				// interpret the exception to HttpException
+				// Null httpError means no need to send any error message to the client.
+				if (exception != null && request != null && request.MessageRead) {
+					httpException = exception as HttpException;
+					if (httpException == null) {
+						httpException = new HttpException(exception);
+						Debug.Assert(httpException.HttpStatusCode == HttpStatusCode.InternalServerError);
 					}
 				}
+
+				// log the state
+				if (exception != null) {
+					// report the original exception message (not httpException's)
+					LogError($"Error: {exception.Message}");
+				}
+				if (httpException != null) {
+					string method = request?.Method;
+					if (string.IsNullOrEmpty(method)) {
+						method = "(undetected method)";
+					}
+					LogError($"Trying to respond an error response: {method} - {httpException.StatusCode}");
+				}
+			} catch {
+				// continue
+				// this method should not throw any exception
+			}
+
+			return httpException;
+		}
+
+		void ICommunicationOwner.OnTunnelingStarted(CommunicationSubType communicationSubType) {
+			// log
+			switch (communicationSubType) {
+				case CommunicationSubType.Session:
+					LogVerbose("Started tunneling mode.");
+					break;
+				case CommunicationSubType.UpStream:
+				case CommunicationSubType.DownStream:
+					LogVerbose($"Started {communicationSubType.ToString()} tunneling.");
+					break;
 			}
 
 			return;
+		}
+
+		void ICommunicationOwner.OnTunnelingClosing(CommunicationSubType communicationSubType, Exception exception) {
+			switch (communicationSubType) {
+				case CommunicationSubType.Session:
+					// log
+					if (exception != null) {
+						LogError($"Error: {exception.Message}");
+					}
+					LogVerbose("Closing tunneling mode.");
+					break;
+				case CommunicationSubType.UpStream:
+				case CommunicationSubType.DownStream:
+					string direction = communicationSubType.ToString();
+					if (exception != null) {
+						StopCommunication();
+						LogError($"Error in {direction} tunneling: {exception.Message}");
+					} else {
+						// shutdown the communication
+						bool downStream = (communicationSubType == CommunicationSubType.DownStream);
+						lock (this) {
+							if (this.server != null) {
+								Socket socket = this.server.Client;
+								socket.Shutdown(downStream ? SocketShutdown.Receive : SocketShutdown.Send);
+							}
+							if (this.client != null) {
+								Socket socket = this.client.Client;
+								socket.Shutdown(downStream ? SocketShutdown.Send : SocketShutdown.Receive);
+							}
+						}
+					}
+					LogVerbose($"Closing {communicationSubType.ToString()} tunneling.");
+					break;
+			}
 		}
 
 		#endregion
 
 
 		#region privates
+
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <remarks>
+		/// Note that this method is not thread safe.
+		/// You must call this method inside a lock(this) scope.
+		/// </remarks>
+		private void CloseTcpConnections() {
+			TcpClient client;
+			TcpClient server;
+
+			// close server connection
+			server = this.server;
+			this.server = null;
+			client = this.client;
+			this.client = null;
+
+			if (server != null) {
+				try {
+					server.Close();
+				} catch (Exception exception) {
+					LogVerbose($"Exception on closing server connection: {exception.Message}");
+					// continue
+				}
+			}
+			if (client != null) {
+				try {
+					client.Close();
+				} catch (Exception exception) {
+					LogVerbose($"Exception on closing client connection: {exception.Message}");
+					// continue
+				}
+			}
+
+			return;
+		}
 
 		private void Communicate() {
 			// preparations
@@ -399,32 +485,41 @@ namespace MAPE.Server {
 						}
 					}
 				}
-				LogInformation("Communication completed.");
-			} catch (EndOfStreamException) {
-				// the end of communication
-				// continue
 			} catch (Exception exception) {
-				// A 400 (Bad Request) error has been sent to client at this point. 
-				LogError($"Fail to communicate: {exception.Message}");
+				LogError($"Error: {exception.Message}");
 				// continue
 			} finally {
+				LogVerbose("Communication completed.");
 				lock (this) {
 					this.proxyCredential = null;
-					this.server = null;
-					this.client = null;
+					CloseTcpConnections();
 				}
-				if (server != null) {
-					try {
-						server.Close();
-					} catch {
-						// continue
-					}
+			}
+
+			return;
+		}
+
+		private void LogRoundTripResult(Request request, Response response, bool retrying) {
+			// argument checks
+			Debug.Assert(request != null);
+			Debug.Assert(response != null);
+
+			// log the result of one round trip 
+			try {
+				int statusCode = response.StatusCode;
+				string heading = retrying ? "Retrying" : "Respond";
+				string message = $"{heading}: {request.Method} -> {statusCode}, {request.Host}";
+
+				if (statusCode < 400) {
+					LogInformation(message);
+				} else if (statusCode == 407) {
+					LogWarning(message);
+				} else {
+					LogError(message);
 				}
-				try {
-					client.Close();
-				} catch {
-					// continue
-				}
+			} catch {
+				// continue
+				// this method should not throw any exception
 			}
 
 			return;

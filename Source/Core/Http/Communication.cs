@@ -37,8 +37,10 @@ namespace MAPE.Http {
 			try {
 				Response response = componentFactory.AllocResponse(responseInput, responseOutput);
 				try {
-					// process one turn
+					// process each client request
 					while (request.Read()) {
+						// send the request to the server
+						// The request is resend while the owner instructs modifications.
 						int repeatCount = 0;
 						IEnumerable<MessageBuffer.Modification> modifications = owner.GetModifications(repeatCount, request, null);
 						do {
@@ -47,6 +49,8 @@ namespace MAPE.Http {
 							++repeatCount;
 							modifications = owner.GetModifications(repeatCount, request, response);
 						} while (modifications != null);
+
+						// send the final response to the client
 						response.Write();
 						if (request.Method == "CONNECT" && response.StatusCode == 200) {
 							// move to tunneling mode
@@ -54,12 +58,26 @@ namespace MAPE.Http {
 							break;
 						}
 					}
-				} catch (HttpException exception) {
-					response.RespondSimpleError(exception.StatusCode, exception.Message);
-					owner.Logger.LogError($"Responded Error {exception.StatusCode}.");
-				} catch (Exception) {
-					response.RespondSimpleError((int)HttpStatusCode.InternalServerError, "Internal Server Error");
-					owner.Logger.LogError($"Responded Error {(int)HttpStatusCode.InternalServerError}.");
+				} catch (EndOfStreamException) {
+					// an EndOfStreamException means disconnection at an appropriate timing.
+					// continue
+				} catch (Exception exception) {
+					// report the exception to the owner
+					HttpException httpError = owner.OnError(request, exception);
+
+					// respond an error message to the client if necessary
+					// Null httpError means no need to send any error message to the client.
+					if (httpError != null) {
+						// Note that the connection may be disabled at this point and may cause an exception.
+						try {
+							response.RespondSimpleError(httpError.StatusCode, httpError.Message);
+						} catch {
+							// continue
+						}
+					}
+
+					// should return immediately
+					return;
 				} finally {
 					componentFactory.ReleaseResponse(response);
 				}
@@ -69,26 +87,13 @@ namespace MAPE.Http {
 
 			// process tunneling mode
 			if (tunnelingMode) {
-				owner.Logger.LogInformation("Move to tunneling mode.");
 				Tunnel(owner, requestInput, requestOutput, responseInput, responseOutput);
-				owner.Logger.LogInformation("Complete tunneling mode.");
 			}
 
 			return;
 		}
 
 		public static void Communicate(ICommunicationOwner owner, Stream clientStream, Stream serverStream) {
-			// argument checks
-			if (owner == null) {
-				throw new ArgumentNullException(nameof(owner));
-			}
-			if (clientStream == null) {
-				throw new ArgumentNullException(nameof(clientStream));
-			}
-			if (serverStream == null) {
-				throw new ArgumentNullException(nameof(serverStream));
-			}
-
 			Communicate(owner, clientStream, serverStream, serverStream, clientStream);
 		}
 
@@ -105,50 +110,76 @@ namespace MAPE.Http {
 			Debug.Assert(responseInput != null);
 			Debug.Assert(responseOutput != null);
 
-			// run downstream task on another thread
-			Task upTask = Task.Run(() => { Forward(owner, responseInput, responseOutput, true); owner.Logger.LogWarning("downstream"); });
+			// handle tunneling mode communication
+			try {
+				// notify the owner
+				owner.OnTunnelingStarted(CommunicationSubType.Session);
 
-			// run upstream task
-			Forward(owner, requestInput, requestOutput, false);
-			owner.Logger.LogWarning("upstream");
+				// run downstream task on another thread
+				Task downstreamTask = Task.Run(() => { Forward(owner, responseInput, responseOutput, CommunicationSubType.DownStream); });
+				try {
+					// run upstream task
+					Forward(owner, requestInput, requestOutput, CommunicationSubType.UpStream);
+				} finally {
+					downstreamTask.Wait();
+				}
 
-			// join the download task
-			upTask.Wait();
+				// notify the owner
+				owner.OnTunnelingClosing(CommunicationSubType.Session, null);
+			} catch (Exception exception) {
+				// notify the owner of the exception
+				try {
+					owner.OnTunnelingClosing(CommunicationSubType.Session, exception);
+				} catch {
+					// continue
+				}
+				// continue
+			}
 
 			return;
 		}
 
-		private static void Forward(ICommunicationOwner owner, Stream input, Stream output, bool downstream) {
+		private static void Forward(ICommunicationOwner owner, Stream input, Stream output, CommunicationSubType type) {
 			// argument checks
 			Debug.Assert(owner != null);
 			Debug.Assert(input != null);
 			Debug.Assert(output != null);
+			Debug.Assert(type == CommunicationSubType.UpStream || type == CommunicationSubType.DownStream);
 
 			// forward bytes from the input to the output
-			Exception error = null;
-			byte[] buf = ComponentFactory.AllocMemoryBlock();
 			try {
-				do {
-					int readCount = input.Read(buf, 0, buf.Length);
-					if (readCount <= 0) {
-						// the end of stream
-						break;
-					}
-					output.Write(buf, 0, readCount);
-					output.Flush();
-				} while (true);
-			} catch (EndOfStreamException) {
-				// continue
-			} catch (Exception exception) {
-				error = exception;
-				owner.Logger.LogError($"Communication terminated: {exception.Message}");
-				// continue
-			} finally {
-				ComponentFactory.FreeMemoryBlock(buf);
-			}
+				// notify the owner
+				owner.OnTunnelingStarted(type);
 
-			// notify the owner of the closing 
-			owner.OnClose(downstream, error);
+				// forward bytes
+				byte[] buf = ComponentFactory.AllocMemoryBlock();
+				try {
+					do {
+						int readCount = input.Read(buf, 0, buf.Length);
+						if (readCount <= 0) {
+							// the end of the stream
+							break;
+						}
+						output.Write(buf, 0, readCount);
+						output.Flush();
+					} while (true);
+				} catch (EndOfStreamException) {
+					// continue
+				} finally {
+					ComponentFactory.FreeMemoryBlock(buf);
+				}
+
+				// notify the owner of its normal closing 
+				owner.OnTunnelingClosing(type, null);
+			} catch (Exception exception) {
+				// notify the owner of the exception
+				try {
+					owner.OnTunnelingClosing(type, exception);
+				} catch {
+					// continue
+				}
+				// continue
+			}
 
 			return;
 		}
