@@ -75,5 +75,31 @@ namespace MAPE.ComponentBase {
 		}
 
 		#endregion
+
+
+		#region methods - settings
+
+		public Settings GetSettings(bool omitDefault) {
+			Settings settings = Settings.CreateEmptySettings();
+
+			// add settings of each class level
+			lock (this) {
+				AddSettings(settings, omitDefault);
+			}
+
+			return settings;
+		}
+
+		#endregion
+
+
+		#region overridables
+
+		public virtual void AddSettings(Settings settings, bool omitDefault) {
+			// not supported by default
+			throw new NotSupportedException();
+		}
+
+		#endregion
 	}
 }

@@ -6,12 +6,11 @@ using System.Net;
 using System.Text;
 using System.Threading;
 using MAPE.Utils;
-using MAPE.Configuration;
 using MAPE.Server;
 
 
 namespace MAPE.Command {
-    public class CLICommandBase: CommandBase {
+    public class CLICommandBase: CommandBase, IProxyRunner {
 		#region types
 
 		public static new class OptionNames {
@@ -25,7 +24,7 @@ namespace MAPE.Command {
 		public new class CommandKind: CommandBase.CommandKind {
 			#region constants
 
-			public const string SaveConfiguration = "SaveConfiguration";
+			public const string SaveSettings = "SaveSettings";
 
 			#endregion
 		}
@@ -45,19 +44,63 @@ namespace MAPE.Command {
 		#endregion
 
 
-		#region methods
+		#region IProxyRunner
+
+		public NetworkCredential AskCredential(Proxy proxy, string realm, bool needUpdate) {
+			NetworkCredential credential = this.Credential;
+			if (needUpdate || credential == null) {
+				// read information from the console
+				Console.WriteLine($"Credential for {realm} is required.");
+				Console.Write("UserName: ");
+				string userName = Console.ReadLine();
+				Console.Write("Password: ");
+				string password = ReadPassword();
+
+				CredentialPersistence credentialPersistence;
+				do {
+					Console.WriteLine($"How save password?");
+					Console.WriteLine($"  1: only during this http session");
+					Console.WriteLine($"  2: during running this process");
+					Console.WriteLine($"  3: save the password in settings file");
+					Console.Write("No: ");
+					string line = Console.ReadLine();
+
+					int number;
+					if (int.TryParse(line, out number)) {
+						if (number == 1) {
+							credentialPersistence = CredentialPersistence.Session;
+							break;
+						} else if (number == 2) {
+							credentialPersistence = CredentialPersistence.Process;
+							break;
+						} else if (number == 3) {
+							credentialPersistence = CredentialPersistence.Persistent;
+							break;
+						}
+					}
+				} while (true);
+
+				credential = new NetworkCredential(userName, password);
+				SetCredential(credentialPersistence, credential, saveIfNecessary: true);
+				proxy.IsServerCredentialPersistencyProcess = (credentialPersistence != CredentialPersistence.Session);
+			}
+
+			// return the clone of this.Credential
+			return new NetworkCredential(credential.UserName, credential.Password);
+		}
+
 		#endregion
 
 
 		#region overrides/overridables - argument processing
 
-		protected override bool HandleOption(Parameter option) {
+		protected override bool HandleOption(string name, string value, Settings settings) {
 			// handle option
 			bool handled = true;
-			if (option.IsName(OptionNames.Save)) {
-				this.Kind = CommandKind.SaveConfiguration;
+			if (AreSameOptionNames(name, OptionNames.Save)) {
+				this.Kind = CommandKind.SaveSettings;
 			} else {
-				handled = base.HandleOption(option);
+				handled = base.HandleOption(name, value, settings);
 			}
 
 			return handled;
@@ -69,7 +112,7 @@ namespace MAPE.Command {
 		#region overrides/overridables - execution
 
 		public override void Run(string[] args) {
-			// connect a ColorCodedConsoleTraceListener during its execution to show log in the console
+			// connect a ColorConsoleTraceListener during its execution to show color-coded log in the console
 			ColorConsoleTraceListener traceListener = new ColorConsoleTraceListener(true);
 			Logger.Source.Listeners.Add(traceListener);
 			try {
@@ -79,59 +122,33 @@ namespace MAPE.Command {
 			}
 		}
 
-		public override void Execute(ProxyConfiguration proxyConfiguration) {
+		public override void Execute(string commandKind, Settings settings) {
 			// argument checks
-			Debug.Assert(proxyConfiguration != null);
+			Debug.Assert(settings.IsNull == false);
 
 			// execute command according to the command kind 
-			switch (this.Kind) {
-				case CommandKind.SaveConfiguration:
-					// adjust proxyConfiguration
-					// Generally, the password given from command line is supposed to be volatile.
-					// But in the SaveConfiguration mode, the password should be saved.
-					proxyConfiguration.ProxyCredentialPersistence = CredentialPersistence.Persistent;
-					SaveConfiguration(proxyConfiguration);
+			switch (commandKind) {
+				case CommandKind.SaveSettings:
+					SaveSettings(settings);
 					break;
 				default:
-					base.Execute(proxyConfiguration);
+					base.Execute(commandKind, settings);
 					break;
 			}
 
 			return;
 		}
 
-		protected virtual void SaveConfiguration(ProxyConfiguration proxyConfiguration) {
+		protected override void RunProxy(Settings settings) {
 			// argument checks
-			Debug.Assert(proxyConfiguration != null);
+			Debug.Assert(settings.IsNull == false);
 
-			// save the configuration
-			proxyConfiguration.SaveConfiguration();
-			// ToDo: saved message
-		}
-
-		protected override void RunProxy(ProxyConfiguration proxyConfiguration) {
-			// argument checks
-			Debug.Assert(proxyConfiguration != null);
-
-			// run proxy server
-			using (Proxy proxy = this.ComponentFactory.CreateProxy(proxyConfiguration)) {
-				// start the proxy
-				proxy.CredentialCallback = GetCredential;
-				SystemSettingSwitcherBase systemSwitcher = GetSystemSwitcher(proxy);
-				bool systemSwitched = false;
-				if (systemSwitcher == null) {
-					proxy.Start();
-				} else {
-					if (proxy.Server == null) {
-						proxy.Server = systemSwitcher.SystemProxy;
-					}
-					proxy.Start();
-					systemSwitched = systemSwitcher.Switch();
-				}
+			// run the proxy
+			bool completed = false;
+			using (RunningProxyState runningProxyState = StartProxy(settings, this)) {
+				// wait for Ctrl+C
 				Console.WriteLine("Listening...");
 				Console.WriteLine("Press Ctrl+C to quit.");
-
-				// wait for Ctrl+C
 				using (ManualResetEvent quitEvent = new ManualResetEvent(false)) {
 					// setup Ctrl+C handler
 					ConsoleCancelEventHandler ctrlCHandler = (o, e) => {
@@ -148,34 +165,34 @@ namespace MAPE.Command {
 				}
 
 				// stop the proxy
-				if (systemSwitched) {
-					try {
-						systemSwitcher.Restore();
-					} catch (Exception exception) {
-						Console.Error.Write($"Fail to restore the previous system setting: {exception.Message}");
-						Console.Error.Write("Please restore it manually.");
-					}
-				}
-				bool completed = proxy.Stop(5000);
-				Console.WriteLine(completed? "Completed.": "Not Completed.");	// ToDo: message
+				completed = runningProxyState.Stop(5000);
 			}
+			Console.WriteLine(completed ? "Completed." : "Not Completed."); // ToDo: message
+
+			return;
+		}
+
+		protected virtual void SaveSettings(Settings settings) {
+			// argument checks
+			Debug.Assert(settings.IsNull == false);
+
+			// adjust the settings
+			// The CredentialPersistence is supposed to be 'Persist'
+			// if /UserName or /Password option is specified from command line with /Save option
+			string userName = settings.GetStringValue(SettingNames.UserName, defaultValue: null);
+			string protectedPasswoed = settings.GetStringValue(SettingNames.ProtectedPassword, defaultValue: null);
+			if (userName != null || protectedPasswoed != null) {
+				settings.SetStringValue(SettingNames.CredentialPersistence, CredentialPersistence.Persistent.ToString());
+			}
+
+			// save the settings
+			SaveSettingsToFile(settings);
 		}
 
 		#endregion
 
 
 		#region privates
-
-		private static NetworkCredential GetCredential(string realm) {
-			// read information from the console
-			Console.WriteLine($"Credential for {realm} is required.");
-			Console.Write("UserName: ");
-			string userName = Console.ReadLine();
-			Console.Write("Password: ");
-			string password = ReadPassword();
-
-			return new NetworkCredential(userName, password);
-		}
 
 		// thanks to http://stackoverflow.com/questions/3404421/password-masking-console-application
 		private static string ReadPassword() {

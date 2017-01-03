@@ -4,17 +4,143 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using MAPE.Utils;
 using MAPE.ComponentBase;
-using MAPE.Configuration;
 
 
 namespace MAPE.Server {
-    public class Proxy: Component {
+	public static class ProxySettingsExtensions {
+		#region methods
+
+		public static List<Listener> GetListeners(this Settings settings, Proxy proxy) {
+			List<Listener> listeners = new List<Listener>();
+
+			// MainListener
+			Settings mainListenerSettings = settings.GetObjectValue(Proxy.SettingNames.MainListener);
+			Listener listener = proxy.ComponentFactory.CreateListener(proxy, mainListenerSettings);
+			listeners.Add(listener);
+
+			// AdditionalListeners
+			IEnumerable<Settings> additionalListenerSettings = settings.GetObjectArrayValue(Proxy.SettingNames.AdditionalListeners, defaultValue: null);
+			if (additionalListenerSettings != null) {
+				Listener[] additionalListeners = (
+					from listenerSettings in additionalListenerSettings
+					select proxy.ComponentFactory.CreateListener(proxy, listenerSettings)
+				).ToArray();
+				listeners.AddRange(additionalListeners);
+			}
+
+			return listeners;
+		}
+
+		public static void SetListeners(this Settings settings, List<Listener> value, bool omitDefault) {
+			// argument checks
+			if (value == null) {
+				throw new ArgumentNullException(nameof(value));
+			}
+			if (value.Count <= 0) {
+				throw new ArgumentException("It must contain at least one item.", nameof(value));
+			}
+
+			// MainListener
+			Listener mainListener = value[0];
+			if (omitDefault == false || mainListener.IsDefault == false) {
+				settings.SetObjectValue(Proxy.SettingNames.MainListener, mainListener.GetSettings(omitDefault));
+			}
+
+			// AdditionalListeners 
+			Settings[] additionalListeners = value.GetRange(1, value.Count - 1).Select(l => l.GetSettings(omitDefault)).ToArray();
+			if (omitDefault == false || 0 < additionalListeners.Length) {
+				settings.SetObjectArrayValue(Proxy.SettingNames.AdditionalListeners, additionalListeners);
+			}
+
+			return;
+		}
+
+
+		public static DnsEndPoint GetDnsEndPointValue(this Settings settings, string settingName, DnsEndPoint defaultValue) {
+			Settings.Value value = settings.GetValue(settingName);
+			if (value.IsNull == false) {
+				return value.GetObjectValue().CreateDnsEndPoint();
+			} else {
+				return defaultValue;
+			}
+		}
+
+		public static DnsEndPoint CreateDnsEndPoint(this Settings settings) {
+			Settings.Value host = settings.GetValue(Proxy.SettingNames.Host);
+			Settings.Value port = settings.GetValue(Proxy.SettingNames.Port);
+			if (host.IsNull || port.IsNull) {
+				throw new FormatException($"Both '{Proxy.SettingNames.Host}' and '{Proxy.SettingNames.Port}' settings are indispensable.");
+			}
+
+			return new DnsEndPoint(host.GetStringValue(), port.GetInt32Value());
+		}
+
+		public static void SetDnsEndPointValue(this Settings settings, string settingName, DnsEndPoint value, bool omitDefault = false, DnsEndPoint defaultValue = null) {
+			// argument checks
+			if (settingName == null) {
+				throw new ArgumentNullException(nameof(settingName));
+			}
+
+			// add a setting if necessary 
+			if (omitDefault == false || value != defaultValue) {
+				settings.SetObjectValue(settingName, GetDnsEndPointSettings(value, omitDefault));
+			}
+
+			return;
+		}
+
+		public static Settings GetDnsEndPointSettings(DnsEndPoint value, bool omitDefault) {
+			// argument checks
+			if (value == null) {
+				return Settings.NullSettings;
+			}
+
+			// create settings of the DnsEndPoint
+			Settings settings = Settings.CreateEmptySettings();
+
+			settings.SetStringValue(Proxy.SettingNames.Host, value.Host);
+			settings.SetInt32Value(Proxy.SettingNames.Port, value.Port);
+
+			return settings;
+		}
+
+		#endregion
+	}
+
+	public class Proxy: Component {
+		#region types
+
+		public static class SettingNames {
+			#region constants
+
+			public const string MainListener = "MainListener";
+
+			public const string AdditionalListeners = "AdditionalListeners";
+
+			public const string Server = "Server";
+
+			public const string Host = "Host";
+
+			public const string Port = "Port";
+
+			public const string RetryCount = "RetryCount";
+
+			#endregion
+		}
+
+		#endregion
+
+
 		#region constants
 
 		public const string ObjectBaseName = "Proxy";
+
+		public const int DefaultRetryCount = 2;     // original try + 2 retries = 3 tries
 
 		#endregion
 
@@ -28,21 +154,21 @@ namespace MAPE.Server {
 
 		#region data - synchronized by locking this
 
+		private List<Listener> listeners = new List<Listener>();
+
 		private DnsEndPoint server;
 
-		private CredentialPersistence serverCredentialPersistence;
+		private bool isServerCredentialPersistencyProcess;
 
 		private NetworkCredential serverCredential;
 
-		private Func<string, NetworkCredential> credentialCallback;
+		private byte[] basicServerCredential;
 
 		private int retryCount;
 
-		private List<Listener> listeners;
-
-		private bool isListening;
-
 		private ConnectionCollection connections;
+
+		protected IProxyRunner Runner { get; private set; }
 
 		#endregion
 
@@ -60,25 +186,29 @@ namespace MAPE.Server {
 				return this.server;
 			}
 			set {
-				EnsureNotListeningAndSetProperty(value, ref this.server);
+				// argument checks
+				// value can be null
+
+				lock (this) {
+					// state checks
+					EnsureNotListening();
+
+					this.server = value;
+				}
 			}
 		}
 
-		public NetworkCredential ServerCredential {
+		public bool IsServerCredentialPersistencyProcess {
 			get {
-				return this.serverCredential;
+				return this.isServerCredentialPersistencyProcess;
 			}
 			set {
-				EnsureNotListeningAndSetProperty(value, ref this.serverCredential);
-			}
-		}
+				lock (this) {
+					// state checks
+					// this property can be changed during listening
 
-		public Func<string, NetworkCredential> CredentialCallback {
-			get {
-				return this.credentialCallback;
-			}
-			set {
-				EnsureNotListeningAndSetProperty(value, ref this.credentialCallback);
+					this.isServerCredentialPersistencyProcess = value;
+				}
 			}
 		}
 
@@ -87,19 +217,18 @@ namespace MAPE.Server {
 				return this.retryCount;
 			}
 			set {
-				EnsureNotListeningAndSetProperty(value, ref this.retryCount);
-			}
-		}
+				lock (this) {
+					// state checks
+					// retryCount can be changed during listening
 
-		public IReadOnlyList<Listener> Listeners {
-			get {
-				return this.listeners;
+					this.retryCount = value;
+				}
 			}
 		}
 
 		public bool IsListening {
 			get {
-				return this.isListening;
+				return this.Runner != null;
 			}
 		}
 
@@ -114,47 +243,34 @@ namespace MAPE.Server {
 
 		#region creation and disposal
 
-		public Proxy(ProxyConfiguration config = null) {
+		public Proxy(ComponentFactory componentFactory, Settings settings) {
 			// argument checks
-			// config can be null
+			if (componentFactory == null) {
+				componentFactory = new ComponentFactory();
+			}
 
 			// initialize members
 			this.ObjectName = ObjectBaseName;
-			if (config != null) {
-				this.componentFactory = config.ComponentFactory;
-				this.server = config.Proxy;
-				this.serverCredentialPersistence = config.ProxyCredentialPersistence;
-				this.serverCredential = (this.serverCredentialPersistence == CredentialPersistence.Persistent) ? config.ProxyCredential : null;
-				this.retryCount = config.RetryCount;
-			} else {
-				// initialize to default settings
-				this.componentFactory = new ComponentFactory();
-				this.server = null;
-				this.serverCredentialPersistence = CredentialPersistence.Process;
-				this.serverCredential = null;
-				this.retryCount = ProxyConfiguration.DefaultRetryCount;
-			}
-			this.credentialCallback = null;
-			this.listeners = new List<Listener>();
-			this.isListening = false;
-			this.connections = null;
+			this.componentFactory = componentFactory;
 
-			// add listeners
-			// add the main listener
-			// If config.MainListener is null, default setting is applied.
-			if (config != null) {
-				this.listeners.Add(this.componentFactory.CreateListener(this, config.MainListener));
-				if (config.AdditionalListeners != null && 0 < config.AdditionalListeners.Length) {
-					Listener[] additionalListeners = (
-						from listenerConfig in config.AdditionalListeners
-						where listenerConfig != null
-						select this.componentFactory.CreateListener(this, listenerConfig)
-					).ToArray();
-					this.listeners.AddRange(additionalListeners);
-				}
-			} else {
-				this.listeners.Add(this.componentFactory.CreateListener(this, null));
-			}
+			// listeners
+			this.listeners = settings.GetListeners(this);
+
+			// server
+			this.server = settings.GetDnsEndPointValue(SettingNames.Server, null);
+
+			// serverCredential, serverCredentialPersistence, basicServerCredential
+			this.serverCredential = null;
+			this.isServerCredentialPersistencyProcess = false;
+			this.basicServerCredential = null;
+
+			// retryCount
+			this.retryCount = settings.GetInt32Value(SettingNames.RetryCount, DefaultRetryCount);
+			// ToDo: value checks
+
+			// misc.
+			this.connections = null;
+			this.Runner = null;
 
 			return;
 		}
@@ -165,8 +281,11 @@ namespace MAPE.Server {
 
 			// clear members
 			lock (this) {
+				Debug.Assert(this.Runner == null);
 				Debug.Assert(this.connections == null);
-				Debug.Assert(this.isListening == false);
+				this.basicServerCredential = null;
+				this.serverCredential = null;
+				this.server = null;
 				List<Listener> temp = this.listeners;
 				this.listeners = null;
 				if (temp != null) {
@@ -176,14 +295,12 @@ namespace MAPE.Server {
 								listener.Dispose();
 							} catch {
 								// continue
+								LogVerbose($"Fail to dispose {listener.ObjectName}.");
 							}
 						}
 					);
 					temp.Clear();
 				}
-				this.credentialCallback = null;
-				this.serverCredential = null;
-				this.server = null;
 			}
 
 			return;
@@ -194,19 +311,26 @@ namespace MAPE.Server {
 
 		#region methods
 
-		public void Start() {
+		public void Start(IProxyRunner runner) {
+			// argument checks
+			if (runner == null) {
+				throw new ArgumentNullException(nameof(runner));
+			}
+
 			try {
 				lock (this) {
 					// state checks
-					if (this.isListening) {
+					if (this.IsDisposed) {
+						throw new ObjectDisposedException(this.ObjectName);
+					}
+					IReadOnlyList<Listener> listeners = this.listeners;
+					Debug.Assert(listeners != null);
+
+					if (this.IsListening) {
 						// already started
 						return;
 					}
 
-					IReadOnlyList<Listener> listeners = this.listeners;
-					if (listeners == null) {
-						throw new ObjectDisposedException(this.ObjectName);
-					}
 					if (listeners.Count <= 0) {
 						throw new InvalidOperationException("No listening end point is specified.");
 					}
@@ -238,10 +362,10 @@ namespace MAPE.Server {
 					}
 
 					// update its state
-					this.isListening = true;
 					if (verbose) {
 						LogVerbose("Started.");
 					}
+					this.Runner = runner;
 				}
 			} catch (Exception exception) {
 				LogError($"Fail to start: {exception.Message}");
@@ -256,10 +380,11 @@ namespace MAPE.Server {
 			try {
 				lock (this) {
 					// state checks
-					if (this.isListening == false) {
+					if (this.IsListening == false) {
 						// already stopped
 						return true;
 					}
+					Debug.Assert(this.IsDisposed == false);
 
 					// log
 					bool verbose = IsLogged(TraceEventType.Verbose);
@@ -297,11 +422,15 @@ namespace MAPE.Server {
 							tasks.AddRange(connections.GetActiveTaskList());
 						}
 
-						stopConfirmed = Task.WaitAll(tasks.ToArray(), millisecondsTimeout);
+						if (0 < tasks.Count) {
+							stopConfirmed = Task.WaitAll(tasks.ToArray(), millisecondsTimeout);
+						} else {
+							stopConfirmed = true;
+						}
 					}
 
 					// update its state
-					this.isListening = false;
+					this.Runner = null;
 					if (stopConfirmed) {
 						if (verbose) {
 							LogVerbose("Stopped.");
@@ -326,33 +455,21 @@ namespace MAPE.Server {
 		#endregion
 
 
-		#region methods - for derived class
+		#region methods - for derived classes
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <remarks>
-		/// This method is not thread-safe.
-		/// Call this method inside lock(this) scope.
-		/// </remarks>
-		protected void EnsureNotListening() {
-			if (this.isListening) {
-				throw new InvalidOperationException("This opeeration is not available while the object is listening.");
+		// not thread-safe
+		public void EnsureNotDisposed() {
+			if (this.IsDisposed) {
+				throw new ObjectDisposedException(this.ObjectName);
 			}
-
-			return;
 		}
 
-		protected void EnsureNotListeningAndSetProperty<T>(T value, ref T fieldRef) {
-			lock (this) {
-				// state checks
-				// The property cannot be changed while the object is listening. 
-				EnsureNotListening();
-
-				fieldRef = value;
+		// not thread-safe
+		public void EnsureNotListening() {
+			EnsureNotDisposed();
+			if (this.IsListening) {
+				throw new InvalidOperationException("You cannot perform this operation while the object is listening.");
 			}
-
-			return;
 		}
 
 		#endregion
@@ -368,6 +485,13 @@ namespace MAPE.Server {
 
 			// create a session
 			lock (this) {
+				// state checks
+				if (this.IsListening == false) {
+					// the proxy stoped just before the listener calling this method
+					client.Close();
+					return;
+				}
+
 				// create a ConnectionCollection object if not created
 				ConnectionCollection connections = this.connections;
 				if (connections == null) {
@@ -406,21 +530,59 @@ namespace MAPE.Server {
 		public byte[] GetProxyCredential(string proxyAuthenticateValue, bool needUpdate) {
 			// currently proxyAuthenticateValue is not inspected.
 			// This method just returns Basic credentials if it is available
-			NetworkCredential credential;
-			Func<string, NetworkCredential> credentialCallback;
+
+			// preparations
+			byte[] basicCredential;
 			lock (this) {
-				credential = this.serverCredential;
-				credentialCallback = this.credentialCallback;
+				NetworkCredential credential = this.serverCredential;
+				basicCredential = this.basicServerCredential;
+				IProxyRunner runner = this.Runner;
+				Debug.Assert(runner != null);
+
+				if (needUpdate || credential == null) {
+					// ask new credential to the user
+					string realm = "Proxy"; // ToDo: extract from the proxyAuthenticateValue
+					credential = runner.AskCredential(this, realm, needUpdate);
+					if (credential == null) {
+						credential = new NetworkCredential();
+					}
+					basicCredential = CreateBasicAuthorizationCredential(credential);
+
+					// Note that this.serverCredentialPersistence may be changed during the runner.AskCredential() call above.
+					if (this.isServerCredentialPersistencyProcess) {
+						this.serverCredential = credential;
+						this.basicServerCredential = basicCredential;
+					}
+				}
 			}
 
-			// query credential if necessary
-			if (needUpdate || credential == null) {
-				string realm = "Proxy"; // ToDo: extract from the proxyAuthenticateValue
-				credential = credentialCallback(realm);
-				this.serverCredential = credential;
-			}
+			Debug.Assert(basicCredential != null);
+			return basicCredential;
+		}
 
-			return (credential == null)? null: CreateBasicAuthorizationCredential(credential);
+		#endregion
+
+
+		#region overrides
+
+		public override void AddSettings(Settings settings, bool omitDefault) {
+			// argument checks
+			Debug.Assert(settings.IsNull == false);
+
+			// state checks
+			Debug.Assert(this.IsDisposed == false);
+			Debug.Assert(this.listeners != null);
+
+			// MainListener, AdditionalListeners
+			settings.SetListeners(this.listeners, omitDefault);
+
+			// Server
+			settings.SetDnsEndPointValue(SettingNames.Server, this.Server, omitDefault, defaultValue: null);
+
+			//	RetryCount
+			settings.SetInt32Value(SettingNames.RetryCount, this.retryCount, omitDefault, defaultValue: DefaultRetryCount);
+
+			return;
 		}
 
 		#endregion
@@ -429,8 +591,21 @@ namespace MAPE.Server {
 		#region privates
 
 		private static byte[] CreateBasicAuthorizationCredential(NetworkCredential credential) {
+			// argument checks
+			if (credential == null) {
+				return null;
+			}
+			string userName = credential.UserName;
+			if (string.IsNullOrEmpty(userName)) {
+				return null;
+			}
+			string password = credential.Password;
+			if (password == null) {
+				password = string.Empty;
+			}
+
 			// ToDo: encoding of key is UTF-8? or I must escape specail/non-ASCII char?
-			string raw = string.Concat(credential.UserName, ":", credential.Password);
+			string raw = string.Concat(userName, ":", password);
 			string key = Convert.ToBase64String(Encoding.ASCII.GetBytes(raw));
 
 			return Encoding.ASCII.GetBytes($"Proxy-Authorization: Basic {key}\r\n");

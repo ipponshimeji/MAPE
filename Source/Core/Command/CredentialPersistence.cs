@@ -1,7 +1,7 @@
 ﻿using System;
 
 
-namespace MAPE.Server {
+namespace MAPE.Command {
 	public enum CredentialPersistence {
 		Session,        // keep in a session
 		Process,        // keep in a process

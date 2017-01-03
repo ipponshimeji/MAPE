@@ -1,23 +1,70 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
+using MAPE.Utils;
 using MAPE.ComponentBase;
-using MAPE.Configuration;
 
 
 namespace MAPE.Server {
+	public static class ListenerSettingsExtensions {
+		#region methods
+
+		public static IPAddress GetIPAddressValue(this Settings settings, string settingName, IPAddress defaultValue) {
+			Settings.Value value = settings.GetValue(settingName);
+			if (value.IsNull == false) {
+				return IPAddress.Parse(value.GetStringValue());
+			} else {
+				return defaultValue;
+			}
+		}
+
+		public static void SetIPAddressValue(this Settings settings, string settingName, IPAddress value, bool omitDefault, IPAddress defaultValue) {
+			if (omitDefault == false || value != defaultValue) {
+				string stringValue = (value == null) ? null : value.ToString();
+				settings.SetStringValue(settingName, stringValue, omitDefault: false);
+			}
+		}
+
+		#endregion
+	}
+
 	public class Listener: TaskingComponent {
+		#region types
+
+		public static class SettingNames {
+			#region constants
+
+			public const string Address = "Address";
+
+			public const string Port = "Port";
+
+			public const string Backlog = "Backlog";
+
+			#endregion
+		}
+
+		#endregion
+
+
 		#region constants
 
 		public const string ObjectBaseName = "Listener";
+
+		public const int DefaultPort = 8888;
+
+		public const int DefaultBacklog = 8;
 
 		#endregion
 
 
 		#region data
+
+		public static readonly IPAddress DefaultAddress = IPAddress.Loopback;
+
 
 		private readonly Proxy owner;
 
@@ -26,11 +73,9 @@ namespace MAPE.Server {
 
 		#region data - synchronized by locking this
 
-		private IPEndPoint endPoint;
+		private TcpListener tcpListener;
 
 		private int backlog;
-
-		private TcpListener tcpListener;
 
 		#endregion
 
@@ -45,10 +90,33 @@ namespace MAPE.Server {
 
 		public IPEndPoint EndPoint {
 			get {
-				return this.endPoint;
+				lock (this) {
+					// state checks
+					if (this.IsDisposed) {
+						throw new ObjectDisposedException(this.ObjectName);
+					}
+					Debug.Assert(this.tcpListener != null);
+
+					return this.tcpListener.LocalEndpoint as IPEndPoint;
+				}
 			}
-			set {
-				EnsureNotListeningAndSetProperty(value, ref this.endPoint);
+			protected set {
+				// argument checks
+				if (value == null) {
+					throw new ArgumentNullException(nameof(value));
+				}
+
+				lock (this) {
+					// state checks
+					if (this.IsDisposed) {
+						throw new ObjectDisposedException(this.ObjectName);
+					}
+					if (this.IsListening) {
+						throw new InvalidOperationException();
+					}
+
+					SetEndPoint(value);
+				}
 			}
 		}
 
@@ -56,20 +124,24 @@ namespace MAPE.Server {
 			get {
 				return this.backlog;
 			}
-			set {
-				EnsureNotListeningAndSetProperty(value, ref this.backlog);
+		}
+
+		public bool IsDisposed {
+			get {
+				return this.tcpListener == null;
 			}
 		}
 
 		public bool IsListening {
 			get {
-				return this.tcpListener != null;
+				return this.Task != null;
 			}
 		}
 
-		public bool IsDisposed {
+		public bool IsDefault {
 			get {
-				return this.endPoint == null;
+				IPEndPoint endPoint = this.EndPoint;
+				return this.backlog == DefaultBacklog && endPoint.Port == DefaultPort && endPoint.Address == DefaultAddress;
 			}
 		}
 
@@ -78,27 +150,22 @@ namespace MAPE.Server {
 
 		#region creation and disposal
 
-		public Listener(Proxy owner, ListenerConfiguration config = null) {
+		public Listener(Proxy owner, Settings settings) {
 			// argument checks
 			if (owner == null) {
 				throw new ArgumentNullException(nameof(owner));
 			}
-			// config can be null
 
 			// initialize members
 			this.owner = owner;
-			if (config != null) {
-				this.endPoint = config.EndPoint;
-				this.backlog = config.Backlog;
-			} else {
-				// set default values
-				this.endPoint = new IPEndPoint(IPAddress.Loopback, ListenerConfiguration.DefaultPort);
-				this.backlog = ListenerConfiguration.DefaultBacklog;
-			}
-			Debug.Assert(this.endPoint != null);
-			this.tcpListener = null;
 
-			this.ObjectName = $"{ObjectBaseName} ({endPoint.ToString()})";
+			// backlog
+			this.backlog = settings.GetInt32Value(SettingNames.Backlog, DefaultBacklog);
+
+			// tcpListener			
+			IPAddress address = settings.GetIPAddressValue(SettingNames.Address, DefaultAddress);
+			int port = settings.GetInt32Value(SettingNames.Port, DefaultPort);
+			SetEndPoint(new IPEndPoint(address, port));
 
 			return;
 		}
@@ -109,8 +176,8 @@ namespace MAPE.Server {
 
 			// clear the listener
 			lock (this) {
-				Debug.Assert(this.tcpListener == null);
-				this.endPoint = null;
+				this.ObjectName = ObjectBaseName;
+				this.tcpListener = null;
 			}
 
 			return;
@@ -119,7 +186,7 @@ namespace MAPE.Server {
 		#endregion
 
 
-		#region methods
+		#region methods - start & stop
 
 		public void Start() {
 			try {
@@ -128,6 +195,7 @@ namespace MAPE.Server {
 					if (this.IsDisposed) {
 						throw new ObjectDisposedException(this.ObjectName);
 					}
+					Debug.Assert(this.tcpListener != null);
 
 					Task listeningTask = this.Task;
 					if (listeningTask != null) {
@@ -142,17 +210,12 @@ namespace MAPE.Server {
 					}
 
 					// start listening
-					Debug.Assert(this.endPoint != null);
-					TcpListener tcpListener = new TcpListener(this.endPoint);
-					Debug.Assert(this.tcpListener == null);
-					this.tcpListener = tcpListener;
 					try {
 						listeningTask = new Task(Listen, TaskCreationOptions.LongRunning);
 						tcpListener.Start(this.backlog);
 						listeningTask.Start();
 						this.Task = listeningTask;
 					} catch {
-						this.tcpListener = null;
 						tcpListener.Stop();
 						throw;
 					}
@@ -177,14 +240,13 @@ namespace MAPE.Server {
 				lock (this) {
 					// state checks
 					if (this.IsDisposed) {
-						Debug.Assert(this.tcpListener == null);
 						throw new ObjectDisposedException(this.ObjectName);
 					}
+					Debug.Assert(this.tcpListener != null);
 
 					listeningTask = this.Task;
 					if (listeningTask == null) {
 						// already stopped
-						Debug.Assert(this.tcpListener == null);
 						return true;
 					}
 
@@ -216,30 +278,24 @@ namespace MAPE.Server {
 			return stopConfirmed;
 		}
 
+		#endregion
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <remarks>
-		/// This method is not thread-safe.
-		/// Call this method inside lock(this) scope.
-		/// </remarks>
-		protected void EnsureNotListening() {
-			if (this.tcpListener != null) {
-				throw new InvalidOperationException("This opeeration is not available while the object is listening.");
-			}
 
-			return;
-		}
+		#region overrides
 
-		protected void EnsureNotListeningAndSetProperty<T>(T value, ref T fieldRef) {
-			lock (this) {
-				// state checks
-				// The property cannot be changed while the object is listening. 
-				EnsureNotListening();
+		public override void AddSettings(Settings settings, bool omitDefault) {
+			// argument checks
+			Debug.Assert(settings.IsNull == false);
 
-				fieldRef = value;
-			}
+			// Address
+			IPEndPoint endPoint = this.EndPoint;
+			settings.SetIPAddressValue(SettingNames.Address, endPoint.Address, omitDefault, DefaultAddress);
+
+			// Port
+			settings.SetInt32Value(SettingNames.Port, endPoint.Port, omitDefault, DefaultPort);
+
+			// Backlog
+			settings.SetInt32Value(SettingNames.Backlog, this.backlog, omitDefault, DefaultBacklog);
 
 			return;
 		}
@@ -248,6 +304,17 @@ namespace MAPE.Server {
 
 
 		#region privates
+
+		private void SetEndPoint(IPEndPoint endPoint) {
+			// argument checks
+			Debug.Assert(endPoint != null);
+
+			// update end point related state
+			this.tcpListener = new TcpListener(endPoint);
+			this.ObjectName = $"{ObjectBaseName} ({endPoint})";
+
+			return;
+		}
 
 		private void Listen() {
 			// state checks
@@ -283,11 +350,6 @@ namespace MAPE.Server {
 			} catch (Exception) {
 				// ToDo: log if not stopping normally
 				;
-			}
-
-			// update state
-			lock (this) {
-				this.tcpListener = null;
 			}
 
 			// log

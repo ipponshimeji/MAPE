@@ -33,8 +33,11 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
-    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Security" />
@@ -46,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Command\CLICommandBase.cs" />
+    <Compile Include="Command\RunningProxyState.cs" />
     <Compile Include="Http\BodyBuffer.cs" />
     <Compile Include="Http\HttpException.cs" />
     <Compile Include="Http\HeaderBuffer.cs" />
@@ -53,19 +57,17 @@
     <Compile Include="Http\ICommunicationOwner.cs" />
     <Compile Include="Http\Communication.cs" />
     <Compile Include="Http\MessageBuffer.cs" />
+    <Compile Include="Server\IProxyRunner.cs" />
     <Compile Include="Utils\ColorConsoleTraceListener.cs" />
     <Compile Include="Utils\ILogger.cs" />
-    <Compile Include="Utils\Parameter.cs" />
-    <Compile Include="Server\CredentialPersistence.cs" />
+    <Compile Include="Utils\Settings.cs" />
+    <Compile Include="Utils\Util.cs" />
+    <Compile Include="Command\CredentialPersistence.cs" />
     <Compile Include="Utils\Logger.cs" />
     <Compile Include="ComponentFactory.cs" />
     <Compile Include="Command\CommandBase.cs" />
-    <Compile Include="Configuration\ProxyConfiguration.cs" />
     <Compile Include="ComponentBase\InstanceCache.cs" />
     <Compile Include="ComponentBase\Component.cs" />
-    <Compile Include="Utils\CharScanningAdapter.cs" />
-    <Compile Include="Utils\ScanningAdapter.cs" />
-    <Compile Include="Configuration\ListenerConfiguration.cs" />
     <Compile Include="ComponentBase\TaskingComponent.cs" />
     <Compile Include="Http\Response.cs" />
     <Compile Include="Http\Request.cs" />
@@ -76,7 +78,9 @@
     <Compile Include="Server\Proxy.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

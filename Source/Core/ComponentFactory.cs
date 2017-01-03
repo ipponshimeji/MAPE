@@ -4,10 +4,11 @@ using System.IO;
 using System.Net;
 using System.Linq;
 using System.Text;
+using MAPE.Utils;
 using MAPE.ComponentBase;
-using MAPE.Configuration;
 using MAPE.Http;
 using MAPE.Server;
+using MAPE.Command;
 
 
 namespace MAPE {
@@ -218,16 +219,16 @@ namespace MAPE {
 
 		#region methods
 
-		public virtual ProxyConfiguration CreateProxyConfiguration() {
-			return new ProxyConfiguration(this);
+		public virtual RunningProxyState CreateRunningProxyState(CommandBase owner, Settings settings) {
+			return new RunningProxyState(owner, settings);
 		}
 
-		public virtual Proxy CreateProxy(ProxyConfiguration config) {
-			return new Proxy(config);
+		public virtual Proxy CreateProxy(Settings settings) {
+			return new Proxy(this, settings);
 		}
 
-		public virtual Listener CreateListener(Proxy owner, ListenerConfiguration config) {
-			return new Listener(owner, config);
+		public virtual Listener CreateListener(Proxy owner, Settings settings) {
+			return new Listener(owner, settings);
 		}
 
 		public virtual ConnectionCollection CreateConnectionCollection(Proxy owner) {
