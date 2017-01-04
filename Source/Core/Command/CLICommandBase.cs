@@ -46,43 +46,28 @@ namespace MAPE.Command {
 
 		#region IProxyRunner
 
-		public NetworkCredential AskCredential(Proxy proxy, string realm, bool needUpdate) {
-			NetworkCredential credential = this.Credential;
-			if (needUpdate || credential == null) {
-				// read information from the console
-				Console.WriteLine($"Credential for {realm} is required.");
-				Console.Write("UserName: ");
-				string userName = Console.ReadLine();
-				Console.Write("Password: ");
-				string password = ReadPassword();
+		public NetworkCredential GetCredential(Proxy proxy, string realm, bool needUpdate) {
+			// argument checks
+			if (proxy == null) {
+				throw new ArgumentNullException(nameof(proxy));
+			}
+			if (realm == null) {
+				realm = string.Empty;
+			}
 
-				CredentialPersistence credentialPersistence;
-				do {
-					Console.WriteLine($"How save password?");
-					Console.WriteLine($"  1: only during this http session");
-					Console.WriteLine($"  2: during running this process");
-					Console.WriteLine($"  3: save the password in settings file");
-					Console.Write("No: ");
-					string line = Console.ReadLine();
+			// lock to share the user response via console.
+			NetworkCredential credential;
+			lock (this) {
+				credential = this.Credential;
+				if (needUpdate || credential == null) {
+					// ask user for information
+					credential = AskCredential(proxy, realm);
+					CredentialPersistence credentialPersistence = AskCredentialPersistence(proxy, realm);
 
-					int number;
-					if (int.TryParse(line, out number)) {
-						if (number == 1) {
-							credentialPersistence = CredentialPersistence.Session;
-							break;
-						} else if (number == 2) {
-							credentialPersistence = CredentialPersistence.Process;
-							break;
-						} else if (number == 3) {
-							credentialPersistence = CredentialPersistence.Persistent;
-							break;
-						}
-					}
-				} while (true);
-
-				credential = new NetworkCredential(userName, password);
-				SetCredential(credentialPersistence, credential, saveIfNecessary: true);
-				proxy.IsServerCredentialPersistencyProcess = (credentialPersistence != CredentialPersistence.Session);
+					// update the state
+					SetCredential(credentialPersistence, credential, saveIfNecessary: true);
+					proxy.KeepServerCredential = (credentialPersistence != CredentialPersistence.Session);
+				}
 			}
 
 			// return the clone of this.Credential
@@ -193,6 +178,49 @@ namespace MAPE.Command {
 
 
 		#region privates
+
+		private static NetworkCredential AskCredential(Proxy proxy, string realm) {
+			// argument checks
+			Debug.Assert(proxy != null);
+			Debug.Assert(realm != null);
+
+			// read information from the console
+			Console.WriteLine($"Credential for {realm} is required.");
+			Console.Write("UserName: ");
+			string userName = Console.ReadLine();
+			Console.Write("Password: ");
+			string password = ReadPassword();
+
+			return new NetworkCredential(userName, password);
+		}
+
+		private static CredentialPersistence AskCredentialPersistence(Proxy proxy, string realm) {
+			// argument checks
+			Debug.Assert(proxy != null);
+			Debug.Assert(realm != null);
+
+			// read user preference from the console
+			do {
+				Console.WriteLine($"How save password?");
+				Console.WriteLine($"  1: only during this http session");
+				Console.WriteLine($"  2: during running this process");
+				Console.WriteLine($"  3: save the password in settings file");
+				Console.Write("No: ");
+				string answer = Console.ReadLine();
+
+				int number;
+				if (int.TryParse(answer, out number)) {
+					switch (number) {
+						case 1:
+							return CredentialPersistence.Session;
+						case 2:
+							return CredentialPersistence.Process;
+						case 3:
+							return CredentialPersistence.Persistent;
+					}
+				}
+			} while (true);
+		}
 
 		// thanks to http://stackoverflow.com/questions/3404421/password-masking-console-application
 		private static string ReadPassword() {

@@ -133,6 +133,34 @@ namespace MAPE.Server {
 			#endregion
 		}
 
+		public class RevisedBytes {
+			#region data
+
+			public readonly int Revision;
+
+			public readonly IReadOnlyCollection<byte> Bytes;
+
+			#endregion
+
+
+			#region creation and disposal
+
+			public RevisedBytes(int revision, IReadOnlyCollection<byte> bytes) {
+				// argument checks
+				if (bytes == null) {
+					throw new ArgumentNullException(nameof(bytes));
+				}
+
+				// initialize members
+				this.Bytes = bytes;
+				this.Revision = revision;
+
+				return;
+			}
+
+			#endregion
+		}
+
 		#endregion
 
 
@@ -158,11 +186,11 @@ namespace MAPE.Server {
 
 		private DnsEndPoint server;
 
-		private bool isServerCredentialPersistencyProcess;
+		private bool keepServerCredential;
 
 		private NetworkCredential serverCredential;
 
-		private byte[] basicServerCredential;
+		private RevisedBytes serverBasicCredential;
 
 		private int retryCount;
 
@@ -198,16 +226,21 @@ namespace MAPE.Server {
 			}
 		}
 
-		public bool IsServerCredentialPersistencyProcess {
+		/// <summary>
+		/// Whether the Proxy object keeps the server credential or not.
+		/// If this value is false, the given credential is kept only during the http session
+		/// which requires the credential.
+		/// </summary>
+		public bool KeepServerCredential {
 			get {
-				return this.isServerCredentialPersistencyProcess;
+				return this.keepServerCredential;
 			}
 			set {
 				lock (this) {
 					// state checks
 					// this property can be changed during listening
 
-					this.isServerCredentialPersistencyProcess = value;
+					this.keepServerCredential = value;
 				}
 			}
 		}
@@ -257,15 +290,15 @@ namespace MAPE.Server {
 			this.listeners = settings.GetListeners(this);
 
 			// server
-			this.server = settings.GetDnsEndPointValue(SettingNames.Server, null);
+			this.server = settings.GetDnsEndPointValue(SettingNames.Server, defaultValue: null);
 
-			// serverCredential, serverCredentialPersistence, basicServerCredential
+			// serverCredential and 
+			this.keepServerCredential = false;
 			this.serverCredential = null;
-			this.isServerCredentialPersistencyProcess = false;
-			this.basicServerCredential = null;
+			this.serverBasicCredential = null;
 
 			// retryCount
-			this.retryCount = settings.GetInt32Value(SettingNames.RetryCount, DefaultRetryCount);
+			this.retryCount = settings.GetInt32Value(SettingNames.RetryCount, defaultValue: DefaultRetryCount);
 			// ToDo: value checks
 
 			// misc.
@@ -283,7 +316,7 @@ namespace MAPE.Server {
 			lock (this) {
 				Debug.Assert(this.Runner == null);
 				Debug.Assert(this.connections == null);
-				this.basicServerCredential = null;
+				this.serverBasicCredential = null;
 				this.serverCredential = null;
 				this.server = null;
 				List<Listener> temp = this.listeners;
@@ -527,31 +560,49 @@ namespace MAPE.Server {
 			return server;
 		}
 
-		public byte[] GetProxyCredential(string proxyAuthenticateValue, bool needUpdate) {
-			// currently proxyAuthenticateValue is not inspected.
-			// This method just returns Basic credentials if it is available
-
-			// preparations
-			byte[] basicCredential;
+		public RevisedBytes GetProxyBasicCredentials(string realm, RevisedBytes oldBasicCredentials) {
+			RevisedBytes basicCredential;
 			lock (this) {
-				NetworkCredential credential = this.serverCredential;
-				basicCredential = this.basicServerCredential;
-				IProxyRunner runner = this.Runner;
-				Debug.Assert(runner != null);
+				basicCredential = this.serverBasicCredential; 
+				NetworkCredential serverCredential = this.serverCredential;
 
-				if (needUpdate || credential == null) {
-					// ask new credential to the user
-					string realm = "Proxy"; // ToDo: extract from the proxyAuthenticateValue
-					credential = runner.AskCredential(this, realm, needUpdate);
-					if (credential == null) {
-						credential = new NetworkCredential();
+				// need a new credential?
+				bool needGetCredential;
+				if (serverCredential == null) {
+					Debug.Assert(basicCredential == null);
+					needGetCredential = true;
+				} else {
+					Debug.Assert(basicCredential != null);
+					// try the current credential if the current revision is newer than the caller's.
+					needGetCredential = ((oldBasicCredentials != null) && (basicCredential.Revision <= oldBasicCredentials.Revision));
+				}
+
+				// ask its runner to enter new credential 
+				if (needGetCredential) {
+					// figure out the next revision number 
+					int revision = 1;
+					if (basicCredential != null) {
+						revision = basicCredential.Revision;
+						if (int.MaxValue <= revision) {
+							throw new Exception("An internal counter was overflowed.");
+						}
+						++revision;
 					}
-					basicCredential = CreateBasicAuthorizationCredential(credential);
 
-					// Note that this.serverCredentialPersistence may be changed during the runner.AskCredential() call above.
-					if (this.isServerCredentialPersistencyProcess) {
-						this.serverCredential = credential;
-						this.basicServerCredential = basicCredential;
+					// ask new credential to the user
+					serverCredential = this.Runner.GetCredential(this, realm, needUpdate: (serverCredential != null));
+					if (serverCredential == null) {
+						// maybe user cancel entering a credential
+						basicCredential = null;
+					} else {
+						basicCredential = new RevisedBytes(revision, CreateBasicProxyAuthorizationBytes(serverCredential));
+					}
+
+					// Note that this.keepServerCredential may be changed during the AskCredential() call above,
+					// according to user's preference such as "save password?" checkbox.
+					if (this.keepServerCredential) {
+						this.serverCredential = serverCredential;
+						this.serverBasicCredential = basicCredential;
 					}
 				}
 			}
@@ -590,14 +641,14 @@ namespace MAPE.Server {
 
 		#region privates
 
-		private static byte[] CreateBasicAuthorizationCredential(NetworkCredential credential) {
+		private static byte[] CreateBasicProxyAuthorizationBytes(NetworkCredential credential) {
 			// argument checks
 			if (credential == null) {
 				return null;
 			}
 			string userName = credential.UserName;
-			if (string.IsNullOrEmpty(userName)) {
-				return null;
+			if (userName == null) {
+				userName = string.Empty;
 			}
 			string password = credential.Password;
 			if (password == null) {

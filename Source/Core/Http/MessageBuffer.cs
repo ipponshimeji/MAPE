@@ -49,6 +49,10 @@ namespace MAPE.Http {
 				return;
 			}
 
+			public void Write(IReadOnlyCollection<byte> data, bool appendCRLF = false) {
+				Write(data?.ToArray(), appendCRLF);
+			}
+
 			public void WriteASCIIString(string str, bool appendCRLF = false) {
 				// write data
 				byte[] data;

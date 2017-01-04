@@ -347,9 +347,12 @@ namespace MAPE.Server {
 						// continue
 					}
 				} while (true);
-			} catch (Exception) {
-				// ToDo: log if not stopping normally
-				;
+			} catch (SocketException exception) {
+				if (exception.SocketErrorCode != SocketError.Interrupted) {
+					LogError(exception.Message);
+				}
+			} catch (Exception exception) {
+				LogError(exception.Message);
 			}
 
 			// log

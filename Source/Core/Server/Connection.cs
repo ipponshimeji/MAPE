@@ -28,7 +28,7 @@ namespace MAPE.Server {
 		#endregion
 
 
-		#region data synchronized by classLocker
+		#region data - synchronized by classLocker
 
 		private static object classLocker = new object();
 
@@ -47,7 +47,7 @@ namespace MAPE.Server {
 
 		private TcpClient server = null;
 
-		private byte[] proxyCredential = null;
+		private Proxy.RevisedBytes proxyCredential = null;
 
 		#endregion
 
@@ -238,38 +238,42 @@ namespace MAPE.Server {
 			}
 			// response may be null
 
-			// ToDo: thread protection
-			byte[] overridingProxyCredential;
+			// Currently only basic authorization for the proxy is handled.
+
+			// ToDo: thread protection if pipe line mode is supported.
+			IReadOnlyCollection<byte> overridingProxyAuthorization;
 			if (response == null) {
 				// first request
 				if (request.ProxyAuthorizationSpan.IsZeroToZero == false) {
 					// the client specified Proxy-Authorization
-					overridingProxyCredential = null;
+					overridingProxyAuthorization = null;
 				} else {
-					overridingProxyCredential = this.proxyCredential;
-					if (overridingProxyCredential == null) {
-						overridingProxyCredential = this.Proxy.GetProxyCredential(null, false);
-					}
+					Proxy.RevisedBytes proxyCredential = this.proxyCredential;
+					overridingProxyAuthorization = proxyCredential?.Bytes;
 				}
 			} else {
 				// re-sending request
 				if (response.StatusCode == 407) {
-					// the current credential seems to be invalid
-					overridingProxyCredential = this.Proxy.GetProxyCredential(response.ProxyAuthenticateValue, true);
+					// 407: Proxy Authentication Required
+					// the current credential seems to be invalid (or null)
+					string realm = "Proxy";	// ToDo: extract realm from the field
+					Proxy.RevisedBytes proxyCredential = this.Proxy.GetProxyBasicCredentials(realm, this.proxyCredential);
+					this.proxyCredential = proxyCredential;
+					overridingProxyAuthorization = proxyCredential?.Bytes;
 				} else {
 					// no need to resending
-					overridingProxyCredential = null;
+					overridingProxyAuthorization = null;
 				}
 			}
 
 			MessageBuffer.Modification[] modifications;
-			if (overridingProxyCredential == null) {
+			if (overridingProxyAuthorization == null) {
 				modifications = null;
 			} else {
 				modifications = new MessageBuffer.Modification[] {
 					new MessageBuffer.Modification(
 						request.ProxyAuthorizationSpan.IsZeroToZero? request.EndOfHeaderFields: request.ProxyAuthorizationSpan,
-						(mb) => { mb.Write(overridingProxyCredential); return true; }	
+						(mb) => { mb.Write(overridingProxyAuthorization); return true; }	
 					)
 				};
 			}

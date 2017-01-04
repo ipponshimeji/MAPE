@@ -5,6 +5,6 @@ using System.Net;
 
 namespace MAPE.Server {
     public interface IProxyRunner {
-		NetworkCredential AskCredential(Proxy proxy, string realm, bool needUpdate);
+		NetworkCredential GetCredential(Proxy proxy, string realm, bool needUpdate);
 	}
 }

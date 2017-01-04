@@ -62,6 +62,7 @@ namespace MAPE.Command {
 				proxy.Server = DetectSystemProxy();
 			}
 			proxy.Start(proxyRunner);
+			this.Proxy = proxy;
 
 			// switch system settings
 			this.SystemSettingsSwithed = SwitchSystemSettings();
