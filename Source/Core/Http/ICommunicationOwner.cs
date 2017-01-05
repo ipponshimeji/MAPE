@@ -15,6 +15,8 @@ namespace MAPE.Http {
 
 		IEnumerable<MessageBuffer.Modification> GetModifications(int repeatCount, Request request, Response response);
 
+		void ReconnectServer();
+
 		HttpException OnError(Request request, Exception exception);
 
 		void OnTunnelingStarted(CommunicationSubType communicationSubType);

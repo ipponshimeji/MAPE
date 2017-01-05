@@ -10,7 +10,7 @@ namespace CLI {
 			using (Command command = new Command()) {
 				command.Run(args);
 			}
-			
+
 			return;
 		}
 

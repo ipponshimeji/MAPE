@@ -17,6 +17,32 @@ namespace MAPE.Utils {
 
 		#region methods - general
 
+		public static void DisposeWithoutFail(IDisposable target) {
+			if (target != null) {
+				try {
+					target.Dispose();
+				} catch (Exception exception) {
+					string objectName;
+					try {
+						objectName = target.GetType().FullName;
+					} catch {
+						objectName = "(unknown)";
+					}
+					// ToDo: display the name of the caller method
+					Logger.LogVerbose($"Exception at Dispose() on '{objectName}': {exception.Message}");
+				}
+			}
+
+			return;			
+		}
+
+		public static void DisposeWithoutFail<T>(ref T target) where T: class, IDisposable {
+			IDisposable temp = target;
+			target = null;
+			DisposeWithoutFail(temp);
+		}
+
+
 		public static void ClearDisposableObjectList<T>(List<T> list) where T: IDisposable {
 			if (list != null) {
 				list.ForEach(

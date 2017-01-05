@@ -40,7 +40,7 @@ namespace MAPE.Http {
 					// process each client request
 					while (request.Read()) {
 						// send the request to the server
-						// The request is resend while the owner instructs modifications.
+						// The request is resent while the owner instructs modifications.
 						int repeatCount = 0;
 						IEnumerable<MessageBuffer.Modification> modifications = owner.GetModifications(repeatCount, request, null);
 						do {
@@ -48,7 +48,15 @@ namespace MAPE.Http {
 							response.Read(request);
 							++repeatCount;
 							modifications = owner.GetModifications(repeatCount, request, response);
-						} while (modifications != null);
+							if (modifications == null) {
+								// no need to resend
+								break;
+							}
+							if (response.KeepAliveEnabled == false) {
+								// reconnect server side connection
+								owner.ReconnectServer();
+							}
+						} while (true);
 
 						// send the final response to the client
 						response.Write();

@@ -544,20 +544,11 @@ namespace MAPE.Server {
 
 		#region methods - for Connection objects
 
-		public TcpClient OpenServerConnection(TcpClient client) {
+		public ReconnectableTcpClient GetServerConnection(TcpClient client) {
 			// state checks
 			Debug.Assert(this.Server != null);
 
-			// ToDo: cache ip address?
-			TcpClient server = new TcpClient();
-			try {
-				server.Connect(this.Server.Host, this.Server.Port);
-			} catch {
-				server.Close();
-				throw;
-			}
-
-			return server;
+			return new ReconnectableTcpClient(this.Server);
 		}
 
 		public RevisedBytes GetProxyBasicCredentials(string realm, RevisedBytes oldBasicCredentials) {

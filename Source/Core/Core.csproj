@@ -57,6 +57,7 @@
     <Compile Include="Http\ICommunicationOwner.cs" />
     <Compile Include="Http\Communication.cs" />
     <Compile Include="Http\MessageBuffer.cs" />
+    <Compile Include="Server\ReconnectableTcpClient.cs" />
     <Compile Include="Server\IProxyRunner.cs" />
     <Compile Include="Utils\ColorConsoleTraceListener.cs" />
     <Compile Include="Utils\ILogger.cs" />

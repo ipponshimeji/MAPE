@@ -110,7 +110,7 @@ namespace MAPE.Command {
 
 		protected string SettingsFilePath { get; set; } = null;
 
-		protected CredentialPersistence CredentialPersistence { get; set; } = DefaultCredentialPersistence;
+		public CredentialPersistence CredentialPersistence { get; protected set; } = DefaultCredentialPersistence;
 
 		protected NetworkCredential Credential { get; set; } = null;
 
@@ -229,7 +229,7 @@ namespace MAPE.Command {
 					this.Credential = credential;
 					break;
 				case CredentialPersistence.Persistent:
-					bool credentialChanged = (credential == this.Credential);
+					bool credentialChanged = (credential != this.Credential);
 					if (credentialChanged) {
 						this.Credential = credential;
 					}

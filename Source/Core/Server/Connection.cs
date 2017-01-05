@@ -45,7 +45,7 @@ namespace MAPE.Server {
 
 		private TcpClient client = null;
 
-		private TcpClient server = null;
+		private ReconnectableTcpClient server = null;
 
 		private Proxy.RevisedBytes proxyCredential = null;
 
@@ -324,6 +324,14 @@ namespace MAPE.Server {
 			return modifications;
 		}
 
+		void ICommunicationOwner.ReconnectServer() {
+			// state checks
+			Debug.Assert(this.server != null);
+
+			// reconnect to the server
+			this.server.Reconnect();
+		}
+
 		HttpException ICommunicationOwner.OnError(Request request, Exception exception) {
 			// argument checks
 			// request can be null
@@ -365,6 +373,8 @@ namespace MAPE.Server {
 			// log
 			switch (communicationSubType) {
 				case CommunicationSubType.Session:
+					Debug.Assert(this.server != null);
+					this.server.Reconnectable = false;	// no need auto-reconnect in tunneling mode
 					LogVerbose("Started tunneling mode.");
 					break;
 				case CommunicationSubType.UpStream:
@@ -424,7 +434,7 @@ namespace MAPE.Server {
 		/// </remarks>
 		private void CloseTcpConnections() {
 			TcpClient client;
-			TcpClient server;
+			ReconnectableTcpClient server;
 
 			// close server connection
 			server = this.server;
@@ -434,7 +444,7 @@ namespace MAPE.Server {
 
 			if (server != null) {
 				try {
-					server.Close();
+					server.Dispose();
 				} catch (Exception exception) {
 					LogVerbose($"Exception on closing server connection: {exception.Message}");
 					// continue
@@ -457,19 +467,21 @@ namespace MAPE.Server {
 			ConnectionCollection owner;
 			Proxy proxy;
 			TcpClient client;
-			TcpClient server;
+			ReconnectableTcpClient server = null;
 			Exception openServerError;
 			lock (this) {
 				owner = this.owner;
 				proxy = this.Proxy;
 				client = this.client;
 				try {
-					server = proxy.OpenServerConnection(client);
+					server = proxy.GetServerConnection(client);
+					server.Connect();
 					openServerError = null;
 				} catch (Exception exception) {
 					LogWarning($"Fail to connect the server: {exception.Message}");
 					LogWarning($"Sending an error response to the client.");
-					server = null;
+					Util.DisposeWithoutFail(ref server);
+					Debug.Assert(server == null);
 					openServerError = exception;
 					// continue
 				}
@@ -484,7 +496,7 @@ namespace MAPE.Server {
 						Response.RespondSimpleError(clientStream, 500, "Not Connected to Actual Proxy");
 						LogError($"Cannot connect to the actual proxy '{this.Proxy.Server.Host}:{this.Proxy.Server.Port}'.");
 					} else {
-						using (NetworkStream serverStream = server.GetStream()) {
+						using (Stream serverStream = server.GetStream()) {
 							Communication.Communicate(this, clientStream, serverStream);
 						}
 					}

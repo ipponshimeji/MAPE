@@ -57,6 +57,7 @@ namespace MAPE.Command {
 
 			// create a proxy
 			Proxy proxy = this.Owner.ComponentFactory.CreateProxy(proxySettings);
+			proxy.KeepServerCredential = (this.Owner.CredentialPersistence != CredentialPersistence.Session);
 			if (proxy.Server == null) {
 				// if Server is not specified, give it the current system proxy
 				proxy.Server = DetectSystemProxy();

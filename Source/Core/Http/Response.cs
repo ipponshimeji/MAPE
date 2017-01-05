@@ -25,6 +25,11 @@ namespace MAPE.Http {
 			protected set;
 		}
 
+		public bool KeepAliveEnabled {
+			get;
+			protected set;
+		}
+
 		public MessageBuffer.Span ProxyAuthenticateSpan {
 			get;
 			protected set;
@@ -123,14 +128,21 @@ namespace MAPE.Http {
 			headerBuffer.ReadSpaceSeparatedItem(skipItem: true, decapitalize: false, lastItem: true);
 
 			// set message properties
-			this.Version = HeaderBuffer.ParseVersion(version);
+			Version httpVersion = HeaderBuffer.ParseVersion(version);
+			this.Version = httpVersion;
 			this.StatusCode = HeaderBuffer.ParseStatusCode(statusCode);
+			if (httpVersion.Major == 1 && httpVersion.Minor == 0) {
+				// in HTTP/1.0, keep-alive is disabled by default 
+				this.KeepAliveEnabled = false;
+			}
 
 			return;
 		}
 
 		protected override bool IsInterestingHeaderFieldFirstChar(char decapitalizedFirstChar) {
 			switch (decapitalizedFirstChar) {
+				case 'c':   // possibly "connection"
+					return true;
 				case 'p':   // possibly "proxy-authenticate"
 					return true;
 				default:
@@ -146,6 +158,15 @@ namespace MAPE.Http {
 					// otherwise it will be blocked to try to read body stream after this.
 					if (this.Request?.Method != "HEAD") {
 						base.ScanHeaderFieldValue(headerBuffer, decapitalizedFieldName, startOffset);
+					}
+					break;
+				case "connection":
+					// ToDo: exact parsing
+					string value = headerBuffer.ReadFieldASCIIValue(false);
+					if (value.Contains("close")) {
+						this.KeepAliveEnabled = false;
+					} else if (value.Contains("keep-alive")) {
+						this.KeepAliveEnabled = true;
 					}
 					break;
 				case "proxy-authenticate":
@@ -167,6 +188,7 @@ namespace MAPE.Http {
 		private void ResetThisClassLevelMessageProperties() {
 			// reset message properties of this class level
 			this.StatusCode = 0;
+			this.KeepAliveEnabled = true;
 			this.ProxyAuthenticateSpan = MessageBuffer.Span.ZeroToZero;
 			this.ProxyAuthenticateValue = null;
 
