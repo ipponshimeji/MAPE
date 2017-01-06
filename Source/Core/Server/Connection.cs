@@ -298,7 +298,7 @@ namespace MAPE.Server {
 			}
 		}
 
-		IEnumerable<MessageBuffer.Modification> ICommunicationOwner.GetModifications(int repeatCount, Request request, Response response) {
+		IEnumerable<MessageBuffer.Modification> ICommunicationOwner.OnCommunicate(int repeatCount, Request request, Response response) {
 			// argument checks
 			if (request == null) {
 				throw new ArgumentNullException(nameof(request));
@@ -307,7 +307,34 @@ namespace MAPE.Server {
 				throw new ArgumentNullException(nameof(response));
 			}
 
-			// retry checks
+			// preparations
+			ReconnectableTcpClient server = this.server;
+			Debug.Assert(this.server != null);
+			Action<ReconnectableTcpClient> onConnectionError = (c) => {
+				LogError($"Cannot connect to the actual proxy '{c.Host}:{c.Port}'.");
+				throw new HttpException(HttpStatusCode.InternalServerError, "Not Connected to Actual Proxy");
+			};
+
+			// start connection
+			if (response == null) {
+				// the start of a request
+				// connect to the server
+				try {
+					Uri uri = new Uri($"http://{request.Host}");
+					IWebProxy actualProxy = this.Proxy.ActualProxy;
+					if (actualProxy != null) {
+						uri = actualProxy.GetProxy(uri);
+					}
+
+					// Note that the server may be already connected in Keep-Alive mode 
+					server.EnsureConnect(uri.Host, uri.Port);
+				} catch (Exception) {
+					// the case that server connection is not available
+					onConnectionError(server);
+				}
+			}
+
+			// retry checks and get modifications
 			IEnumerable<MessageBuffer.Modification> modifications = null;
 			if (repeatCount <= this.retryCount) {
 				// get actual modifications
@@ -316,20 +343,29 @@ namespace MAPE.Server {
 				LogWarning("Overruns the retry count. Responding the current response.");
 			}
 
-			// log the round trip result
+			// log and Keep-Alive check
 			if (response != null) {
+				// log the round trip result
 				LogRoundTripResult(request, response, modifications != null);
+
+				// manage the connection for non-Keep-Alive mode
+				if (response.KeepAliveEnabled == false) {
+					// disconnect the server connection
+					server.Disconnect();
+
+					// re-connect the server connection if the request is going to be re-sent
+					if (modifications != null) {
+						try {
+							server.EnsureConnect();
+						} catch (Exception) {
+							// the case that server connection is not available
+							onConnectionError(server);
+						}
+					}
+				}
 			}
 
 			return modifications;
-		}
-
-		void ICommunicationOwner.ReconnectServer() {
-			// state checks
-			Debug.Assert(this.server != null);
-
-			// reconnect to the server
-			this.server.Reconnect();
 		}
 
 		HttpException ICommunicationOwner.OnError(Request request, Exception exception) {
@@ -374,7 +410,7 @@ namespace MAPE.Server {
 			switch (communicationSubType) {
 				case CommunicationSubType.Session:
 					Debug.Assert(this.server != null);
-					this.server.Reconnectable = false;	// no need auto-reconnect in tunneling mode
+					this.server.Reconnectable = false;	// no need to reconnect in tunneling mode
 					LogVerbose("Started tunneling mode.");
 					break;
 				case CommunicationSubType.UpStream:
@@ -467,38 +503,19 @@ namespace MAPE.Server {
 			ConnectionCollection owner;
 			Proxy proxy;
 			TcpClient client;
-			ReconnectableTcpClient server = null;
-			Exception openServerError;
+			ReconnectableTcpClient server = new ReconnectableTcpClient();
 			lock (this) {
 				owner = this.owner;
 				proxy = this.Proxy;
 				client = this.client;
-				try {
-					server = proxy.GetServerConnection(client);
-					server.Connect();
-					openServerError = null;
-				} catch (Exception exception) {
-					LogWarning($"Fail to connect the server: {exception.Message}");
-					LogWarning($"Sending an error response to the client.");
-					Util.DisposeWithoutFail(ref server);
-					Debug.Assert(server == null);
-					openServerError = exception;
-					// continue
-				}
 				this.server = server;
 			}
 
 			// communicate
 			try {
 				using (NetworkStream clientStream = this.client.GetStream()) {
-					if (openServerError != null) {
-						// the case that server connection is not available
-						Response.RespondSimpleError(clientStream, 500, "Not Connected to Actual Proxy");
-						LogError($"Cannot connect to the actual proxy '{this.Proxy.Server.Host}:{this.Proxy.Server.Port}'.");
-					} else {
-						using (Stream serverStream = server.GetStream()) {
-							Communication.Communicate(this, clientStream, serverStream);
-						}
+					using (Stream serverStream = server.GetStream()) {
+						Communication.Communicate(this, clientStream, serverStream);
 					}
 				}
 			} catch (Exception exception) {

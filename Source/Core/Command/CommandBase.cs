@@ -35,7 +35,6 @@ namespace MAPE.Command {
 		#endregion
 	}
 
-
 	public abstract class CommandBase: IDisposable {
 		#region types
 
@@ -58,9 +57,9 @@ namespace MAPE.Command {
 
 			public const string AdditionalListeners = "AdditionalListeners";
 
-			public const string Server = "Server";
-
 			public const string RetryCount = "RetryCount";
+
+			public const string ActualProxy = "ActualProxy";
 
 			#endregion
 		}
@@ -199,9 +198,9 @@ namespace MAPE.Command {
 			Settings proxySettings = settings.GetObjectValue(SettingNames.Proxy);
 
 			// create a RunningProxyState and start the proxy
-			RunningProxyState state = this.ComponentFactory.CreateRunningProxyState(this, systemSettingSwitchSettings);
+			RunningProxyState state = this.ComponentFactory.CreateRunningProxyState(this);
 			try {
-				state.Start(proxySettings, proxyRunner);
+				state.Start(systemSettingSwitchSettings, proxySettings, proxyRunner);
 			} catch {
 				state.Dispose();
 				throw;
@@ -411,10 +410,10 @@ namespace MAPE.Command {
 				settings.GetProxySettings(createIfNotExist: true).SetJsonValue(Proxy.SettingNames.MainListener, value);
 			} else if (AreSameOptionNames(name, OptionNames.AdditionalListeners)) {
 				settings.GetProxySettings(createIfNotExist: true).SetJsonValue(Proxy.SettingNames.AdditionalListeners, value);
-			} else if (AreSameOptionNames(name, OptionNames.Server)) {
-				settings.GetProxySettings(createIfNotExist: true).SetJsonValue(Proxy.SettingNames.Server, value);
 			} else if (AreSameOptionNames(name, OptionNames.RetryCount)) {
 				settings.GetProxySettings(createIfNotExist: true).SetJsonValue(Proxy.SettingNames.RetryCount, value);
+			} else if (AreSameOptionNames(name, OptionNames.ActualProxy)) {
+				settings.GetSystemSettingSwitchSettings(createIfNotExist: true).SetJsonValue(RunningProxyState.SettingNames.ActualProxy, value);
 			} else {
 				handled = false;	// not handled
 			}

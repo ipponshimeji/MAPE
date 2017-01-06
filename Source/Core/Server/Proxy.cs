@@ -60,55 +60,6 @@ namespace MAPE.Server {
 			return;
 		}
 
-
-		public static DnsEndPoint GetDnsEndPointValue(this Settings settings, string settingName, DnsEndPoint defaultValue) {
-			Settings.Value value = settings.GetValue(settingName);
-			if (value.IsNull == false) {
-				return value.GetObjectValue().CreateDnsEndPoint();
-			} else {
-				return defaultValue;
-			}
-		}
-
-		public static DnsEndPoint CreateDnsEndPoint(this Settings settings) {
-			Settings.Value host = settings.GetValue(Proxy.SettingNames.Host);
-			Settings.Value port = settings.GetValue(Proxy.SettingNames.Port);
-			if (host.IsNull || port.IsNull) {
-				throw new FormatException($"Both '{Proxy.SettingNames.Host}' and '{Proxy.SettingNames.Port}' settings are indispensable.");
-			}
-
-			return new DnsEndPoint(host.GetStringValue(), port.GetInt32Value());
-		}
-
-		public static void SetDnsEndPointValue(this Settings settings, string settingName, DnsEndPoint value, bool omitDefault = false, DnsEndPoint defaultValue = null) {
-			// argument checks
-			if (settingName == null) {
-				throw new ArgumentNullException(nameof(settingName));
-			}
-
-			// add a setting if necessary 
-			if (omitDefault == false || value != defaultValue) {
-				settings.SetObjectValue(settingName, GetDnsEndPointSettings(value, omitDefault));
-			}
-
-			return;
-		}
-
-		public static Settings GetDnsEndPointSettings(DnsEndPoint value, bool omitDefault) {
-			// argument checks
-			if (value == null) {
-				return Settings.NullSettings;
-			}
-
-			// create settings of the DnsEndPoint
-			Settings settings = Settings.CreateEmptySettings();
-
-			settings.SetStringValue(Proxy.SettingNames.Host, value.Host);
-			settings.SetInt32Value(Proxy.SettingNames.Port, value.Port);
-
-			return settings;
-		}
-
 		#endregion
 	}
 
@@ -121,12 +72,6 @@ namespace MAPE.Server {
 			public const string MainListener = "MainListener";
 
 			public const string AdditionalListeners = "AdditionalListeners";
-
-			public const string Server = "Server";
-
-			public const string Host = "Host";
-
-			public const string Port = "Port";
 
 			public const string RetryCount = "RetryCount";
 
@@ -184,7 +129,7 @@ namespace MAPE.Server {
 
 		private List<Listener> listeners = new List<Listener>();
 
-		private DnsEndPoint server;
+		private IWebProxy actualProxy;
 
 		private bool keepServerCredential;
 
@@ -209,9 +154,9 @@ namespace MAPE.Server {
 			}
 		}
 
-		public DnsEndPoint Server {
+		public IWebProxy ActualProxy {
 			get {
-				return this.server;
+				return this.actualProxy;
 			}
 			set {
 				// argument checks
@@ -221,7 +166,7 @@ namespace MAPE.Server {
 					// state checks
 					EnsureNotListening();
 
-					this.server = value;
+					this.actualProxy = value;
 				}
 			}
 		}
@@ -289,8 +234,8 @@ namespace MAPE.Server {
 			// listeners
 			this.listeners = settings.GetListeners(this);
 
-			// server
-			this.server = settings.GetDnsEndPointValue(SettingNames.Server, defaultValue: null);
+			// actualProxy
+			this.actualProxy = null;
 
 			// serverCredential and 
 			this.keepServerCredential = false;
@@ -318,7 +263,7 @@ namespace MAPE.Server {
 				Debug.Assert(this.connections == null);
 				this.serverBasicCredential = null;
 				this.serverCredential = null;
-				this.server = null;
+				this.actualProxy = null;
 				List<Listener> temp = this.listeners;
 				this.listeners = null;
 				if (temp != null) {
@@ -366,9 +311,6 @@ namespace MAPE.Server {
 
 					if (listeners.Count <= 0) {
 						throw new InvalidOperationException("No listening end point is specified.");
-					}
-					if (this.Server == null) {
-						throw new InvalidOperationException("No server end point is specified.");
 					}
 
 					// log
@@ -544,13 +486,6 @@ namespace MAPE.Server {
 
 		#region methods - for Connection objects
 
-		public ReconnectableTcpClient GetServerConnection(TcpClient client) {
-			// state checks
-			Debug.Assert(this.Server != null);
-
-			return new ReconnectableTcpClient(this.Server);
-		}
-
 		public RevisedBytes GetProxyBasicCredentials(string realm, RevisedBytes oldBasicCredentials) {
 			RevisedBytes basicCredential;
 			lock (this) {
@@ -617,9 +552,6 @@ namespace MAPE.Server {
 
 			// MainListener, AdditionalListeners
 			settings.SetListeners(this.listeners, omitDefault);
-
-			// Server
-			settings.SetDnsEndPointValue(SettingNames.Server, this.Server, omitDefault, defaultValue: null);
 
 			//	RetryCount
 			settings.SetInt32Value(SettingNames.RetryCount, this.retryCount, omitDefault, defaultValue: DefaultRetryCount);

@@ -219,8 +219,8 @@ namespace MAPE {
 
 		#region methods
 
-		public virtual RunningProxyState CreateRunningProxyState(CommandBase owner, Settings settings) {
-			return new RunningProxyState(owner, settings);
+		public virtual RunningProxyState CreateRunningProxyState(CommandBase owner) {
+			return new RunningProxyState(owner);
 		}
 
 		public virtual Proxy CreateProxy(Settings settings) {

@@ -17,7 +17,7 @@ namespace MAPE.Windows {
 
 		#region creation and disposal
 
-		public RunningProxyStateForWindows(CommandBase owner, Settings settings): base(owner, settings) {
+		public RunningProxyStateForWindows(CommandBase owner): base(owner) {
 		}
 
 		#endregion

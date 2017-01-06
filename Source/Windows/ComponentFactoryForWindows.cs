@@ -8,8 +8,8 @@ namespace MAPE.Windows {
     public class ComponentFactoryForWindows: ComponentFactory {
 		#region methods
 
-		public override RunningProxyState CreateRunningProxyState(CommandBase owner, Settings settings) {
-			return new RunningProxyStateForWindows(owner, settings);
+		public override RunningProxyState CreateRunningProxyState(CommandBase owner) {
+			return new RunningProxyStateForWindows(owner);
 		}
 
 		#endregion

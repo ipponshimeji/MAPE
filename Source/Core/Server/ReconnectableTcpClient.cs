@@ -23,7 +23,12 @@ namespace MAPE.Server {
 
 			private Stream InnerStream {
 				get {
-					return this.Owner.networkStream;
+					Stream value = this.Owner.networkStream;
+					if (value == null) {
+						throw new InvalidOperationException("Not connected now.");
+					}
+
+					return value;
 				}
 			}
 
@@ -153,18 +158,32 @@ namespace MAPE.Server {
 
 		#region data - synchronized by locking this
 
-		private DnsEndPoint remoteEndPoint;
+		private string host = null;
 
-		private TcpClient tcpClient;
+		private int port = 0;
 
-		private NetworkStream networkStream;
+		private TcpClient tcpClient = null;
 
-		private bool reconnectable;
+		private NetworkStream networkStream = null;
+
+		private bool reconnectable = true;
 
 		#endregion
 
 
 		#region properties
+
+		public string Host {
+			get {
+				return this.host;
+			}
+		}
+
+		public int Port {
+			get {
+				return this.port;
+			}
+		}
 
 		public bool Reconnectable {
 			get {
@@ -188,30 +207,16 @@ namespace MAPE.Server {
 
 		#region creation and disposal
 
-		public ReconnectableTcpClient(DnsEndPoint endPoint) {
-			// argument checks
-			if (endPoint == null) {
-				throw new ArgumentNullException(nameof(endPoint));
-			}
-
-			// initialize members
-			this.remoteEndPoint = endPoint;
-			this.tcpClient = null;
-			this.networkStream = null;
-			this.reconnectable = true;
-
-			return;
+		public ReconnectableTcpClient() {
 		}
 
 		public void Dispose() {
 			lock (this) {
 				// dispose networkStream and tcpClient
-				DisconnectTcpClient();
+				Disconnect();
 				Debug.Assert(this.networkStream == null);
 				Debug.Assert(this.tcpClient == null);
-
-				// dispose endPoint
-				this.remoteEndPoint = null;
+				this.host = null;
 			}
 
 			return;
@@ -222,54 +227,78 @@ namespace MAPE.Server {
 
 		#region methods
 
-		public void Connect() {
+		public void EnsureConnect(string host, int port) {
+			// argument checks
+			if (string.IsNullOrEmpty(host)) {
+				throw new ArgumentNullException(nameof(host));
+			}
+			if (port < IPEndPoint.MinPort || IPEndPoint.MaxPort < port) {
+				throw new ArgumentOutOfRangeException(nameof(port));
+			}
+
 			lock (this) {
 				// state checks
-				if (this.remoteEndPoint == null) {
-					throw new ObjectDisposedException(null);
-				}
 				if (this.tcpClient != null) {
-					throw new InvalidOperationException("This object was already connected.");
+					// connecting now
+					if (port == this.port && AreSameHostNames(host, this.host)) {
+						// the current connection is usable
+						return;
+					}
+
+					// disconnect to re-connect the connection
+					DisconnectInternal();
+				}
+				if (this.reconnectable == false) {
+					throw new InvalidOperationException("This object is not reconnectable currently.");
 				}
 
+				// keep host and port
+				this.host = host;
+				this.port = port;
+
 				// connect to the end point
-				ConnectTcpClient(getNetworkStream: false);
+				ConnectInternal();
 			}
 
 			return;
 		}
 
-		public Stream GetStream() {
+		public void EnsureConnect() {
+			lock (this) {
+				// state checks
+				if (this.tcpClient != null) {
+					// connecting now
+					return;
+				}
+				if (string.IsNullOrEmpty(this.host)) {
+					throw new InvalidOperationException("The host is not specified.");
+				}
+				if (this.reconnectable == false) {
+					throw new InvalidOperationException("This object is not reconnectable currently.");
+				}
+
+				// connect to the end point
+				ConnectInternal();
+			}
+
+			return;
+		}
+
+		public void Disconnect() {
 			lock (this) {
 				// state checks
 				if (this.tcpClient == null) {
-					throw new InvalidOperationException("This object is not connected.");
-				}
-				if (this.networkStream != null) {
-					// this object can provide only one stream
-					throw new InvalidOperationException("This object is already providing its stream.");
+					// not connecting now
+					return;
 				}
 
-				// capsule the network stream in a ReconnectableStream
-				this.networkStream = this.tcpClient.GetStream();
-				return new ReconnectableStream(this);
+				DisconnectInternal();
 			}
 		}
 
-		public void Reconnect() {
+		public Stream GetStream() {
 			lock (this) {
-				// state checks
-				if (this.remoteEndPoint == null) {
-					throw new ObjectDisposedException(null);
-				}
-				if (this.reconnectable == false) {
-					throw new InvalidOperationException("This object is not reconnectable now.");
-				}
-
-				// reconnect the tcp client
-				bool providingStream = this.networkStream != null;
-				DisconnectTcpClient();
-				ConnectTcpClient(getNetworkStream: providingStream);
+				return new ReconnectableStream(this);
 			}
 		}
 
@@ -289,22 +318,22 @@ namespace MAPE.Server {
 
 		#region privates
 
-		private void ConnectTcpClient(bool getNetworkStream) {
-			// state checks
-			DnsEndPoint remoteEndPoint = this.remoteEndPoint;
-			Debug.Assert(remoteEndPoint != null);
-			Debug.Assert(this.tcpClient == null);
-			Debug.Assert(this.networkStream == null);
+		private static bool AreSameHostNames(string name1, string name2) {
+			return string.Compare(name1, name2, StringComparison.OrdinalIgnoreCase) == 0;
+		}
 
-			// create and connect a tcp client
+		private void ConnectInternal() {
+			// state checks
+			Debug.Assert(string.IsNullOrEmpty(this.host) == false);
+			Debug.Assert(IPEndPoint.MinPort <= port && port <= IPEndPoint.MaxPort);
+
+			// connect to the end point
 			TcpClient tcpClient = null;
 			NetworkStream networkStream = null;
 			try {
 				tcpClient = new TcpClient();
-				tcpClient.Connect(remoteEndPoint.Host, remoteEndPoint.Port);
-				if (getNetworkStream) {
-					networkStream = tcpClient.GetStream();
-				}
+				tcpClient.Connect(this.host, this.port);
+				networkStream = tcpClient.GetStream();
 			} catch {
 				Util.DisposeWithoutFail(networkStream);
 				Util.DisposeWithoutFail(tcpClient);
@@ -318,7 +347,11 @@ namespace MAPE.Server {
 			return;
 		}
 
-		private void DisconnectTcpClient() {
+		private void DisconnectInternal() {
+			// state checks
+			Debug.Assert(this.tcpClient != null);
+
+			// dispose connection resources
 			Util.DisposeWithoutFail(ref this.networkStream);
 			Util.DisposeWithoutFail(ref this.tcpClient);
 
