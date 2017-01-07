@@ -6,10 +6,10 @@ set RMDIR=rmdir /S /Q
 %RMDIR% "__Bin"
 %RMDIR% "Core\bin"
 %RMDIR% "Core\obj"
-%RMDIR% "Windows\bin"
-%RMDIR% "Windows\obj"
-%RMDIR% "CLI\bin"
-%RMDIR% "CLI\obj"
+%RMDIR% "Windows\Windows\bin"
+%RMDIR% "Windows\Windows\obj"
+%RMDIR% "Windows\CLI\bin"
+%RMDIR% "Windows\CLI\obj"
 %RMDIR% "TestResults"
 
 endlocal
