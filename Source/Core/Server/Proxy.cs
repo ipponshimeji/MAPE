@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MAPE.Utils;
 using MAPE.ComponentBase;
+using SettingNames = MAPE.Server.Proxy.SettingNames;
 
 
 namespace MAPE.Server {
@@ -47,13 +48,17 @@ namespace MAPE.Server {
 
 			// MainListener
 			Listener mainListener = value[0];
-			if (omitDefault == false || mainListener.IsDefault == false) {
+			if (omitDefault && mainListener.IsDefault) {
+				settings.RemoveValue(Proxy.SettingNames.MainListener);
+			} else {
 				settings.SetObjectValue(Proxy.SettingNames.MainListener, mainListener.GetSettings(omitDefault));
 			}
 
 			// AdditionalListeners 
 			Settings[] additionalListeners = value.GetRange(1, value.Count - 1).Select(l => l.GetSettings(omitDefault)).ToArray();
-			if (omitDefault == false || 0 < additionalListeners.Length) {
+			if (omitDefault && additionalListeners.Length <= 0) {
+				settings.RemoveValue(Proxy.SettingNames.AdditionalListeners);
+			} else {
 				settings.SetObjectArrayValue(Proxy.SettingNames.AdditionalListeners, additionalListeners);
 			}
 
@@ -131,15 +136,11 @@ namespace MAPE.Server {
 
 		private IWebProxy actualProxy;
 
-		private bool keepServerCredential;
-
-		private NetworkCredential serverCredential;
-
-		private RevisedBytes serverBasicCredential;
-
 		private int retryCount;
 
 		private ConnectionCollection connections;
+
+		private Dictionary<string, RevisedBytes> serverBasicCredentialCache;
 
 		protected IProxyRunner Runner { get; private set; }
 
@@ -167,25 +168,6 @@ namespace MAPE.Server {
 					EnsureNotListening();
 
 					this.actualProxy = value;
-				}
-			}
-		}
-
-		/// <summary>
-		/// Whether the Proxy object keeps the server credential or not.
-		/// If this value is false, the given credential is kept only during the http session
-		/// which requires the credential.
-		/// </summary>
-		public bool KeepServerCredential {
-			get {
-				return this.keepServerCredential;
-			}
-			set {
-				lock (this) {
-					// state checks
-					// this property can be changed during listening
-
-					this.keepServerCredential = value;
 				}
 			}
 		}
@@ -237,17 +219,13 @@ namespace MAPE.Server {
 			// actualProxy
 			this.actualProxy = null;
 
-			// serverCredential and 
-			this.keepServerCredential = false;
-			this.serverCredential = null;
-			this.serverBasicCredential = null;
-
 			// retryCount
 			this.retryCount = settings.GetInt32Value(SettingNames.RetryCount, defaultValue: DefaultRetryCount);
 			// ToDo: value checks
 
 			// misc.
 			this.connections = null;
+			this.serverBasicCredentialCache = new Dictionary<string, RevisedBytes>();
 			this.Runner = null;
 
 			return;
@@ -260,9 +238,9 @@ namespace MAPE.Server {
 			// clear members
 			lock (this) {
 				Debug.Assert(this.Runner == null);
+				this.serverBasicCredentialCache.Clear();
+				this.serverBasicCredentialCache = null;
 				Debug.Assert(this.connections == null);
-				this.serverBasicCredential = null;
-				this.serverCredential = null;
 				this.actualProxy = null;
 				List<Listener> temp = this.listeners;
 				this.listeners = null;
@@ -486,24 +464,35 @@ namespace MAPE.Server {
 
 		#region methods - for Connection objects
 
-		public RevisedBytes GetProxyBasicCredentials(string realm, RevisedBytes oldBasicCredentials) {
+		public RevisedBytes GetServerBasicCredentials(string endPoint, string realm, RevisedBytes oldBasicCredentials) {
+			// argument checks
+			if (endPoint == null) {
+				throw new ArgumentNullException(nameof(endPoint));
+			}
+			// realm can be null
+			// oldBasicCredentials can be null
+
 			RevisedBytes basicCredential;
 			lock (this) {
-				basicCredential = this.serverBasicCredential; 
-				NetworkCredential serverCredential = this.serverCredential;
+				// state checks
+				IDictionary<string, RevisedBytes> basicCredentialCache = this.serverBasicCredentialCache;
+				if (basicCredentialCache == null) {
+					throw new ObjectDisposedException(this.ObjectName);
+				}
+
+				// get value from the cache
+				basicCredentialCache.TryGetValue(endPoint, out basicCredential);
 
 				// need a new credential?
 				bool needGetCredential;
-				if (serverCredential == null) {
-					Debug.Assert(basicCredential == null);
+				if (basicCredential == null) {
 					needGetCredential = true;
 				} else {
-					Debug.Assert(basicCredential != null);
 					// try the current credential if the current revision is newer than the caller's.
 					needGetCredential = ((oldBasicCredentials != null) && (basicCredential.Revision <= oldBasicCredentials.Revision));
 				}
 
-				// ask its runner to enter new credential 
+				// get the credential from the runner 
 				if (needGetCredential) {
 					// figure out the next revision number 
 					int revision = 1;
@@ -515,25 +504,25 @@ namespace MAPE.Server {
 						++revision;
 					}
 
-					// ask new credential to the user
-					serverCredential = this.Runner.GetCredential(this, realm, needUpdate: (serverCredential != null));
-					if (serverCredential == null) {
+					// get the credential from the runner
+					ValueTuple<NetworkCredential, bool> tuple = this.Runner.GetCredential(endPoint, realm, needUpdate: (basicCredential != null));
+					if (tuple.Item1 == null) {
 						// maybe user cancel entering a credential
 						basicCredential = null;
 					} else {
-						basicCredential = new RevisedBytes(revision, CreateBasicProxyAuthorizationBytes(serverCredential));
+						basicCredential = new RevisedBytes(revision, CreateBasicProxyAuthorizationBytes(tuple.Item1));
 					}
 
-					// Note that this.keepServerCredential may be changed during the AskCredential() call above,
-					// according to user's preference such as "save password?" checkbox.
-					if (this.keepServerCredential) {
-						this.serverCredential = serverCredential;
-						this.serverBasicCredential = basicCredential;
+					// update the cache
+					// Note credential.Item2 indicates whether the proxy can save the credential or not
+					if (basicCredential == null || tuple.Item2 == false) {
+						basicCredentialCache.Remove(endPoint);
+					} else {
+						basicCredentialCache[endPoint] = basicCredential;
 					}
 				}
 			}
 
-			Debug.Assert(basicCredential != null);
 			return basicCredential;
 		}
 

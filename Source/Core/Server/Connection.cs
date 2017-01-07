@@ -256,8 +256,9 @@ namespace MAPE.Server {
 				if (response.StatusCode == 407) {
 					// 407: Proxy Authentication Required
 					// the current credential seems to be invalid (or null)
+					string endPoint = this.server.EndPoint;
 					string realm = "Proxy";	// ToDo: extract realm from the field
-					Proxy.RevisedBytes proxyCredential = this.Proxy.GetProxyBasicCredentials(realm, this.proxyCredential);
+					Proxy.RevisedBytes proxyCredential = this.Proxy.GetServerBasicCredentials(endPoint, realm, this.proxyCredential);
 					this.proxyCredential = proxyCredential;
 					overridingProxyAuthorization = proxyCredential?.Bytes;
 				} else {

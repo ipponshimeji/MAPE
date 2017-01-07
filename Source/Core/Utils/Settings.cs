@@ -56,6 +56,10 @@ namespace MAPE.Utils {
 				this.InnerObject = innerObject;
 			}
 
+			public static Value Parse(string jsonText) {
+				return new Value(JToken.Parse(jsonText));
+			}
+
 			#endregion
 
 
@@ -106,6 +110,7 @@ namespace MAPE.Utils {
 		#region data
 
 		public static readonly Settings NullSettings = new Settings(null);
+		public static readonly Settings[] EmptySettingsArray = new Settings[0];
 
 
 		public readonly JObject InnerObject;
@@ -145,6 +150,11 @@ namespace MAPE.Utils {
 
 		public static Settings CreateEmptySettings() {
 			return new Settings(new JObject());
+		}
+
+		public static Settings Parse(string jsonText) {
+			JToken token = JToken.Parse(jsonText);
+			return new Settings((JObject)token);
 		}
 
 		#endregion
@@ -295,6 +305,15 @@ namespace MAPE.Utils {
 
 		#region methods - set value
 
+		public bool RemoveValue(string settingName) {
+			// argument checks
+			if (settingName == null) {
+				throw new ArgumentNullException(nameof(settingName));
+			}
+
+			return this.NonNullInnerObject.Remove(settingName);
+		}
+
 		public void SetValue(string settingName, Value value) {
 			// argument checks
 			if (settingName == null) {
@@ -312,10 +331,13 @@ namespace MAPE.Utils {
 
 			// state checks
 			EnsureHasStorage();
+			JObject innerObject = this.InnerObject;
 
 			// add a setting if necessary 
-			if (omitDefault == false || string.Compare(value, defaultValue, StringComparison.Ordinal) != 0) {
-				this.InnerObject[settingName] = value;
+			if (omitDefault && string.Compare(value, defaultValue, StringComparison.Ordinal) == 0) {
+				innerObject.Remove(settingName);
+			} else {
+				innerObject[settingName] = value;
 			}
 
 			return;
@@ -329,10 +351,13 @@ namespace MAPE.Utils {
 
 			// state checks
 			EnsureHasStorage();
+			JObject innerObject = this.InnerObject;
 
 			// add a setting if necessary 
-			if (omitDefault == false || value != defaultValue) {
-				this.InnerObject[settingName] = value;
+			if (omitDefault && value == defaultValue) {
+				innerObject.Remove(settingName);
+			} else {
+				innerObject[settingName] = value;
 			}
 
 			return;
@@ -346,16 +371,19 @@ namespace MAPE.Utils {
 
 			// state checks
 			EnsureHasStorage();
+			JObject innerObject = this.InnerObject;
 
 			// add a setting if necessary 
-			if (omitDefault == false || value != defaultValue) {
-				this.InnerObject[settingName] = value;
+			if (omitDefault && value == defaultValue) {
+				innerObject.Remove(settingName);
+			} else {
+				innerObject[settingName] = value;
 			}
 
 			return;
 		}
 
-		public void SetObjectValue(string settingName, Settings value) {
+		public void SetObjectValue(string settingName, Settings value, bool omitIfNull = false) {
 			// argument checks
 			if (settingName == null) {
 				throw new ArgumentNullException(nameof(settingName));
@@ -363,9 +391,14 @@ namespace MAPE.Utils {
 
 			// state checks
 			EnsureHasStorage();
+			JObject innerObject = this.InnerObject;
 
 			// add a setting
-			this.InnerObject[settingName] = value.InnerObject;
+			if (omitIfNull && value.IsNull) {
+				innerObject.Remove(settingName);
+			} else {
+				innerObject[settingName] = value.InnerObject;
+			}
 
 			return;
 		}
@@ -378,16 +411,19 @@ namespace MAPE.Utils {
 
 			// state checks
 			EnsureHasStorage();
+			JObject innerObject = this.InnerObject;
 
 			// add a setting if necessary 
-			if (omitDefault == false || object.Equals(value, defaultValue) == false) {
-				this.InnerObject[settingName] = value.ToString();
+			if (omitDefault && object.Equals(value, defaultValue)) {
+				innerObject.Remove(settingName);
+			} else {
+				innerObject[settingName] = value.ToString();
 			}
 
 			return;
 		}
 
-		public void SetObjectArrayValue(string settingName, IEnumerable<Settings> value) {
+		public void SetObjectArrayValue(string settingName, IEnumerable<Settings> value, bool omitIfNull = false) {
 			// argument checks
 			if (settingName == null) {
 				throw new ArgumentNullException(nameof(settingName));
@@ -395,10 +431,18 @@ namespace MAPE.Utils {
 
 			// state checks
 			EnsureHasStorage();
+			JObject innerObject = this.InnerObject;
 
 			// add a setting
-			JObject[] objectArray = value.Select(s => s.InnerObject).ToArray();
-			this.InnerObject[settingName] = new JArray(objectArray);
+			if (omitIfNull && value == null) {
+				innerObject.Remove(settingName);
+			} else {
+				if (value == null) {
+					value = EmptySettingsArray;
+				}
+				JObject[] objectArray = value.Select(s => s.InnerObject).ToArray();
+				this.InnerObject[settingName] = new JArray(objectArray);
+			}
 
 			return;
 		}

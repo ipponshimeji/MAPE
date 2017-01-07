@@ -10,7 +10,7 @@ using MAPE.Server;
 
 
 namespace MAPE.Command {
-    public class CLICommandBase: CommandBase, IProxyRunner {
+    public class CLICommandBase: CommandBase {
 		#region types
 
 		public static new class OptionNames {
@@ -39,39 +39,6 @@ namespace MAPE.Command {
 		#region creation and disposal
 
 		public CLICommandBase(ComponentFactory componentFactory): base(componentFactory) {
-		}
-
-		#endregion
-
-
-		#region IProxyRunner
-
-		public NetworkCredential GetCredential(Proxy proxy, string realm, bool needUpdate) {
-			// argument checks
-			if (proxy == null) {
-				throw new ArgumentNullException(nameof(proxy));
-			}
-			if (realm == null) {
-				realm = string.Empty;
-			}
-
-			// lock to share the user response via console.
-			NetworkCredential credential;
-			lock (this) {
-				credential = this.Credential;
-				if (needUpdate || credential == null) {
-					// ask user for information
-					credential = AskCredential(proxy, realm);
-					CredentialPersistence credentialPersistence = AskCredentialPersistence(proxy, realm);
-
-					// update the state
-					SetCredential(credentialPersistence, credential, saveIfNecessary: true);
-					proxy.KeepServerCredential = (credentialPersistence != CredentialPersistence.Session);
-				}
-			}
-
-			// return the clone of this.Credential
-			return new NetworkCredential(credential.UserName, credential.Password);
 		}
 
 		#endregion
@@ -157,18 +124,17 @@ namespace MAPE.Command {
 			return;
 		}
 
+		protected override CredentialInfo UpdateCredential(string endPoint, string realm) {
+			// argument checks
+			Debug.Assert(endPoint != null);
+			Debug.Assert(realm != null);    // may be empty
+
+			return AskCredentialInfo(endPoint, realm);
+		}
+
 		protected virtual void SaveSettings(Settings settings) {
 			// argument checks
 			Debug.Assert(settings.IsNull == false);
-
-			// adjust the settings
-			// The CredentialPersistence is supposed to be 'Persist'
-			// if /UserName or /Password option is specified from command line with /Save option
-			string userName = settings.GetStringValue(SettingNames.UserName, defaultValue: null);
-			string protectedPasswoed = settings.GetStringValue(SettingNames.ProtectedPassword, defaultValue: null);
-			if (userName != null || protectedPasswoed != null) {
-				settings.SetStringValue(SettingNames.CredentialPersistence, CredentialPersistence.Persistent.ToString());
-			}
 
 			// save the settings
 			SaveSettingsToFile(settings);
@@ -179,33 +145,30 @@ namespace MAPE.Command {
 
 		#region privates
 
-		private static NetworkCredential AskCredential(Proxy proxy, string realm) {
+		private static CredentialInfo AskCredentialInfo(string endPoint, string realm) {
 			// argument checks
-			Debug.Assert(proxy != null);
 			Debug.Assert(realm != null);
 
 			// read information from the console
-			Console.WriteLine($"Credential for {realm} is required.");
+			Console.WriteLine($"Credential for {endPoint} is required.");
+			Console.WriteLine($"Realm: {endPoint}");
 			Console.Write("UserName: ");
 			string userName = Console.ReadLine();
 			Console.Write("Password: ");
 			string password = ReadPassword();
+			CredentialPersistence persistence = AskCredentialPersistence();
 
-			return new NetworkCredential(userName, password);
+			return new CredentialInfo(endPoint, userName, password, persistence);
 		}
 
-		private static CredentialPersistence AskCredentialPersistence(Proxy proxy, string realm) {
-			// argument checks
-			Debug.Assert(proxy != null);
-			Debug.Assert(realm != null);
-
+		private static CredentialPersistence AskCredentialPersistence() {
 			// read user preference from the console
 			do {
 				Console.WriteLine($"How save password?");
 				Console.WriteLine($"  1: only during this http session");
-				Console.WriteLine($"  2: during running this process");
+				Console.WriteLine($"  2: only during running this process");
 				Console.WriteLine($"  3: save the password in settings file");
-				Console.Write("No: ");
+				Console.Write("Selection: ");
 				string answer = Console.ReadLine();
 
 				int number;

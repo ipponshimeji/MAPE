@@ -185,6 +185,12 @@ namespace MAPE.Server {
 			}
 		}
 
+		public string EndPoint {
+			get {
+				return $"{this.host}:{this.port}";
+			}
+		}
+
 		public bool Reconnectable {
 			get {
 				return this.reconnectable;

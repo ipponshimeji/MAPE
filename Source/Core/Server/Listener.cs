@@ -23,7 +23,9 @@ namespace MAPE.Server {
 		}
 
 		public static void SetIPAddressValue(this Settings settings, string settingName, IPAddress value, bool omitDefault, IPAddress defaultValue) {
-			if (omitDefault == false || value != defaultValue) {
+			if (omitDefault && value == defaultValue) {
+				settings.RemoveValue(settingName);
+			} else {
 				string stringValue = (value == null) ? null : value.ToString();
 				settings.SetStringValue(settingName, stringValue, omitDefault: false);
 			}

@@ -9,10 +9,19 @@ using System.Text;
 using System.Threading.Tasks;
 using MAPE.Utils;
 using MAPE.Server;
+using SettingNames = MAPE.Command.CommandBase.SettingNames;
+using CredentialInfo = MAPE.Command.CommandBase.CredentialInfo;
 
 
 namespace MAPE.Command {
 	public static class CommandBaseSettingsExtensions {
+		#region data
+
+		private static readonly byte[] entropy = Encoding.UTF8.GetBytes("認証プロキシ爆発しろ");
+
+		#endregion
+
+
 		#region methods
 
 		public static CredentialPersistence GetCredentialPersistenceValue(this Settings settings, string settingName, CredentialPersistence defaultValue, bool createIfNotExist = false) {
@@ -21,6 +30,77 @@ namespace MAPE.Command {
 
 		public static void SetCredentialPersistenceValue(this Settings settings, string settingName, CredentialPersistence value, bool omitDefault, CredentialPersistence defaultValue) {
 			settings.SetEnumValue(settingName, value, omitDefault, defaultValue);
+		}
+
+
+		public static IEnumerable<CredentialInfo> GetCredentialsValue(this Settings settings, string settingName) {
+			CredentialInfo[] credentials = null;
+
+			IEnumerable<Settings> credentialsSettings = settings.GetObjectArrayValue(settingName, defaultValue: null);
+			if (credentialsSettings != null) {
+				credentials = (
+					from subSettings in credentialsSettings
+					select CreateCredentialInfo(subSettings)
+				).ToArray();
+			}
+
+			return credentials;
+		}
+
+		public static CredentialInfo CreateCredentialInfo(this Settings settings) {
+			string endPoint = settings.GetStringValue(SettingNames.EndPoint, defaultValue: string.Empty);
+			string userName = settings.GetStringValue(SettingNames.UserName, defaultValue: string.Empty);
+			string protectedPassword = settings.GetStringValue(SettingNames.ProtectedPassword, defaultValue: null);
+			string password = (protectedPassword == null) ? string.Empty : UnprotectPassword(protectedPassword);
+			CredentialPersistence persistence = settings.GetCredentialPersistenceValue(SettingNames.Persistence, defaultValue: CommandBase.DefaultCredentialPersistence);
+
+			return new CredentialInfo(userName, password, endPoint, persistence);
+		}
+
+		public static void SetCredentialsValue(this Settings settings, string settingName, IEnumerable<CredentialInfo> value, bool omitDefault) {
+			// argument checks
+			// value can be null
+
+			// set the array of CredentialInfo settings
+			Settings[] settingsArray;
+			if (value == null) {
+				settingsArray = Settings.EmptySettingsArray;
+			} else {
+				settingsArray = (
+					from credential in value
+					where credential != null && credential.Persistence == CredentialPersistence.Persistent
+					select GetCredentialInfoSettings(credential, omitDefault)
+				).ToArray();
+			}
+			if (omitDefault && settingsArray.Length <= 0) {
+				settings.RemoveValue(settingName);
+			} else {
+				settings.SetObjectArrayValue(settingName, settingsArray);
+			}
+
+			return;
+		}
+
+		public static Settings GetCredentialInfoSettings(CredentialInfo value, bool omitDefault) {
+			// argument checks
+			if (value == null) {
+				return Settings.NullSettings;
+			}
+
+			// create settings of the CredentialInfo
+			Settings settings = Settings.CreateEmptySettings();
+
+			string endPoint = NormalizeNullToEmpty(value.EndPoint);
+			string userName = NormalizeNullToEmpty(value.UserName);
+			string password = value.Password;
+			string protectedPassword = string.IsNullOrEmpty(password)? string.Empty: ProtectPassword(password);
+
+			settings.SetStringValue(SettingNames.EndPoint, endPoint, omitDefault, defaultValue: string.Empty);
+			settings.SetStringValue(SettingNames.UserName, userName, omitDefault, defaultValue: string.Empty);
+			settings.SetStringValue(SettingNames.ProtectedPassword, protectedPassword, omitDefault, defaultValue: string.Empty);
+			settings.SetCredentialPersistenceValue(SettingNames.Persistence, value.Persistence, omitDefault, defaultValue: CommandBase.DefaultCredentialPersistence);
+
+			return settings;
 		}
 
 
@@ -33,9 +113,38 @@ namespace MAPE.Command {
 		}
 
 		#endregion
+
+
+		#region privates
+
+		private static string NormalizeNullToEmpty(string value) {
+			return (value == null) ? string.Empty : value;
+		}
+
+		private static string ProtectPassword(string password) {
+			// argument checks
+			Debug.Assert(password != null);
+
+			// encrypt the password by ProtectedData API
+			// The password is encrypted with the key of the current user.
+			// The protected value transfered from other machine or user cannot be decrypted.
+			byte[] bytes = ProtectedData.Protect(Encoding.UTF8.GetBytes(password), entropy, DataProtectionScope.CurrentUser);
+			return Convert.ToBase64String(bytes);
+		}
+
+		private static string UnprotectPassword(string encryptedPassword) {
+			// argument checks
+			Debug.Assert(encryptedPassword != null);
+
+			// decrypt the password by ProtectedData API.
+			byte[] bytes = ProtectedData.Unprotect(Convert.FromBase64String(encryptedPassword), entropy, DataProtectionScope.CurrentUser);
+			return Encoding.UTF8.GetString(bytes);
+		}
+
+		#endregion
 	}
 
-	public abstract class CommandBase: IDisposable {
+	public abstract class CommandBase: IDisposable, IProxyRunner {
 		#region types
 
 		public static class OptionNames {
@@ -47,11 +156,7 @@ namespace MAPE.Command {
 
 			public const string NoSettings = "NoSettings";
 
-			public const string CredentialPersistence = "CredentialPersistence";
-
-			public const string UserName = "UserName";
-
-			public const string Password = "Password";
+			public const string Credential = "Credential";
 
 			public const string MainListener = "MainListener";
 
@@ -67,11 +172,16 @@ namespace MAPE.Command {
 		public static class SettingNames {
 			#region constants
 
-			public const string CredentialPersistence = OptionNames.CredentialPersistence;
+			public const string Credentials = "Credentials";
 
-			public const string UserName = OptionNames.UserName;
+			public const string EndPoint = "EndPoint";
+
+			public const string UserName = "UserName";
 
 			public const string ProtectedPassword = "ProtectedPassword";
+
+			public const string Persistence = "Persistence";
+
 
 			public const string Proxy = "Proxy";
 
@@ -90,28 +200,118 @@ namespace MAPE.Command {
 			#endregion
 		}
 
+		public class CredentialInfo {
+			#region data
+
+			private readonly NetworkCredential credential;
+
+			public readonly CredentialPersistence Persistence;
+
+			#endregion
+
+
+			#region properties
+
+			public string EndPoint {
+				get {
+					// Note that the endPoint is stored as 'Domain' property of the NetworkCredential object.
+					return this.credential.Domain;
+				}
+			}
+
+			public string UserName {
+				get {
+					return this.credential.UserName;
+				}
+			}
+
+			public string Password {
+				get {
+					return this.credential.Password;
+				}
+			}
+
+			#endregion
+
+
+			#region creation and disposal
+
+			public CredentialInfo(string endPoint, string userName, string password, CredentialPersistence persistence) {
+				// argument checks
+				if (endPoint == null) {
+					// endPoint can be empty
+					throw new ArgumentNullException(nameof(endPoint));
+				}
+				// userName can be null
+				// password can be null
+
+				// initialize members
+				// Note that the endPoint is stored as 'Domain' property of the NetworkCredential object.
+				this.credential = new NetworkCredential(userName, password, endPoint);
+				this.Persistence = persistence;
+
+				return;
+			}
+
+			#endregion
+
+
+			#region methods
+
+			private static bool AreSameEndPoint(string endPoint1, string endPoint2) {
+				return string.Compare(endPoint1, endPoint2, StringComparison.OrdinalIgnoreCase) == 0;
+			}
+
+			public NetworkCredential GetNetworkCredential() {
+				// return a clone of this.credential not to be changed its contents
+				NetworkCredential credential = this.credential;
+				return new NetworkCredential(credential.UserName, credential.Password, credential.Domain);
+			}
+
+			#endregion
+
+
+			#region overrides
+
+			public override bool Equals(object obj) {
+				// argument checks
+				CredentialInfo another = obj as CredentialInfo;
+				if (another == null) {
+					return false;
+				}
+
+				return (
+					this.Persistence == another.Persistence &&
+					AreSameEndPoint(this.EndPoint, another.EndPoint) &&
+					string.CompareOrdinal(this.UserName, another.UserName) == 0 &&
+					string.CompareOrdinal(this.Password, another.Password) == 0
+				);
+			}
+
+			public override int GetHashCode() {
+				return this.credential.GetHashCode() ^ this.Persistence.GetHashCode();
+			}
+
+			#endregion
+		}
+
 		#endregion
 
 
 		#region constants
 
-		public const CredentialPersistence DefaultCredentialPersistence = CredentialPersistence.Process;
+		public const CredentialPersistence DefaultCredentialPersistence = CredentialPersistence.Persistent;
 
 		#endregion
 
 
 		#region data
 
-		private static readonly byte[] entropy = Encoding.UTF8.GetBytes("認証プロキシ爆発しろ");
-
-
 		public readonly ComponentFactory ComponentFactory;
 
 		protected string SettingsFilePath { get; set; } = null;
 
-		public CredentialPersistence CredentialPersistence { get; protected set; } = DefaultCredentialPersistence;
-
-		protected NetworkCredential Credential { get; set; } = null;
+		protected IDictionary<string, CredentialInfo> Credentials { get; private set; } = new Dictionary<string, CredentialInfo>();
 
 		protected string Kind { get; set; } = CommandKind.RunProxy;
 
@@ -136,6 +336,7 @@ namespace MAPE.Command {
 		public virtual void Dispose() {
 			// clear members
 			this.Kind = null;
+			this.Credentials = null;
 			this.SettingsFilePath = null;
 
 			return;
@@ -185,14 +386,6 @@ namespace MAPE.Command {
 				throw new ArgumentNullException(nameof(proxyRunner));
 			}
 
-			// initialize credential
-			CredentialPersistence credentialPersistence = settings.GetCredentialPersistenceValue(SettingNames.CredentialPersistence, defaultValue: CredentialPersistence.Process);
-			string userName = settings.GetStringValue(SettingNames.UserName, defaultValue: null);
-			string protectedPassword = settings.GetStringValue(SettingNames.ProtectedPassword, defaultValue: null);
-			string password = string.IsNullOrEmpty(protectedPassword) ? null : UnprotectPassword(protectedPassword);
-			NetworkCredential credential = (userName == null && password == null) ? null : new NetworkCredential(userName, password);
-			SetCredential(credentialPersistence, credential, saveIfNecessary: false);
-
 			// get setting valuses to be used
 			Settings systemSettingSwitchSettings = settings.GetObjectValue(SettingNames.SystemSettingSwitch);
 			Settings proxySettings = settings.GetObjectValue(SettingNames.Proxy);
@@ -209,30 +402,42 @@ namespace MAPE.Command {
 			return state;
 		}
 
-		protected void SetCredential(CredentialPersistence credentialPersistence, NetworkCredential credential, bool saveIfNecessary) {
+		protected void SetCredential(CredentialInfo credential, bool saveIfNecessary) {
 			// argument checks
-			// credential can be null
+			if (credential == null) {
+				throw new ArgumentNullException(nameof(credential));
+			}
 
-			// update CredentialPersistence
-			bool persistenceChanged = (this.CredentialPersistence != credentialPersistence);
-			this.CredentialPersistence = credentialPersistence;
+			lock (this) {
+				// state checks
+				IDictionary<string, CredentialInfo> credentials = this.Credentials;
+				if (credential == null) {
+					throw new ObjectDisposedException(null);
+				}
 
-			// update Credential
-			switch (credentialPersistence) {
-				case CredentialPersistence.Session:
-					// do not keep the credential
-					this.Credential = null;
-					break;
-				case CredentialPersistence.Process:
-					// keep the credential
-					this.Credential = credential;
-					break;
-				case CredentialPersistence.Persistent:
-					bool credentialChanged = (credential != this.Credential);
-					if (credentialChanged) {
-						this.Credential = credential;
+				// register the credential to the this.Credentials
+				string endPoint = credential.EndPoint;
+				bool changed = false;
+				CredentialInfo oldCredential;
+				if (credentials.TryGetValue(endPoint, out oldCredential)) {
+					// the credential for the endpoint exists
+					changed = !credential.Equals(oldCredential);
+				} else {
+					// newly added
+					changed = true;
+				}
+				if (changed) {
+					// register the credential
+					if (credential.Persistence == CredentialPersistence.Session) {
+						credentials.Remove(endPoint);
+					} else {
+						credentials[endPoint] = credential;
 					}
-					if (saveIfNecessary && (credentialChanged || persistenceChanged)) {
+
+					// update settings file if necessary
+					if (saveIfNecessary) {
+						// create a clone of the credential list
+						CredentialInfo[] credentialArray = credentials.Values.ToArray(); 
 						Action action = () => {
 							Settings settings;
 							try {
@@ -241,19 +446,14 @@ namespace MAPE.Command {
 								settings = Settings.CreateEmptySettings();
 							}
 
-							string userName = credential?.UserName;
-							string password = credential?.Password;
-							string protectedPassword = (password == null) ? null : ProtectPassword(password);
-							settings.SetCredentialPersistenceValue(SettingNames.CredentialPersistence, credentialPersistence, false, CredentialPersistence.Process);
-							settings.SetStringValue(SettingNames.UserName, userName, omitDefault: true, defaultValue: null);
-							settings.SetStringValue(SettingNames.ProtectedPassword, protectedPassword, omitDefault: true, defaultValue: null);
+							settings.SetCredentialsValue(SettingNames.Credentials, credentialArray, omitDefault: true);
 							SaveSettingsToFile(settings);
 						};
+
+						// launch save task
 						Task.Run(action);
 					}
-					break;
-				default:
-					throw new ArgumentException("invalid value", nameof(credentialPersistence));
+				}
 			}
 
 			return;
@@ -374,6 +574,9 @@ namespace MAPE.Command {
 				settings = Settings.CreateEmptySettings();
 			}
 
+			// load the settings
+			LoadSettings(settings);
+
 			// consolidate the settings and command line options
 			foreach (KeyValuePair<string, string> option in options) {
 				if (HandleOption(option.Key, option.Value, settings) == false) {
@@ -389,6 +592,22 @@ namespace MAPE.Command {
 			return settings;
 		}
 
+		protected virtual void LoadSettings(Settings settings) {
+			// argument checks
+			// settings can contain null
+
+			// SettingNames.Credentials
+			IEnumerable<CredentialInfo> credentials = settings.GetCredentialsValue(SettingNames.Credentials);
+			if (credentials != null) {
+				IDictionary<string, CredentialInfo> dictionary = this.Credentials;
+				foreach (CredentialInfo credential in credentials) {
+					dictionary.Add(credential.EndPoint, credential);
+				}
+			}
+
+			return;
+		}
+
 		protected virtual bool HandleOption(string name, string value, Settings settings) {
 			// argument checks
 			Debug.Assert(name != null);
@@ -400,12 +619,9 @@ namespace MAPE.Command {
 				this.Kind = CommandKind.ShowUsage;
 			} else if (AreSameOptionNames(name, OptionNames.SettingsFile) || AreSameOptionNames(name, OptionNames.NoSettings)) {
 				// ignore, it was already handled in CreateSettings()
-			} else if (AreSameOptionNames(name, OptionNames.CredentialPersistence)) {
-				this.CredentialPersistence = (CredentialPersistence)Enum.Parse(typeof(CredentialPersistence), value);
-			} else if (AreSameOptionNames(name, OptionNames.UserName)) {
-				settings.SetStringValue(SettingNames.UserName, value);
-			} else if (AreSameOptionNames(name, OptionNames.Password)) {
-				settings.SetStringValue(SettingNames.ProtectedPassword, ProtectPassword(value));
+			} else if (AreSameOptionNames(name, OptionNames.Credential)) {
+				CredentialInfo credential = Settings.Parse(value).CreateCredentialInfo();
+				SetCredential(credential, saveIfNecessary: false);
 			} else if (AreSameOptionNames(name, OptionNames.MainListener)) {
 				settings.GetProxySettings(createIfNotExist: true).SetJsonValue(Proxy.SettingNames.MainListener, value);
 			} else if (AreSameOptionNames(name, OptionNames.AdditionalListeners)) {
@@ -476,6 +692,56 @@ namespace MAPE.Command {
 
 		protected abstract void RunProxy(Settings settings);
 
+		protected virtual CredentialInfo UpdateCredential(string endPoint, string realm) {
+			return null;	// no credential by default
+		}
+
+		#endregion
+
+
+		#region IProxyRunner - for Proxy class only
+
+		ValueTuple<NetworkCredential, bool> IProxyRunner.GetCredential(string endPoint, string realm, bool needUpdate) {
+			// argument checks
+			if (endPoint == null) {
+				throw new ArgumentNullException(nameof(endPoint));
+			}
+			if (realm == null) {
+				realm = string.Empty;
+			}
+
+			// lock to share the user response via console.
+			CredentialInfo credential = null;
+			lock (this) {
+				// state checks
+				IDictionary<string, CredentialInfo> credentials = this.Credentials;
+				if (credentials == null) {
+					throw new ObjectDisposedException(null);
+				}
+
+				// try to find the credential for the end point
+				if (needUpdate == false) {
+					if (credentials.TryGetValue(endPoint, out credential) == false) {
+						// try to find the credential for the "wildcard"
+						if (credentials.TryGetValue(string.Empty, out credential) == false) {
+							needUpdate = true;
+						}
+					}
+				}
+
+				// update the credential if necessary
+				if (needUpdate) {
+					credential = UpdateCredential(endPoint, realm);
+					if (credential != null) {
+						SetCredential(credential, saveIfNecessary: true);
+					}
+				}
+			}
+
+			// return the clone of this.Credential
+			return new ValueTuple<NetworkCredential, bool>(credential.GetNetworkCredential(), credential.Persistence != CredentialPersistence.Session);
+		}
+
 		#endregion
 
 
@@ -489,26 +755,6 @@ namespace MAPE.Command {
 			}
 
 			return settingsFilePath;
-		}
-
-		private static string ProtectPassword(string password) {
-			// argument checks
-			Debug.Assert(password != null);
-
-			// encrypt the password by ProtectedData API
-			// The password is encrypted with the key of the current user.
-			// The protected value transfered from other machine or user cannot be decrypted.
-			byte[] bytes = ProtectedData.Protect(Encoding.UTF8.GetBytes(password), entropy, DataProtectionScope.CurrentUser);
-			return Convert.ToBase64String(bytes);
-		}
-
-		private static string UnprotectPassword(string encryptedPassword) {
-			// argument checks
-			Debug.Assert(encryptedPassword != null);
-
-			// decrypt the password by ProtectedData API.
-			byte[] bytes = ProtectedData.Unprotect(Convert.FromBase64String(encryptedPassword), entropy, DataProtectionScope.CurrentUser);
-			return Encoding.UTF8.GetString(bytes);
 		}
 
 		#endregion

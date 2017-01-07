@@ -36,7 +36,9 @@ namespace MAPE.Command {
 			}
 
 			// add a setting if necessary 
-			if (omitDefault == false || value != defaultValue) {
+			if (omitDefault && value == defaultValue) {
+				settings.RemoveValue(settingName);
+			} else {
 				settings.SetObjectValue(settingName, GetWebProxySettings(value, omitDefault));
 			}
 
@@ -129,15 +131,15 @@ namespace MAPE.Command {
 			}
 
 			// read settings
-			WebProxy actualProxy = settings.GetWebProxyValue(SettingNames.ActualProxy, null);
+			IWebProxy actualProxy = settings.GetWebProxyValue(SettingNames.ActualProxy, null);
 			if (actualProxy == null) {
+				// try to detect the current proxy settings
 				actualProxy = DetectSystemProxy();
 			}
 
 			// create a proxy
 			Proxy proxy = this.Owner.ComponentFactory.CreateProxy(proxySettings);
 			proxy.ActualProxy = actualProxy;
-			proxy.KeepServerCredential = (this.Owner.CredentialPersistence != CredentialPersistence.Session);
 			proxy.Start(proxyRunner);
 			this.Proxy = proxy;
 
