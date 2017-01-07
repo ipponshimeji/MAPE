@@ -20,6 +20,9 @@ namespace CLI {
 		#region creation and disposal
 
 		public Command(): base(new ComponentFactoryForWindows()) {
+			// initialize members
+			this.ObjectName = "CLI command";
+
 			return;
 		}
 

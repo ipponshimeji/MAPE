@@ -155,6 +155,18 @@ namespace MAPE.Server {
 			}
 		}
 
+		public IPEndPoint MainListenerEndPoint {
+			get {
+				lock (this) {
+					// state checks
+					EnsureNotDisposed();
+					Debug.Assert(this.listeners != null && 0 < this.listeners.Count);
+
+					return this.listeners[0].EndPoint;
+				}
+			}
+		}
+
 		public IWebProxy ActualProxy {
 			get {
 				return this.actualProxy;

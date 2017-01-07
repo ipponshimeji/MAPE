@@ -53,7 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Command\CLICommandBase.cs" />
-    <Compile Include="Command\RunningProxyState.cs" />
+    <Compile Include="Command\SystemSettingsSwitcher.cs" />
     <Compile Include="Http\BodyBuffer.cs" />
     <Compile Include="Http\HttpException.cs" />
     <Compile Include="Http\HeaderBuffer.cs" />

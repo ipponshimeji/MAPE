@@ -7,7 +7,9 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using MAPE;
 using MAPE.Utils;
+using MAPE.ComponentBase;
 using MAPE.Server;
 using SettingNames = MAPE.Command.CommandBase.SettingNames;
 using CredentialInfo = MAPE.Command.CommandBase.CredentialInfo;
@@ -108,8 +110,8 @@ namespace MAPE.Command {
 			return settings.GetObjectValue(CommandBase.SettingNames.Proxy, Settings.EmptySettingsGenerator, createIfNotExist);
 		}
 
-		public static Settings GetSystemSettingSwitchSettings(this Settings settings, bool createIfNotExist = true) {
-			return settings.GetObjectValue(CommandBase.SettingNames.SystemSettingSwitch, Settings.EmptySettingsGenerator, createIfNotExist);
+		public static Settings GetSystemSettingSwitcherSettings(this Settings settings, bool createIfNotExist = true) {
+			return settings.GetObjectValue(CommandBase.SettingNames.SystemSettingSwitcher, Settings.EmptySettingsGenerator, createIfNotExist);
 		}
 
 		#endregion
@@ -144,7 +146,7 @@ namespace MAPE.Command {
 		#endregion
 	}
 
-	public abstract class CommandBase: IDisposable, IProxyRunner {
+	public abstract class CommandBase: Component, IProxyRunner {
 		#region types
 
 		public static class OptionNames {
@@ -185,7 +187,7 @@ namespace MAPE.Command {
 
 			public const string Proxy = "Proxy";
 
-			public const string SystemSettingSwitch = "SystemSettingSwitch";
+			public const string SystemSettingSwitcher = "SystemSettingSwitcher";
 
 			#endregion
 		}
@@ -295,6 +297,120 @@ namespace MAPE.Command {
 			#endregion
 		}
 
+		protected class RunningProxyState: IDisposable {
+			#region data
+
+			public readonly CommandBase Owner;
+
+			private Proxy proxy = null;
+
+			private SystemSettingsSwitcher backup = null;
+
+			#endregion
+
+
+			#region creation and disposal
+
+			public RunningProxyState(CommandBase owner) {
+				// argument checks
+				if (owner == null) {
+					throw new ArgumentNullException(nameof(owner));
+				}
+
+				// inirialize members
+				this.Owner = owner;
+
+				return;
+			}
+
+			public virtual void Dispose() {
+				// state checks
+				if (this.proxy != null) {
+					Stop();
+				}
+				Debug.Assert(this.proxy == null);
+
+				return;
+			}
+
+			#endregion
+
+
+			#region methods
+
+			public void Start(Settings systemSettingsSwitcherSettings, Settings proxySettings, IProxyRunner proxyRunner) {
+				// argument checks
+				// systemSettingsSwitcherSettings can contain null
+				// proxySettings can contain null
+				if (proxyRunner == null) {
+					throw new ArgumentNullException(nameof(proxyRunner));
+				}
+
+				// state checks
+				if (this.proxy != null) {
+					throw new InvalidOperationException("Already started.");
+				}
+
+				try {
+					ComponentFactory componentFactory = this.Owner.ComponentFactory;
+
+					// create a proxy
+					Proxy proxy = componentFactory.CreateProxy(proxySettings);
+
+					// create a system settings swither
+					SystemSettingsSwitcher systemSettingsSwitcher = componentFactory.CreateSystemSettingsSwitcher(this.Owner, systemSettingsSwitcherSettings, proxy);
+
+					// start the proxy
+					proxy.ActualProxy = systemSettingsSwitcher.ActualProxy;
+					proxy.Start(proxyRunner);
+					this.proxy = proxy;
+
+					// switch system settings
+					this.backup = systemSettingsSwitcher.Switch(makeBackup: true);
+				} catch {
+					Stop();
+					throw;
+				}
+
+				return;
+			}
+
+			public bool Stop(int millisecondsTimeout = 0) {
+				// restore the system settings
+				SystemSettingsSwitcher backup = this.backup;
+				this.backup = null;
+				if (backup != null) {
+					try {
+						backup.Switch(makeBackup: false);
+					} catch (Exception exception) {
+						// ToDo: the way to send the message to owner
+						// Console is not appropriate for GUI
+						Console.Error.Write($"Fail to restore the previous system settings: {exception.Message}");
+						Console.Error.Write("Please restore it manually.");
+						// continue
+					}
+				}
+
+				// stop and dispose the proxy
+				Proxy proxy = this.proxy;
+				this.proxy = null;
+				bool stopConfirmed = false;
+				if (proxy == null) {
+					stopConfirmed = true;
+				} else {
+					try {
+						stopConfirmed = proxy.Stop(millisecondsTimeout);
+					} finally {
+						proxy.Dispose();
+					}
+				}
+
+				return stopConfirmed;
+			}
+
+			#endregion
+		}
+
 		#endregion
 
 
@@ -333,7 +449,7 @@ namespace MAPE.Command {
 			return;
 		}
 
-		public virtual void Dispose() {
+		public override void Dispose() {
 			// clear members
 			this.Kind = null;
 			this.Credentials = null;
@@ -387,13 +503,13 @@ namespace MAPE.Command {
 			}
 
 			// get setting valuses to be used
-			Settings systemSettingSwitchSettings = settings.GetObjectValue(SettingNames.SystemSettingSwitch);
+			Settings systemSettingSwitcherSettings = settings.GetObjectValue(SettingNames.SystemSettingSwitcher);
 			Settings proxySettings = settings.GetObjectValue(SettingNames.Proxy);
 
 			// create a RunningProxyState and start the proxy
-			RunningProxyState state = this.ComponentFactory.CreateRunningProxyState(this);
+			RunningProxyState state = new RunningProxyState(this);
 			try {
-				state.Start(systemSettingSwitchSettings, proxySettings, proxyRunner);
+				state.Start(systemSettingSwitcherSettings, proxySettings, proxyRunner);
 			} catch {
 				state.Dispose();
 				throw;
@@ -629,7 +745,7 @@ namespace MAPE.Command {
 			} else if (AreSameOptionNames(name, OptionNames.RetryCount)) {
 				settings.GetProxySettings(createIfNotExist: true).SetJsonValue(Proxy.SettingNames.RetryCount, value);
 			} else if (AreSameOptionNames(name, OptionNames.ActualProxy)) {
-				settings.GetSystemSettingSwitchSettings(createIfNotExist: true).SetJsonValue(RunningProxyState.SettingNames.ActualProxy, value);
+				settings.GetSystemSettingSwitcherSettings(createIfNotExist: true).SetJsonValue(SystemSettingsSwitcher.SettingNames.ActualProxy, value);
 			} else {
 				handled = false;	// not handled
 			}
