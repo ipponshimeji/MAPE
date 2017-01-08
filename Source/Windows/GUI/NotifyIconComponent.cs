@@ -10,12 +10,23 @@ namespace MAPE.Windows.GUI {
 
 		public NotifyIconComponent() {
 			InitializeComponent();
+			InitializeMisc();
 		}
 
 		public NotifyIconComponent(IContainer container) {
 			container.Add(this);
 
 			InitializeComponent();
+			InitializeMisc();
+		}
+
+		#endregion
+
+
+		#region privates
+
+		private void InitializeMisc() {
+			this.notifyIcon.Text = Properties.Resources.App_Title;
 		}
 
 		#endregion

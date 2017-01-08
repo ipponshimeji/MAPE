@@ -38,9 +38,7 @@
 			// notifyIcon
 			// 
 			this.notifyIcon.ContextMenuStrip = this.contextMenuStrip;
-			this.notifyIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon.Icon")));
-			this.notifyIcon.Text = "MAPE";
-			this.notifyIcon.Visible = true;
+			resources.ApplyResources(this.notifyIcon, "notifyIcon");
 			// 
 			// contextMenuStrip
 			// 
@@ -53,41 +51,37 @@
             this.menuItemSeparator2,
             this.ExitMenuItem});
 			this.contextMenuStrip.Name = "contextMenuStrip";
-			this.contextMenuStrip.Size = new System.Drawing.Size(121, 120);
+			resources.ApplyResources(this.contextMenuStrip, "contextMenuStrip");
 			// 
 			// StartMenuItem
 			// 
 			this.StartMenuItem.Name = "StartMenuItem";
-			this.StartMenuItem.Size = new System.Drawing.Size(120, 26);
-			this.StartMenuItem.Text = "Start";
+			resources.ApplyResources(this.StartMenuItem, "StartMenuItem");
 			// 
 			// StopMenuItem
 			// 
 			this.StopMenuItem.Name = "StopMenuItem";
-			this.StopMenuItem.Size = new System.Drawing.Size(120, 26);
-			this.StopMenuItem.Text = "Stop";
+			resources.ApplyResources(this.StopMenuItem, "StopMenuItem");
 			// 
 			// menuItemSeparator1
 			// 
 			this.menuItemSeparator1.Name = "menuItemSeparator1";
-			this.menuItemSeparator1.Size = new System.Drawing.Size(117, 6);
+			resources.ApplyResources(this.menuItemSeparator1, "menuItemSeparator1");
 			// 
 			// OpenMenuItem
 			// 
 			this.OpenMenuItem.Name = "OpenMenuItem";
-			this.OpenMenuItem.Size = new System.Drawing.Size(120, 26);
-			this.OpenMenuItem.Text = "Open";
+			resources.ApplyResources(this.OpenMenuItem, "OpenMenuItem");
 			// 
 			// menuItemSeparator2
 			// 
 			this.menuItemSeparator2.Name = "menuItemSeparator2";
-			this.menuItemSeparator2.Size = new System.Drawing.Size(117, 6);
+			resources.ApplyResources(this.menuItemSeparator2, "menuItemSeparator2");
 			// 
 			// ExitMenuItem
 			// 
 			this.ExitMenuItem.Name = "ExitMenuItem";
-			this.ExitMenuItem.Size = new System.Drawing.Size(120, 26);
-			this.ExitMenuItem.Text = "Exit";
+			resources.ApplyResources(this.ExitMenuItem, "ExitMenuItem");
 			this.contextMenuStrip.ResumeLayout(false);
 
 		}

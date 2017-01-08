@@ -59,5 +59,14 @@ namespace MAPE.Windows.GUI.Properties {
                 resourceCulture = value;
             }
         }
+        
+        /// <summary>
+        ///   MAPE に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string App_Title {
+            get {
+                return ResourceManager.GetString("App_Title", resourceCulture);
+            }
+        }
     }
 }

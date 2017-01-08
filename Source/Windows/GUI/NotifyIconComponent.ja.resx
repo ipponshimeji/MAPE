@@ -117,51 +117,39 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <metadata name="notifyIcon.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>17, 60</value>
-  </metadata>
-  <metadata name="contextMenuStrip.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-    <value>203, 17</value>
-  </metadata>
   <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
   <data name="StartMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>192, 26</value>
+    <value>306, 26</value>
   </data>
   <data name="StartMenuItem.Text" xml:space="preserve">
-    <value>&amp;Start Proxying</value>
+    <value>中継を開始する(&amp;S)</value>
   </data>
   <data name="StopMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>192, 26</value>
+    <value>306, 26</value>
   </data>
   <data name="StopMenuItem.Text" xml:space="preserve">
-    <value>S&amp;top Proxying</value>
+    <value>中継を停止する(&amp;T)</value>
   </data>
   <data name="menuItemSeparator1.Size" type="System.Drawing.Size, System.Drawing">
-    <value>189, 6</value>
+    <value>303, 6</value>
   </data>
   <data name="OpenMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>192, 26</value>
+    <value>306, 26</value>
   </data>
   <data name="OpenMenuItem.Text" xml:space="preserve">
-    <value>&amp;Open Window ...</value>
+    <value>Windowを開く(&amp;O) ...</value>
   </data>
   <data name="menuItemSeparator2.Size" type="System.Drawing.Size, System.Drawing">
-    <value>189, 6</value>
+    <value>303, 6</value>
   </data>
   <data name="ExitMenuItem.Size" type="System.Drawing.Size, System.Drawing">
-    <value>192, 26</value>
+    <value>306, 26</value>
   </data>
   <data name="ExitMenuItem.Text" xml:space="preserve">
-    <value>E&amp;xit MAPE</value>
+    <value>認証プロキシ爆発しろ！を終了する(&amp;X)</value>
   </data>
   <data name="contextMenuStrip.Size" type="System.Drawing.Size, System.Drawing">
-    <value>193, 120</value>
-  </data>
-  <data name="&gt;&gt;contextMenuStrip.Name" xml:space="preserve">
-    <value>contextMenuStrip</value>
-  </data>
-  <data name="&gt;&gt;contextMenuStrip.Type" xml:space="preserve">
-    <value>System.Windows.Forms.ContextMenuStrip, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+    <value>307, 120</value>
   </data>
   <data name="notifyIcon.Icon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
     <value>
@@ -701,17 +689,4 @@
         AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
 </value>
   </data>
-  <data name="notifyIcon.Text" xml:space="preserve">
-    <value>MAPE</value>
-  </data>
-  <assembly alias="mscorlib" name="mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="notifyIcon.Visible" type="System.Boolean, mscorlib">
-    <value>True</value>
-  </data>
-  <metadata name="$this.Localizable" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>True</value>
-  </metadata>
-  <metadata name="$this.TrayLargeIcon" type="System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089">
-    <value>False</value>
-  </metadata>
 </root>
