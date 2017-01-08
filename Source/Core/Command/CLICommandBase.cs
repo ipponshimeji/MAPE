@@ -124,7 +124,7 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected override CredentialInfo UpdateCredential(string endPoint, string realm) {
+		protected override CredentialInfo UpdateCredential(string endPoint, string realm, CredentialInfo oldCredential) {
 			// argument checks
 			Debug.Assert(endPoint != null);
 			Debug.Assert(realm != null);    // may be empty

@@ -120,4 +120,31 @@
   <data name="App_Title" xml:space="preserve">
     <value>MAPE</value>
   </data>
+  <data name="CredentialDialog_Description" xml:space="preserve">
+    <value>The credential for {0} is required.</value>
+  </data>
+  <data name="CredentialDialog_Group_Persistency" xml:space="preserve">
+    <value>How _save the credential?</value>
+  </data>
+  <data name="CredentialDialog_Label_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="CredentialDialog_Label_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="CredentialDialog_Label_Password" xml:space="preserve">
+    <value>_Password:</value>
+  </data>
+  <data name="CredentialDialog_Label_UserName" xml:space="preserve">
+    <value>_UserName:</value>
+  </data>
+  <data name="CredentialDialog_Persistency_Persistent" xml:space="preserve">
+    <value>save the credential</value>
+  </data>
+  <data name="CredentialDialog_Persistency_Process" xml:space="preserve">
+    <value>keep during this application</value>
+  </data>
+  <data name="CredentialDialog_Persistency_Session" xml:space="preserve">
+    <value>do not save the credential</value>
+  </data>
 </root>

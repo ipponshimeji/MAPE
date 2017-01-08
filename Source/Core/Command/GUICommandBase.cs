@@ -57,6 +57,16 @@ namespace MAPE.Command {
 		public GUICommandBase(ComponentFactory componentFactory): base(componentFactory) {
 		}
 
+		public override void Dispose() {
+			// dispose this class level
+			if (this.runningProxyState != null) {
+				StopProxy();
+			}
+
+			// dispose the base class level
+			base.Dispose();
+		}
+
 		#endregion
 
 

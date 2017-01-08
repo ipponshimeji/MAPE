@@ -22,7 +22,7 @@ namespace MAPE.Windows.GUI.Properties {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class Resources {
+    public class Resources {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
@@ -36,7 +36,7 @@ namespace MAPE.Windows.GUI.Properties {
         ///   このクラスで使用されているキャッシュされた ResourceManager インスタンスを返します。
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Resources.ResourceManager ResourceManager {
+        public static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
                     global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("MAPE.Windows.GUI.Properties.Resources", typeof(Resources).Assembly);
@@ -51,7 +51,7 @@ namespace MAPE.Windows.GUI.Properties {
         ///   現在のスレッドの CurrentUICulture プロパティをオーバーライドします。
         /// </summary>
         [global::System.ComponentModel.EditorBrowsableAttribute(global::System.ComponentModel.EditorBrowsableState.Advanced)]
-        internal static global::System.Globalization.CultureInfo Culture {
+        public static global::System.Globalization.CultureInfo Culture {
             get {
                 return resourceCulture;
             }
@@ -63,9 +63,90 @@ namespace MAPE.Windows.GUI.Properties {
         /// <summary>
         ///   MAPE に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        internal static string App_Title {
+        public static string App_Title {
             get {
                 return ResourceManager.GetString("App_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The credential for {0} is required. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_Description {
+            get {
+                return ResourceManager.GetString("CredentialDialog_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   How _save the credential? に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_Group_Persistency {
+            get {
+                return ResourceManager.GetString("CredentialDialog_Group_Persistency", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Cancel に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_Label_Cancel {
+            get {
+                return ResourceManager.GetString("CredentialDialog_Label_Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   OK に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_Label_OK {
+            get {
+                return ResourceManager.GetString("CredentialDialog_Label_OK", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Password: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_Label_Password {
+            get {
+                return ResourceManager.GetString("CredentialDialog_Label_Password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _UserName: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_Label_UserName {
+            get {
+                return ResourceManager.GetString("CredentialDialog_Label_UserName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   save the credential に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_Persistency_Persistent {
+            get {
+                return ResourceManager.GetString("CredentialDialog_Persistency_Persistent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   keep during this application に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_Persistency_Process {
+            get {
+                return ResourceManager.GetString("CredentialDialog_Persistency_Process", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   do not save the credential に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_Persistency_Session {
+            get {
+                return ResourceManager.GetString("CredentialDialog_Persistency_Session", resourceCulture);
             }
         }
     }

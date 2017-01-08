@@ -808,7 +808,7 @@ namespace MAPE.Command {
 
 		protected abstract void RunProxy(Settings settings);
 
-		protected virtual CredentialInfo UpdateCredential(string endPoint, string realm) {
+		protected virtual CredentialInfo UpdateCredential(string endPoint, string realm, CredentialInfo oldCredential) {
 			return null;	// no credential by default
 		}
 
@@ -836,18 +836,16 @@ namespace MAPE.Command {
 				}
 
 				// try to find the credential for the end point
-				if (needUpdate == false) {
-					if (credentials.TryGetValue(endPoint, out credential) == false) {
-						// try to find the credential for the "wildcard"
-						if (credentials.TryGetValue(string.Empty, out credential) == false) {
-							needUpdate = true;
-						}
+				if (credentials.TryGetValue(endPoint, out credential) == false) {
+					// try to find the credential for the "wildcard"
+					if (credentials.TryGetValue(string.Empty, out credential) == false) {
+						needUpdate = true;
 					}
 				}
 
 				// update the credential if necessary
 				if (needUpdate) {
-					credential = UpdateCredential(endPoint, realm);
+					credential = UpdateCredential(endPoint, realm, credential);
 					if (credential != null) {
 						SetCredential(credential, saveIfNecessary: true);
 					}

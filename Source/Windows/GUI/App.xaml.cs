@@ -35,7 +35,7 @@ namespace MAPE.Windows.GUI {
 
 		private NotifyIconComponent notifyIcon;
 
-		private MainWindow mainWindow;
+		private Window mainWindow;
 
 		#endregion
 
@@ -110,6 +110,7 @@ namespace MAPE.Windows.GUI {
 		}
 
 		internal void ErrorMessage(string message) {
+			// ToDo: the way to show error
 			MessageBox.Show(message, this.command.ObjectName, MessageBoxButton.OK, MessageBoxImage.Error);
 		}
 
@@ -216,7 +217,7 @@ namespace MAPE.Windows.GUI {
 
 		private void OpenMenuItem_Click(object sender, EventArgs e) {
 			try {
-				MainWindow window = this.mainWindow;
+				Window window = this.mainWindow;
 				if (window != null) {
 					window.Activate();
 				} else {

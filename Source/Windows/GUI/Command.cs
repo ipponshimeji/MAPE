@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Globalization;
+using System.Windows;
 using MAPE.Utils;
 using MAPE.Command;
 
@@ -36,8 +37,20 @@ namespace MAPE.Windows.GUI {
 			return;
 		}
 
-		protected override CredentialInfo UpdateCredential(string endPoint, string realm) {
-			throw new NotImplementedException();
+		protected override CredentialInfo UpdateCredential(string endPoint, string realm, CredentialInfo oldCredential) {
+			// argument checks
+			Debug.Assert(endPoint != null);
+			Debug.Assert(realm != null);    // may be empty
+			// oldCredential can be null
+
+			// setup a credential dialog
+			CredentialDialog dialog = new CredentialDialog();
+			dialog.Title = realm;
+			dialog.EndPoint = endPoint;
+			dialog.Credential = oldCredential;
+
+			// show the credential dialog and get user input
+			return (dialog.ShowDialog() ?? false) ? dialog.Credential : null;
 		}
 
 		#endregion

@@ -28,7 +28,7 @@ using System.Windows;
 //下の NeutralResourceLanguage 属性のコメントを解除します。下の行の "en-US" を
 //プロジェクト ファイルの UICulture 設定と一致するよう更新します。
 
-//[assembly: NeutralResourcesLanguage("en-US", UltimateResourceFallbackLocation.Satellite)]
+// [assembly: NeutralResourcesLanguage("en-US", UltimateResourceFallbackLocation.Satellite)]
 
 
 [assembly: ThemeInfo(

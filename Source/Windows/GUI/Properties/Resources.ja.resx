@@ -120,4 +120,31 @@
   <data name="App_Title" xml:space="preserve">
     <value>認証プロキシ爆発しろ！</value>
   </data>
+  <data name="CredentialDialog_Description" xml:space="preserve">
+    <value>{0}に対する認証情報が必要です。</value>
+  </data>
+  <data name="CredentialDialog_Group_Persistency" xml:space="preserve">
+    <value>認証情報の保存方法(_S)</value>
+  </data>
+  <data name="CredentialDialog_Label_Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="CredentialDialog_Label_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="CredentialDialog_Label_Password" xml:space="preserve">
+    <value>パスワード(_P):</value>
+  </data>
+  <data name="CredentialDialog_Label_UserName" xml:space="preserve">
+    <value>ユーザ名(_U):</value>
+  </data>
+  <data name="CredentialDialog_Persistency_Persistent" xml:space="preserve">
+    <value>保存する</value>
+  </data>
+  <data name="CredentialDialog_Persistency_Process" xml:space="preserve">
+    <value>このアプリケーションの実行中のみ保持する</value>
+  </data>
+  <data name="CredentialDialog_Persistency_Session" xml:space="preserve">
+    <value>保存しない</value>
+  </data>
 </root>
