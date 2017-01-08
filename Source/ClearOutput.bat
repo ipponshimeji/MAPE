@@ -10,6 +10,8 @@ set RMDIR=rmdir /S /Q
 %RMDIR% "Windows\Windows\obj"
 %RMDIR% "Windows\CLI\bin"
 %RMDIR% "Windows\CLI\obj"
+%RMDIR% "Windows\GUI\bin"
+%RMDIR% "Windows\GUI\obj"
 %RMDIR% "TestResults"
 
 endlocal
