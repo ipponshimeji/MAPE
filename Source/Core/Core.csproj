@@ -52,6 +52,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Command\GUICommandBase.cs" />
     <Compile Include="Command\CLICommandBase.cs" />
     <Compile Include="Command\SystemSettingsSwitcher.cs" />
     <Compile Include="Http\BodyBuffer.cs" />

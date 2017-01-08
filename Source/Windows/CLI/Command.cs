@@ -2,7 +2,7 @@
 using MAPE.Windows;
 
 
-namespace CLI {
+namespace MAPE.Windows.CLI {
 	class Command: CLICommandForWindows {
 		#region entry point
 

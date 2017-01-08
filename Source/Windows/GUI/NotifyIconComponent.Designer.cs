@@ -27,12 +27,12 @@
 			System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(NotifyIconComponent));
 			this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
 			this.contextMenuStrip = new System.Windows.Forms.ContextMenuStrip(this.components);
-			this.startMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-			this.stopMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.StartMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.StopMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemSeparator1 = new System.Windows.Forms.ToolStripSeparator();
-			this.openMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.OpenMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemSeparator2 = new System.Windows.Forms.ToolStripSeparator();
-			this.exitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.ExitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.contextMenuStrip.SuspendLayout();
 			// 
 			// notifyIcon
@@ -46,48 +46,48 @@
 			// 
 			this.contextMenuStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
 			this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.startMenuItem,
-            this.stopMenuItem,
+            this.StartMenuItem,
+            this.StopMenuItem,
             this.menuItemSeparator1,
-            this.openMenuItem,
+            this.OpenMenuItem,
             this.menuItemSeparator2,
-            this.exitMenuItem});
+            this.ExitMenuItem});
 			this.contextMenuStrip.Name = "contextMenuStrip";
 			this.contextMenuStrip.Size = new System.Drawing.Size(121, 120);
 			// 
-			// startMenuItem
+			// StartMenuItem
 			// 
-			this.startMenuItem.Name = "startMenuItem";
-			this.startMenuItem.Size = new System.Drawing.Size(120, 26);
-			this.startMenuItem.Text = "Start";
+			this.StartMenuItem.Name = "StartMenuItem";
+			this.StartMenuItem.Size = new System.Drawing.Size(120, 26);
+			this.StartMenuItem.Text = "Start";
 			// 
-			// stopMenuItem
+			// StopMenuItem
 			// 
-			this.stopMenuItem.Name = "stopMenuItem";
-			this.stopMenuItem.Size = new System.Drawing.Size(120, 26);
-			this.stopMenuItem.Text = "Stop";
+			this.StopMenuItem.Name = "StopMenuItem";
+			this.StopMenuItem.Size = new System.Drawing.Size(120, 26);
+			this.StopMenuItem.Text = "Stop";
 			// 
 			// menuItemSeparator1
 			// 
 			this.menuItemSeparator1.Name = "menuItemSeparator1";
 			this.menuItemSeparator1.Size = new System.Drawing.Size(117, 6);
 			// 
-			// openMenuItem
+			// OpenMenuItem
 			// 
-			this.openMenuItem.Name = "openMenuItem";
-			this.openMenuItem.Size = new System.Drawing.Size(120, 26);
-			this.openMenuItem.Text = "Open";
+			this.OpenMenuItem.Name = "OpenMenuItem";
+			this.OpenMenuItem.Size = new System.Drawing.Size(120, 26);
+			this.OpenMenuItem.Text = "Open";
 			// 
 			// menuItemSeparator2
 			// 
 			this.menuItemSeparator2.Name = "menuItemSeparator2";
 			this.menuItemSeparator2.Size = new System.Drawing.Size(117, 6);
 			// 
-			// exitMenuItem
+			// ExitMenuItem
 			// 
-			this.exitMenuItem.Name = "exitMenuItem";
-			this.exitMenuItem.Size = new System.Drawing.Size(120, 26);
-			this.exitMenuItem.Text = "Exit";
+			this.ExitMenuItem.Name = "ExitMenuItem";
+			this.ExitMenuItem.Size = new System.Drawing.Size(120, 26);
+			this.ExitMenuItem.Text = "Exit";
 			this.contextMenuStrip.ResumeLayout(false);
 
 		}
@@ -96,11 +96,11 @@
 
 		private System.Windows.Forms.NotifyIcon notifyIcon;
 		private System.Windows.Forms.ContextMenuStrip contextMenuStrip;
-		private System.Windows.Forms.ToolStripMenuItem startMenuItem;
-		private System.Windows.Forms.ToolStripMenuItem stopMenuItem;
 		private System.Windows.Forms.ToolStripSeparator menuItemSeparator1;
-		private System.Windows.Forms.ToolStripMenuItem openMenuItem;
 		private System.Windows.Forms.ToolStripSeparator menuItemSeparator2;
-		private System.Windows.Forms.ToolStripMenuItem exitMenuItem;
+		internal System.Windows.Forms.ToolStripMenuItem StartMenuItem;
+		internal System.Windows.Forms.ToolStripMenuItem StopMenuItem;
+		internal System.Windows.Forms.ToolStripMenuItem OpenMenuItem;
+		internal System.Windows.Forms.ToolStripMenuItem ExitMenuItem;
 	}
 }
