@@ -310,28 +310,35 @@ namespace MAPE.Server {
 
 			// preparations
 			ReconnectableTcpClient server = this.server;
-			Debug.Assert(this.server != null);
-			Action<ReconnectableTcpClient> onConnectionError = (c) => {
-				LogError($"Cannot connect to the actual proxy '{c.Host}:{c.Port}'.");
+			if (server == null) {
+				throw new InvalidOperationException("The server connection has been closed.");
+			}
+			Action<string, int, Exception> onConnectionError = (h, p, e) => {
+				LogError($"Cannot connect to the actual proxy '{h}:{p}': {e.Message}");
 				throw new HttpException(HttpStatusCode.InternalServerError, "Not Connected to Actual Proxy");
 			};
+			bool logVerbose = IsLogged(TraceEventType.Verbose);
 
 			// start connection
 			if (response == null) {
 				// the start of a request
 				// connect to the server
+				Uri uri = null;
 				try {
-					Uri uri = new Uri($"http://{request.Host}");
+					uri = new Uri($"http://{request.Host}");
 					IWebProxy actualProxy = this.Proxy.ActualProxy;
 					if (actualProxy != null) {
 						uri = actualProxy.GetProxy(uri);
 					}
+					if (logVerbose) {
+						LogVerbose($"The remote end point is {uri.Host}:{uri.Port}");
+					}
 
 					// Note that the server may be already connected in Keep-Alive mode 
 					server.EnsureConnect(uri.Host, uri.Port);
-				} catch (Exception) {
+				} catch (Exception exception) {
 					// the case that server connection is not available
-					onConnectionError(server);
+					onConnectionError(uri?.Host, uri?.Port ?? 0, exception);
 				}
 			}
 
@@ -358,9 +365,9 @@ namespace MAPE.Server {
 					if (modifications != null) {
 						try {
 							server.EnsureConnect();
-						} catch (Exception) {
+						} catch (Exception exception) {
 							// the case that server connection is not available
-							onConnectionError(server);
+							onConnectionError(server.Host, server.Port, exception);
 						}
 					}
 				}
@@ -378,25 +385,30 @@ namespace MAPE.Server {
 			try {
 				// interpret the exception to HttpException
 				// Null httpError means no need to send any error message to the client.
-				if (exception != null && request != null && request.MessageRead) {
-					httpException = exception as HttpException;
-					if (httpException == null) {
-						httpException = new HttpException(exception);
-						Debug.Assert(httpException.HttpStatusCode == HttpStatusCode.InternalServerError);
+				if (exception is EndOfStreamException) {
+					// an EndOfStreamException means disconnection at an appropriate timing.
+					LogVerbose($"The communication ends normally.");
+				} else {
+					if (exception != null && request != null && request.MessageRead) {
+						httpException = exception as HttpException;
+						if (httpException == null) {
+							httpException = new HttpException(exception);
+							Debug.Assert(httpException.HttpStatusCode == HttpStatusCode.InternalServerError);
+						}
 					}
-				}
 
-				// log the state
-				if (exception != null) {
-					// report the original exception message (not httpException's)
-					LogError($"Error: {exception.Message}");
-				}
-				if (httpException != null) {
-					string method = request?.Method;
-					if (string.IsNullOrEmpty(method)) {
-						method = "(undetected method)";
+					// log the state
+					if (exception != null) {
+						// report the original exception message (not httpException's)
+						LogError($"Error: {exception.Message}");
 					}
-					LogError($"Trying to respond an error response: {method} - {httpException.StatusCode}");
+					if (httpException != null) {
+						string method = request?.Method;
+						if (string.IsNullOrEmpty(method)) {
+							method = "(undetected method)";
+						}
+						LogError($"Trying to respond an error response: {method} -> {httpException.StatusCode}, {request?.Host}");
+					}
 				}
 			} catch {
 				// continue

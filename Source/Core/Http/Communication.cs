@@ -61,8 +61,9 @@ namespace MAPE.Http {
 							break;
 						}
 					}
-				} catch (EndOfStreamException) {
+				} catch (EndOfStreamException exception) {
 					// an EndOfStreamException means disconnection at an appropriate timing.
+					owner.OnError(request, exception);
 					// continue
 				} catch (Exception exception) {
 					// report the exception to the owner
