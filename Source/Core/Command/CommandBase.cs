@@ -166,6 +166,8 @@ namespace MAPE.Command {
 
 			public const string RetryCount = "RetryCount";
 
+			public const string EnableSystemSettingSwitch = "EnableSystemSettingSwitch";
+
 			public const string ActualProxy = "ActualProxy";
 
 			#endregion
@@ -671,7 +673,7 @@ namespace MAPE.Command {
 						Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
 						"MAPE"
 					);
-					settingsFilePath = Path.Combine(settingsFolderPath, "MAPE.settings");
+					settingsFilePath = Path.Combine(settingsFolderPath, "Settings.json");
 				}
 				this.SettingsFilePath = settingsFilePath;
 
@@ -744,6 +746,8 @@ namespace MAPE.Command {
 				settings.GetProxySettings(createIfNotExist: true).SetJsonValue(Proxy.SettingNames.AdditionalListeners, value);
 			} else if (AreSameOptionNames(name, OptionNames.RetryCount)) {
 				settings.GetProxySettings(createIfNotExist: true).SetJsonValue(Proxy.SettingNames.RetryCount, value);
+			} else if (AreSameOptionNames(name, OptionNames.EnableSystemSettingSwitch)) {
+				settings.GetSystemSettingSwitcherSettings(createIfNotExist: true).SetJsonValue(SystemSettingsSwitcher.SettingNames.EnableSystemSettingSwitch, value);
 			} else if (AreSameOptionNames(name, OptionNames.ActualProxy)) {
 				settings.GetSystemSettingSwitcherSettings(createIfNotExist: true).SetJsonValue(SystemSettingsSwitcher.SettingNames.ActualProxy, value);
 			} else {
