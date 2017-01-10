@@ -71,23 +71,18 @@ namespace MAPE.Http {
 
 			// set message properties
 			this.Method = method;
-			Version version = HeaderBuffer.ParseVersion(httpVersion);
-			this.Version = version;
-			if (version.Major == 1 && version.Minor == 0) {
-				// HTTP/1.0
-				// "Host" header field may not be specified
-				if (string.IsNullOrEmpty(target) == false) {
-					// adjust target
-					// It seems that some Windows components specify a target without scheme, such as "spsprodch1su1dedicatedsb4.servicebus.windows.net:443"
-					if (target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) == false && target.StartsWith("https://", StringComparison.OrdinalIgnoreCase) == false) {
-						target = $"http://{target}";
-					}
-					try {
-						Uri uri = new Uri(target);
-						this.Host = $"{uri.Host}:{uri.Port}";
-					} catch {
-						// continue
-					}
+			this.Version = HeaderBuffer.ParseVersion(httpVersion);
+			if (string.IsNullOrEmpty(target) == false &&  target[0] != '/') {
+				// adjust target
+				// ToDo: is this secure?
+				if (target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) == false && target.StartsWith("https://", StringComparison.OrdinalIgnoreCase) == false) {
+					target = $"http://{target}";
+				}
+				try {
+					Uri uri = new Uri(target);
+					this.Host = $"{uri.Host}:{uri.Port}";
+				} catch {
+					// continue
 				}
 			}
 
@@ -109,7 +104,11 @@ namespace MAPE.Http {
 			switch (decapitalizedFieldName) {
 				case "host":
 					// save its value, but its span is unnecessary
-					this.Host = HeaderBuffer.TrimHeaderFieldValue(headerBuffer.ReadFieldASCIIValue(false));
+					if (string.IsNullOrEmpty(this.Host)) {
+						this.Host = HeaderBuffer.TrimHeaderFieldValue(headerBuffer.ReadFieldASCIIValue(false));
+					} else {
+						headerBuffer.SkipField();
+					}
 					break;
 				case "proxy-authorization":
 					// save its span, but its value is unnecessary

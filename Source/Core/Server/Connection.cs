@@ -304,6 +304,9 @@ namespace MAPE.Server {
 			if (request == null) {
 				throw new ArgumentNullException(nameof(request));
 			}
+			if (string.IsNullOrEmpty(request.Host)) {
+				throw new HttpException(HttpStatusCode.BadRequest);
+			}
 			if (response == null && repeatCount != 0) {
 				throw new ArgumentNullException(nameof(response));
 			}
