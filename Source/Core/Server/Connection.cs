@@ -357,7 +357,7 @@ namespace MAPE.Server {
 				LogRoundTripResult(request, response, modifications != null);
 
 				// manage the connection for non-Keep-Alive mode
-				if (response.KeepAliveEnabled == false) {
+				if (response.KeepAliveEnabled == false && !(response.StatusCode == 200 && request.Method == "CONNECT")) {
 					// disconnect the server connection
 					server.Disconnect();
 

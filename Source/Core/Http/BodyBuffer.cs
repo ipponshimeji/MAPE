@@ -140,7 +140,7 @@ namespace MAPE.Http {
 					// read body bytes into the rest of the header buffer
 					Debug.Assert(restLen <= int.MaxValue);
 					FillBuffer(headerBuffer, (int)restLen);
-					Debug.Assert(contentLength == bodyBytesInHeaderBufferLength);
+					Debug.Assert(contentLength == headerBuffer.Limit - headerBuffer.Next);
 					Debug.Assert(this.MemoryBlock == null);
 				} else {
 					byte[] memoryBlock = EnsureMemoryBlockAllocated();

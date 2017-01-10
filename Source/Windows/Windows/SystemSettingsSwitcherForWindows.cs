@@ -124,7 +124,18 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected override bool Switch() {
+		protected override bool Switch(SystemSettingsSwitcher backup) {
+			// argument checks
+			// backup can be null
+
+			// adjust settings
+			SystemSettingsSwitcherForWindows actualBackup = backup as SystemSettingsSwitcherForWindows;
+			string proxyOverride = this.ProxyOverride;
+			if (actualBackup != null && string.IsNullOrEmpty(actualBackup.ProxyOverride)) {
+				// use the current ProxyOverride if it is defined explicitly
+				proxyOverride = actualBackup.ProxyOverride;
+			}
+
 			// set Internet Options in the registry 
 			using (RegistryKey key = GetInternetSettingKey(writable: true)) {
 				// AutoConfigURL
@@ -137,7 +148,7 @@ namespace MAPE.Command {
 				SetValue(key, RegistryNames.ProxyServer, this.ProxyServer);
 
 				// ProxyOverride
-				SetValue(key, RegistryNames.ProxyOverride, this.ProxyOverride);
+				SetValue(key, RegistryNames.ProxyOverride, proxyOverride);
 			}
 
 			// set User Environment Variables in the registry

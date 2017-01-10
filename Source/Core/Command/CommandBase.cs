@@ -56,7 +56,7 @@ namespace MAPE.Command {
 			string password = (protectedPassword == null) ? string.Empty : UnprotectPassword(protectedPassword);
 			CredentialPersistence persistence = settings.GetCredentialPersistenceValue(SettingNames.Persistence, defaultValue: CommandBase.DefaultCredentialPersistence);
 
-			return new CredentialInfo(userName, password, endPoint, persistence);
+			return new CredentialInfo(endPoint, userName, password, persistence);
 		}
 
 		public static void SetCredentialsValue(this Settings settings, string settingName, IEnumerable<CredentialInfo> value, bool omitDefault) {

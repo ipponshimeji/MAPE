@@ -114,7 +114,7 @@ namespace MAPE.Command {
 
 			// switch the system setting
 			try {
-				if (Switch() == false) {
+				if (Switch(backup) == false) {
 					// actually, not switched
 					// backup is no use
 					backup = null;
@@ -122,7 +122,7 @@ namespace MAPE.Command {
 			} catch {
 				if (backup != null) {
 					try {
-						backup.Switch();
+						backup.Switch(null);
 					} catch {
 						// continue
 					}
@@ -160,7 +160,10 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected virtual bool Switch() {
+		protected virtual bool Switch(SystemSettingsSwitcher backup) {
+			// argument checks
+			// backup can be null
+
 			return false;	// not switched, by default
 		}
 

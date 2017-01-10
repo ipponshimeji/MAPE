@@ -65,89 +65,63 @@ namespace MAPE.Server {
 
 			public override bool CanRead {
 				get {
-					lock (this.Owner) {
-						return this.InnerStream.CanRead;
-					}
+					return this.InnerStream.CanRead;
 				}
 			}
 
 			public override bool CanSeek {
 				get {
-					lock (this.Owner) {
-						return this.InnerStream.CanSeek;
-					}
+					return this.InnerStream.CanSeek;
 				}
 			}
 
 			public override bool CanWrite {
 				get {
-					lock (this.Owner) {
-						return this.InnerStream.CanWrite;
-					}
+					return this.InnerStream.CanWrite;
 				}
 			}
 
 			public override long Length {
 				get {
-					lock (this.Owner) {
-						return this.InnerStream.Length;
-					}
+					return this.InnerStream.Length;
 				}
 			}
 
 			public override long Position {
 				get {
-					lock (this.Owner) {
-						return this.InnerStream.Position;
-					}
+					return this.InnerStream.Position;
 				}
 				set {
-					lock (this.Owner) {
-						this.InnerStream.Position = value;
-					}
+					this.InnerStream.Position = value;
 				}
 			}
 
 			public override void Flush() {
-				lock (this.Owner) {
-					this.InnerStream.Flush();
-				}
+				this.InnerStream.Flush();
 			}
 
 			public override int Read(byte[] buffer, int offset, int count) {
-				lock (this.Owner) {
-					return this.InnerStream.Read(buffer, offset, count);
-				}
+				return this.InnerStream.Read(buffer, offset, count);
 			}
 
 			public override int ReadByte() {
-				lock (this.Owner) {
-					return this.InnerStream.ReadByte();
-				}
+				return this.InnerStream.ReadByte();
 			}
 
 			public override long Seek(long offset, SeekOrigin origin) {
-				lock (this.Owner) {
-					return this.InnerStream.Seek(offset, origin);
-				}
+				return this.InnerStream.Seek(offset, origin);
 			}
 
 			public override void SetLength(long value) {
-				lock (this.Owner) {
-					this.InnerStream.SetLength(value);
-				}
+				this.InnerStream.SetLength(value);
 			}
 
 			public override void Write(byte[] buffer, int offset, int count) {
-				lock (this.Owner) {
-					this.InnerStream.Write(buffer, offset, count);
-				}
+				this.InnerStream.Write(buffer, offset, count);
 			}
 
 			public override void WriteByte(byte value) {
-				lock (this.Owner) {
-					this.InnerStream.WriteByte(value);
-				}
+				this.InnerStream.WriteByte(value);
 			}
 
 			#endregion

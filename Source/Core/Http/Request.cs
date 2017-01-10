@@ -66,12 +66,30 @@ namespace MAPE.Http {
 
 			// read items
 			string method = headerBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
-			headerBuffer.ReadSpaceSeparatedItem(skipItem: true, decapitalize: false, lastItem: false);
-			string version = headerBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: true);
+			string target = headerBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
+			string httpVersion = headerBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: true);
 
 			// set message properties
 			this.Method = method;
-			this.Version = HeaderBuffer.ParseVersion(version);
+			Version version = HeaderBuffer.ParseVersion(httpVersion);
+			this.Version = version;
+			if (version.Major == 1 && version.Minor == 0) {
+				// HTTP/1.0
+				// "Host" header field may not be specified
+				if (string.IsNullOrEmpty(target) == false) {
+					// adjust target
+					// It seems that some Windows components specify a target without scheme, such as "spsprodch1su1dedicatedsb4.servicebus.windows.net:443"
+					if (target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) == false && target.StartsWith("https://", StringComparison.OrdinalIgnoreCase) == false) {
+						target = $"http://{target}";
+					}
+					try {
+						Uri uri = new Uri(target);
+						this.Host = $"{uri.Host}:{uri.Port}";
+					} catch {
+						// continue
+					}
+				}
+			}
 
 			return;
 		}
