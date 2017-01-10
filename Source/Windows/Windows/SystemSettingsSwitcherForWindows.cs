@@ -29,6 +29,8 @@ namespace MAPE.Command {
 
 			public const string ProxyOverride = "ProxyOverride";
 
+			public const string DefaultConnectionSettings = "DefaultConnectionSettings";
+
 			#endregion
 		}
 
@@ -45,6 +47,17 @@ namespace MAPE.Command {
 		#endregion
 
 
+		#region constants
+
+		public const int ConnectionsRevisionIndex = 4;
+
+		public const int AutoDetectByteIndex = 8;
+
+		public const byte AutoDetectFlag = 0x08;
+
+		#endregion
+
+
 		#region data
 
 		public string AutoConfigURL { get; protected set; } = null;
@@ -56,6 +69,8 @@ namespace MAPE.Command {
 
 		// ex. *.example.org;*.example.jp;<local>
 		public string ProxyOverride { get; protected set; } = null;
+
+		public bool AutoDetect { get; protected set; } = false;
 
 		public string HttpProxyEnvironmentVariable { get; protected set; } = null;
 
@@ -79,6 +94,7 @@ namespace MAPE.Command {
 				this.ProxyEnable = 1;
 				this.ProxyServer = $"http={proxyEndPoint};https={proxyEndPoint}";
 				this.ProxyOverride = settings.GetStringValue(SettingNames.ProxyOverride, null);
+				Debug.Assert(this.AutoDetect == false);
 				this.HttpProxyEnvironmentVariable = $"http://{proxyEndPoint}";
 				this.HttpsProxyEnvironmentVariable = $"http://{proxyEndPoint}";
 			}
@@ -98,7 +114,7 @@ namespace MAPE.Command {
 			// load this class level settings
 
 			// read Internet Options from the registry 
-			using (RegistryKey key = GetInternetSettingKey(writable: false)) {
+			using (RegistryKey key = OpenInternetSettingsKey(writable: false)) {
 				// AutoConfigURL
 				this.AutoConfigURL = (string)key.GetValue(RegistryNames.AutoConfigURL, defaultValue: null);
 
@@ -110,10 +126,20 @@ namespace MAPE.Command {
 
 				// ProxyOverride
 				this.ProxyOverride = (string)key.GetValue(RegistryNames.ProxyOverride, defaultValue: null);
+
+				// AutoDetect
+				using (RegistryKey connectionsKey = OpenConnectionsKey(key, writable: false)) {
+					bool autoDetect = false;
+					byte[] bytes = (byte[])connectionsKey.GetValue(RegistryNames.DefaultConnectionSettings, defaultValue: null);
+					if (bytes != null && AutoDetectByteIndex < bytes.Length) {
+						autoDetect = (bytes[AutoDetectByteIndex] & AutoDetectFlag) != 0;
+					}
+					this.AutoDetect = autoDetect;
+				}
 			}
 
 			// read User Environment Variables from the registry
-			using (RegistryKey key = GetEnvironmentKey(writable: false)) {
+			using (RegistryKey key = OpenEnvironmentKey(writable: false)) {
 				// HttpProxyEnvironmentVariable
 				this.HttpProxyEnvironmentVariable = (string)key.GetValue(EnvironmentNames.HttpProxy, defaultValue: null);
 
@@ -137,7 +163,7 @@ namespace MAPE.Command {
 			}
 
 			// set Internet Options in the registry 
-			using (RegistryKey key = GetInternetSettingKey(writable: true)) {
+			using (RegistryKey key = OpenInternetSettingsKey(writable: true)) {
 				// AutoConfigURL
 				SetValue(key, RegistryNames.AutoConfigURL, this.AutoConfigURL);
 
@@ -149,10 +175,37 @@ namespace MAPE.Command {
 
 				// ProxyOverride
 				SetValue(key, RegistryNames.ProxyOverride, proxyOverride);
+
+				// AutoDetect
+				using (RegistryKey connectionsKey = OpenConnectionsKey(key, writable: true)) {
+					byte[] bytes = (byte[])connectionsKey.GetValue(RegistryNames.DefaultConnectionSettings, defaultValue: null);
+					if (bytes != null && AutoDetectByteIndex < bytes.Length) {
+						byte oldFlags = bytes[AutoDetectByteIndex];
+						byte newFlags = this.AutoDetect? (byte)(oldFlags | AutoDetectFlag): (byte)(oldFlags & ~AutoDetectFlag);
+						if (oldFlags != newFlags) {
+							// set AutoDetect flag
+							bytes[AutoDetectByteIndex] = newFlags;
+
+							// update revision
+							// Do not increment the revision.
+							// Incrementing revision confuses Windows' Internet Option System.
+							// It seems that it detects difference based on this value.
+#if false
+							uint revision = BitConverter.ToUInt32(bytes, ConnectionsRevisionIndex);
+							byte[] revisionBytes = BitConverter.GetBytes(++revision);
+							Debug.Assert(revisionBytes.Length == 4);
+							Array.Copy(revisionBytes, 0, bytes, ConnectionsRevisionIndex, 4);
+#endif
+
+							// save the bytes
+							connectionsKey.SetValue(RegistryNames.DefaultConnectionSettings, bytes, RegistryValueKind.Binary);
+						}
+					}
+				}
 			}
 
 			// set User Environment Variables in the registry
-			using (RegistryKey key = GetEnvironmentKey(writable: true)) {
+			using (RegistryKey key = OpenEnvironmentKey(writable: true)) {
 				// HttpProxyEnvironmentVariable
 				SetValue(key, EnvironmentNames.HttpProxy, this.HttpProxyEnvironmentVariable);
 
@@ -192,11 +245,18 @@ namespace MAPE.Command {
 
 		#region private
 
-		private static RegistryKey GetInternetSettingKey(bool writable) {
+		private static RegistryKey OpenInternetSettingsKey(bool writable) {
 			return Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings", writable);
 		}
 
-		private static RegistryKey GetEnvironmentKey(bool writable) {
+		private static RegistryKey OpenConnectionsKey(RegistryKey internetSettingsKey, bool writable) {
+			// argument checks
+			Debug.Assert(internetSettingsKey != null);
+
+			return internetSettingsKey.OpenSubKey("Connections", writable);
+		}
+
+		private static RegistryKey OpenEnvironmentKey(bool writable) {
 			return Registry.CurrentUser.OpenSubKey(@"Environment", writable);
 		}
 
