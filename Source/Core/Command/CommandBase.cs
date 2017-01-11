@@ -679,7 +679,7 @@ namespace MAPE.Command {
 
 				// load settings from the config file
 				if (File.Exists(settingsFilePath) == false) {
-					Logger.LogInformation("The settings file is not found.");
+					Logger.LogInformation("The settings file is not found. Assuming empty one.");
 				} else {
 					try {
 						settings = LoadSettingsFromFile(settingsFilePath);

@@ -9,6 +9,13 @@ using MAPE.Command;
 
 namespace MAPE.Windows.GUI {
 	internal class Command: GUICommandBase {
+		#region data
+
+		private App app = null;
+
+		#endregion
+
+
 		#region creation and disposal
 
 		public Command(): base(new ComponentFactoryForWindows()) {
@@ -29,10 +36,20 @@ namespace MAPE.Windows.GUI {
 		}
 
 		protected override void RunProxy(Settings settings) {
+			// state checks
+			if (this.app != null) {
+				throw new InvalidOperationException();
+			}
+
 			// run WPF application
 			App app = new App(this);
 			app.InitializeComponent();
-			app.Run();
+			this.app = app;
+			try {
+				app.Run();
+			} finally {
+				this.app = null;
+			}
 
 			return;
 		}
@@ -43,14 +60,22 @@ namespace MAPE.Windows.GUI {
 			Debug.Assert(realm != null);    // may be empty
 			// oldCredential can be null
 
-			// setup a credential dialog
-			CredentialDialog dialog = new CredentialDialog();
-			dialog.Title = realm;
-			dialog.EndPoint = endPoint;
-			dialog.Credential = oldCredential;
+			// state checks
+			Debug.Assert(this.app != null);
 
-			// show the credential dialog and get user input
-			return (dialog.ShowDialog() ?? false) ? dialog.Credential : null;
+			// ask user's credential
+			Func<CredentialInfo> callback = () => {
+				// setup a credential dialog
+				CredentialDialog dialog = new CredentialDialog();
+				dialog.Title = realm;
+				dialog.EndPoint = endPoint;
+				dialog.Credential = oldCredential;
+
+				// show the credential dialog and get user input
+				return (dialog.ShowDialog() ?? false) ? dialog.Credential : null;
+			};
+
+			return this.app.Dispatcher.Invoke<CredentialInfo>(callback);
 		}
 
 		#endregion
