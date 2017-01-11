@@ -11,7 +11,7 @@ namespace MAPE.Http {
 	public interface ICommunicationOwner {
 		ILogger Logger { get; }
 
-		ComponentFactory ComponentFactory { get; }
+		IHttpComponentFactory ComponentFactory { get; }
 
 		IEnumerable<MessageBuffer.Modification> OnCommunicate(int repeatCount, Request request, Response response);
 

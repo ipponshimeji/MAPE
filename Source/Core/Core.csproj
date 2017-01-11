@@ -59,9 +59,11 @@
     <Compile Include="Http\HttpException.cs" />
     <Compile Include="Http\HeaderBuffer.cs" />
     <Compile Include="Http\CommunicationSubType.cs" />
+    <Compile Include="Http\IHttpComponentFactory.cs" />
     <Compile Include="Http\ICommunicationOwner.cs" />
     <Compile Include="Http\Communication.cs" />
     <Compile Include="Http\MessageBuffer.cs" />
+    <Compile Include="Server\IServerComponentFactory.cs" />
     <Compile Include="Server\ReconnectableTcpClient.cs" />
     <Compile Include="Server\IProxyRunner.cs" />
     <Compile Include="Utils\ColorConsoleTraceListener.cs" />

@@ -1,9 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Net;
-using System.Linq;
-using System.Text;
 using MAPE.Utils;
 using MAPE.ComponentBase;
 using MAPE.Http;
@@ -12,7 +8,7 @@ using MAPE.Command;
 
 
 namespace MAPE {
-    public class ComponentFactory {
+    public class ComponentFactory: IServerComponentFactory, IHttpComponentFactory {
 		#region types
 
 		public class ConnectionCache: InstanceCache<Connection> {
@@ -219,8 +215,27 @@ namespace MAPE {
 
 		#region methods
 
+		public static byte[] AllocMemoryBlock() {
+			return memoryBlockCache.AllocMemoryBlock();
+		}
+
+		public static void FreeMemoryBlock(byte[] instance) {
+			memoryBlockCache.ReleaseMemoryBlock(instance);
+		}
+
 		public virtual SystemSettingsSwitcher CreateSystemSettingsSwitcher(CommandBase owner, Settings settings, Proxy proxy) {
 			return new SystemSettingsSwitcher(owner, settings, proxy);
+		}
+
+		#endregion
+
+
+		#region IServerComponentFactory
+
+		public virtual IHttpComponentFactory HttpComponentFactory {
+			get {
+				return this;
+			}
 		}
 
 		public virtual Proxy CreateProxy(Settings settings) {
@@ -243,6 +258,11 @@ namespace MAPE {
 			connectionCache.ReleaseConnection(instance, discardInstance);
 		}
 
+		#endregion
+
+
+		#region IHttpComponentFactory
+
 		public virtual Request AllocRequest(Stream input, Stream output) {
 			return requestCache.AllocRequest(input, output);
 		}
@@ -257,14 +277,6 @@ namespace MAPE {
 
 		public virtual void ReleaseResponse(Response instance, bool discardInstance = false) {
 			responseCache.ReleaseResponse(instance, discardInstance);
-		}
-
-		public static byte[] AllocMemoryBlock() {
-			return memoryBlockCache.AllocMemoryBlock();
-		}
-
-		public static void FreeMemoryBlock(byte[] instance) {
-			memoryBlockCache.ReleaseMemoryBlock(instance);
 		}
 
 		#endregion

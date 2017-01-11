@@ -32,7 +32,7 @@ namespace MAPE.Http {
 
 			// process Http request/response
 			bool tunnelingMode = false;
-			ComponentFactory componentFactory = owner.ComponentFactory;
+			IHttpComponentFactory componentFactory = owner.ComponentFactory;
 			Request request = componentFactory.AllocRequest(requestInput, requestOutput);
 			try {
 				Response response = componentFactory.AllocResponse(responseInput, responseOutput);

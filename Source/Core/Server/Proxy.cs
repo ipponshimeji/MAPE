@@ -125,7 +125,7 @@ namespace MAPE.Server {
 
 		#region data
 
-		private readonly ComponentFactory componentFactory;
+		private readonly IServerComponentFactory componentFactory;
 
 		#endregion
 
@@ -149,7 +149,7 @@ namespace MAPE.Server {
 
 		#region properties
 
-		public ComponentFactory ComponentFactory {
+		public IServerComponentFactory ComponentFactory {
 			get {
 				return this.componentFactory;
 			}
@@ -215,7 +215,7 @@ namespace MAPE.Server {
 
 		#region creation and disposal
 
-		public Proxy(ComponentFactory componentFactory, Settings settings) {
+		public Proxy(IServerComponentFactory componentFactory, Settings settings) {
 			// argument checks
 			if (componentFactory == null) {
 				componentFactory = new ComponentFactory();

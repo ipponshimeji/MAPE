@@ -34,7 +34,7 @@ namespace MAPE.Server {
 			}
 		}
 
-		public ComponentFactory ComponentFactory {
+		public IServerComponentFactory ComponentFactory {
 			get {
 				return this.owner.ComponentFactory;
 			}

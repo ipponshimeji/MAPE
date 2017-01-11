@@ -60,7 +60,7 @@ namespace MAPE.Server {
 			}
 		}
 
-		public ComponentFactory ComponentFactory {
+		public IServerComponentFactory ComponentFactory {
 			get {
 				return this.owner.ComponentFactory;
 			}
@@ -287,9 +287,9 @@ namespace MAPE.Server {
 
 		#region ICommunicationOwner - for Communication class only
 
-		ComponentFactory ICommunicationOwner.ComponentFactory {
+		IHttpComponentFactory ICommunicationOwner.ComponentFactory {
 			get {
-				return this.ComponentFactory;
+				return this.ComponentFactory.HttpComponentFactory;
 			}
 		}
 
