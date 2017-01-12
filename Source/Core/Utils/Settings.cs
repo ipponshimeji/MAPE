@@ -485,6 +485,10 @@ namespace MAPE.Utils {
 			if (filePath == null) {
 				throw new ArgumentNullException(nameof(filePath));
 			}
+			string folderPath = Path.GetDirectoryName(filePath);
+			if (Directory.Exists(folderPath) == false) {
+				Directory.CreateDirectory(folderPath);
+			}
 
 			string tempFilePath = string.Concat(filePath, ".tmp");
 			string backupFilePath = string.Concat(filePath, ".bak");
