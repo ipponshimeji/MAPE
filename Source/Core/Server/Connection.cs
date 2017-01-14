@@ -16,7 +16,7 @@ namespace MAPE.Server {
     public class Connection: TaskingComponent, ICommunicationOwner {
 		#region constants
 
-		public const string ObjectBaseName = "Connection";
+		public const string ComponentNameBase = "Connection";
 
 		#endregion
 
@@ -28,18 +28,7 @@ namespace MAPE.Server {
 		#endregion
 
 
-		#region data - synchronized by classLocker
-
-		private static object classLocker = new object();
-
-		private static int nextId = 0;
-
-		#endregion
-
-
 		#region data - synchronized by locking this
-
-		private int id = 0;
 
 		private int retryCount;
 
@@ -71,9 +60,9 @@ namespace MAPE.Server {
 
 		#region creation and disposal
 
-		public Connection() {
+		public Connection(): base(allocateComponentId: false) {
 			// initialize members
-			this.ObjectName = ObjectBaseName;
+			this.ComponentName = ComponentNameBase;
 
 			return;
 		}
@@ -95,14 +84,13 @@ namespace MAPE.Server {
 				}
 
 				// initialize members
+				this.ParentComponentId = owner.Owner.ComponentId;
+				this.ComponentId = Logger.AllocComponentId();
 				this.owner = owner;
 				this.retryCount = owner.Owner.RetryCount;
 				Debug.Assert(this.client == null);
 				Debug.Assert(this.server == null);
 				Debug.Assert(this.proxyCredential == null);
-				lock (classLocker) {
-					this.id = nextId++;
-				}
 			}
 
 			return;
@@ -144,14 +132,14 @@ namespace MAPE.Server {
 			try {
 				lock (this) {
 					// log
-					bool verbose = IsLogged(TraceEventType.Verbose);
+					bool verbose = ShouldLog(TraceEventType.Verbose);
 					if (verbose) {
 						LogVerbose($"Starting for {client.Client.RemoteEndPoint.ToString()} ...");
 					}
 
 					// state checks
 					if (this.owner == null) {
-						throw new ObjectDisposedException(this.ObjectName);
+						throw new ObjectDisposedException(this.ComponentName);
 					}
 
 					Task communicatingTask = this.Task;
@@ -161,14 +149,14 @@ namespace MAPE.Server {
 					communicatingTask = new Task(Communicate);
 					communicatingTask.ContinueWith(
 						(t) => {
-							base.LogVerbose("Stopped.");
-							this.ObjectName = ObjectBaseName;
+							LogVerbose("Stopped.");
+							this.ComponentName = ComponentNameBase;
 							this.owner.OnConnectionCompleted(this);
 						}
 					);
 					this.Task = communicatingTask;
 
-					this.ObjectName = $"{ObjectBaseName} <{this.id}>";
+					this.ComponentName = $"{ComponentNameBase} <{this.ComponentId}>";
 					Debug.Assert(this.client == null);
 					this.client = client;
 
@@ -195,7 +183,7 @@ namespace MAPE.Server {
 				lock (this) {
 					// state checks
 					if (this.owner == null) {
-						throw new ObjectDisposedException(this.ObjectName);
+						throw new ObjectDisposedException(this.ComponentName);
 					}
 
 					communicatingTask = this.Task;
@@ -293,7 +281,7 @@ namespace MAPE.Server {
 			}
 		}
 
-		ILogger ICommunicationOwner.Logger {
+		IComponentLogger ICommunicationOwner.Logger {
 			get {
 				return this;
 			}
@@ -320,7 +308,7 @@ namespace MAPE.Server {
 				LogError($"Cannot connect to the actual proxy '{h}:{p}': {e.Message}");
 				throw new HttpException(HttpStatusCode.InternalServerError, "Not Connected to Actual Proxy");
 			};
-			bool logVerbose = IsLogged(TraceEventType.Verbose);
+			bool logVerbose = ShouldLog(TraceEventType.Verbose);
 
 			// start connection
 			if (response == null) {

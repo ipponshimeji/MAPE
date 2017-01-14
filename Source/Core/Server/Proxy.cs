@@ -222,7 +222,7 @@ namespace MAPE.Server {
 			}
 
 			// initialize members
-			this.ObjectName = ObjectBaseName;
+			this.ComponentName = ObjectBaseName;
 			this.componentFactory = componentFactory;
 
 			// listeners
@@ -263,7 +263,7 @@ namespace MAPE.Server {
 								listener.Dispose();
 							} catch {
 								// continue
-								LogVerbose($"Fail to dispose {listener.ObjectName}.");
+								LogVerbose($"Fail to dispose {listener.ComponentName}.");
 							}
 						}
 					);
@@ -289,7 +289,7 @@ namespace MAPE.Server {
 				lock (this) {
 					// state checks
 					if (this.IsDisposed) {
-						throw new ObjectDisposedException(this.ObjectName);
+						throw new ObjectDisposedException(this.ComponentName);
 					}
 					IReadOnlyList<Listener> listeners = this.listeners;
 					Debug.Assert(listeners != null);
@@ -304,7 +304,7 @@ namespace MAPE.Server {
 					}
 
 					// log
-					bool verbose = IsLogged(TraceEventType.Verbose);
+					bool verbose = ShouldLog(TraceEventType.Verbose);
 					if (verbose) {
 						LogVerbose("Starting...");
 					}
@@ -352,7 +352,7 @@ namespace MAPE.Server {
 					Debug.Assert(this.IsDisposed == false);
 
 					// log
-					bool verbose = IsLogged(TraceEventType.Verbose);
+					bool verbose = ShouldLog(TraceEventType.Verbose);
 					if (verbose) {
 						LogVerbose("Stopping...");
 					}
@@ -425,7 +425,7 @@ namespace MAPE.Server {
 		// not thread-safe
 		public void EnsureNotDisposed() {
 			if (this.IsDisposed) {
-				throw new ObjectDisposedException(this.ObjectName);
+				throw new ObjectDisposedException(this.ComponentName);
 			}
 		}
 
@@ -489,7 +489,7 @@ namespace MAPE.Server {
 				// state checks
 				IDictionary<string, RevisedBytes> basicCredentialCache = this.serverBasicCredentialCache;
 				if (basicCredentialCache == null) {
-					throw new ObjectDisposedException(this.ObjectName);
+					throw new ObjectDisposedException(this.ComponentName);
 				}
 
 				// get value from the cache

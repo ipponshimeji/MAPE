@@ -20,7 +20,7 @@ namespace MAPE.Windows.GUI {
 
 		public Command(): base(new ComponentFactoryForWindows()) {
 			// initialize members
-			this.ObjectName = "MAPE GUI";
+			this.ComponentName = "MAPE GUI";
 
 			return;
 		}

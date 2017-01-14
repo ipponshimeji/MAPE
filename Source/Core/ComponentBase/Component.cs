@@ -4,8 +4,18 @@ using MAPE.Utils;
 
 
 namespace MAPE.ComponentBase {
-	public abstract class Component: IDisposable, ILogger {
+	public abstract class Component: IDisposable, IComponentLogger {
 		#region data
+
+		public int ParentComponentId {
+			get;
+			protected set;
+		} = Logger.NoComponent;
+
+		public int ComponentId {
+			get;
+			protected set;
+		} = Logger.NoComponent;
 
 		/// <summary>
 		/// 
@@ -13,7 +23,7 @@ namespace MAPE.ComponentBase {
 		/// <remarks>
 		/// ToDo: remarks for thread-safety
 		/// </remarks>
-		public string ObjectName {
+		public string ComponentName {
 			get;
 			protected set;
 		} = string.Empty;
@@ -23,7 +33,13 @@ namespace MAPE.ComponentBase {
 
 		#region creation and disposal
 
-		protected Component() {
+		protected Component(bool allocateComponentId = true) {
+			// initialize members
+			if (allocateComponentId) {
+				this.ComponentId = Logger.AllocComponentId();
+			}
+
+			return;
 		}
 
 		public abstract void Dispose();
@@ -31,38 +47,14 @@ namespace MAPE.ComponentBase {
 		#endregion
 
 
-		#region ILogger
+		#region IComponentLogger
 
-		public bool IsLogged(TraceEventType eventType) {
-			return Logger.IsLogged(eventType);
+		public bool ShouldLog(TraceEventType eventType) {
+			return Logger.ShouldLog(eventType);
 		}
 
-		public void LogCritical(string message) {
-			Logger.LogCritical(FormatTraceMessage(message));
-		}
-
-		public void LogError(string message) {
-			Logger.LogError(FormatTraceMessage(message));
-		}
-
-		public void LogWarning(string message) {
-			Logger.LogWarning(FormatTraceMessage(message));
-		}
-
-		public void LogInformation(string message) {
-			Logger.LogInformation(FormatTraceMessage(message));
-		}
-
-		public void LogVerbose(string message) {
-			Logger.LogVerbose(FormatTraceMessage(message));
-		}
-
-		public void LogStart(string message) {
-			Logger.LogStart(FormatTraceMessage(message));
-		}
-
-		public void LogStop(string message) {
-			Logger.LogStop(FormatTraceMessage(message));
+		public void Log(TraceEventType eventType, string message, int eventId = 0) {
+			Logger.Log(this.ParentComponentId, this.ComponentId, this.ComponentName, eventType, message, eventId);
 		}
 
 		#endregion
@@ -70,8 +62,32 @@ namespace MAPE.ComponentBase {
 
 		#region methods - logging
 
-		public string FormatTraceMessage(string message) {
-			return string.Concat(DateTime.Now, " [", this.ObjectName, "] ", message);
+		public void LogCritical(string message, int eventId = 0) {
+			Log(TraceEventType.Critical, message, eventId);
+		}
+
+		public void LogError(string message, int eventId = 0) {
+			Log(TraceEventType.Error, message, eventId);
+		}
+
+		public void LogWarning(string message, int eventId = 0) {
+			Log(TraceEventType.Warning, message, eventId);
+		}
+
+		public void LogInformation(string message, int eventId = 0) {
+			Log(TraceEventType.Information, message, eventId);
+		}
+
+		public void LogVerbose(string message, int eventId = 0) {
+			Log(TraceEventType.Verbose, message, eventId);
+		}
+
+		public void LogStart(string message, int eventId = 0) {
+			Log(TraceEventType.Start, message, eventId);
+		}
+
+		public void LogStop(string message, int eventId = 0) {
+			Log(TraceEventType.Stop, message, eventId);
 		}
 
 		#endregion

@@ -29,7 +29,7 @@ namespace MAPE.Utils {
 						objectName = "(unknown)";
 					}
 					// ToDo: display the name of the caller method
-					Logger.LogVerbose($"Exception at Dispose() on '{objectName}': {exception.Message}");
+					Logger.LogVerbose("Util.DisposeWithoutFail()", $"Exception at Dispose() on '{objectName}': {exception.Message}");
 				}
 			}
 

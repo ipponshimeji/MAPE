@@ -95,7 +95,7 @@ namespace MAPE.Server {
 				lock (this) {
 					// state checks
 					if (this.IsDisposed) {
-						throw new ObjectDisposedException(this.ObjectName);
+						throw new ObjectDisposedException(this.ComponentName);
 					}
 					Debug.Assert(this.tcpListener != null);
 
@@ -111,7 +111,7 @@ namespace MAPE.Server {
 				lock (this) {
 					// state checks
 					if (this.IsDisposed) {
-						throw new ObjectDisposedException(this.ObjectName);
+						throw new ObjectDisposedException(this.ComponentName);
 					}
 					if (this.IsListening) {
 						throw new InvalidOperationException();
@@ -159,6 +159,7 @@ namespace MAPE.Server {
 			}
 
 			// initialize members
+			this.ParentComponentId = owner.ComponentId;
 			this.owner = owner;
 
 			// backlog
@@ -178,7 +179,7 @@ namespace MAPE.Server {
 
 			// clear the listener
 			lock (this) {
-				this.ObjectName = ObjectBaseName;
+				this.ComponentName = ObjectBaseName;
 				this.tcpListener = null;
 			}
 
@@ -195,7 +196,7 @@ namespace MAPE.Server {
 				lock (this) {
 					// state checks
 					if (this.IsDisposed) {
-						throw new ObjectDisposedException(this.ObjectName);
+						throw new ObjectDisposedException(this.ComponentName);
 					}
 					Debug.Assert(this.tcpListener != null);
 
@@ -206,7 +207,7 @@ namespace MAPE.Server {
 					}
 
 					// log
-					bool verbose = IsLogged(TraceEventType.Verbose);
+					bool verbose = ShouldLog(TraceEventType.Verbose);
 					if (verbose) {
 						LogVerbose("Starting...");
 					}
@@ -242,7 +243,7 @@ namespace MAPE.Server {
 				lock (this) {
 					// state checks
 					if (this.IsDisposed) {
-						throw new ObjectDisposedException(this.ObjectName);
+						throw new ObjectDisposedException(this.ComponentName);
 					}
 					Debug.Assert(this.tcpListener != null);
 
@@ -313,7 +314,7 @@ namespace MAPE.Server {
 
 			// update end point related state
 			this.tcpListener = new TcpListener(endPoint);
-			this.ObjectName = $"{ObjectBaseName} ({endPoint})";
+			this.ComponentName = $"{ObjectBaseName} ({endPoint})";
 
 			return;
 		}
@@ -332,7 +333,7 @@ namespace MAPE.Server {
 			}
 
 			// start accept loop
-			bool verbose = IsLogged(TraceEventType.Verbose);
+			bool verbose = ShouldLog(TraceEventType.Verbose);
 			try {
 				do {
 					TcpClient client = tcpListener.AcceptTcpClient();

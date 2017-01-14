@@ -55,6 +55,8 @@
     <Compile Include="Command\GUICommandBase.cs" />
     <Compile Include="Command\CLICommandBase.cs" />
     <Compile Include="Command\SystemSettingsSwitcher.cs" />
+    <Compile Include="ComponentBase\ComponentLoggerExtensions.cs" />
+    <Compile Include="ComponentBase\IComponentLogger.cs" />
     <Compile Include="Http\BodyBuffer.cs" />
     <Compile Include="Http\HttpException.cs" />
     <Compile Include="Http\HeaderBuffer.cs" />
@@ -67,7 +69,8 @@
     <Compile Include="Server\ReconnectableTcpClient.cs" />
     <Compile Include="Server\IProxyRunner.cs" />
     <Compile Include="Utils\ColorConsoleTraceListener.cs" />
-    <Compile Include="Utils\ILogger.cs" />
+    <Compile Include="Utils\Log.cs" />
+    <Compile Include="Utils\ILogMonitor.cs" />
     <Compile Include="Utils\Settings.cs" />
     <Compile Include="Utils\Util.cs" />
     <Compile Include="Command\CredentialPersistence.cs" />

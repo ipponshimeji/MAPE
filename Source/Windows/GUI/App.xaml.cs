@@ -111,7 +111,7 @@ namespace MAPE.Windows.GUI {
 
 		internal void ErrorMessage(string message) {
 			// ToDo: the way to show error
-			MessageBox.Show(message, this.command.ObjectName, MessageBoxButton.OK, MessageBoxImage.Error);
+			MessageBox.Show(message, this.command.ComponentName, MessageBoxButton.OK, MessageBoxImage.Error);
 		}
 
 		#endregion

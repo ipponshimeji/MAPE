@@ -21,7 +21,7 @@ namespace MAPE.Windows.CLI {
 
 		public Command(): base(new ComponentFactoryForWindows()) {
 			// initialize members
-			this.ObjectName = "CLI command";
+			this.ComponentName = "CLI command";
 
 			return;
 		}

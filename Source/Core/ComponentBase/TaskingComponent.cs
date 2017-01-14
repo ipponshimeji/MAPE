@@ -43,7 +43,7 @@ namespace MAPE.ComponentBase {
 
 		#region creation and disposal
 
-		protected TaskingComponent() {
+		protected TaskingComponent(bool allocateComponentId = true): base(allocateComponentId) {
 		}
 
 		#endregion
