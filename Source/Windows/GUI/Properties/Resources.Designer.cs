@@ -149,5 +149,61 @@ namespace MAPE.Windows.GUI.Properties {
                 return ResourceManager.GetString("CredentialDialog_Persistency_Session", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   (アイコン) に類似した型 System.Drawing.Icon のローカライズされたリソースを検索します。
+        /// </summary>
+        public static System.Drawing.Icon OffIcon {
+            get {
+                object obj = ResourceManager.GetObject("OffIcon", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   (アイコン) に類似した型 System.Drawing.Icon のローカライズされたリソースを検索します。
+        /// </summary>
+        public static System.Drawing.Icon OnIcon {
+            get {
+                object obj = ResourceManager.GetObject("OnIcon", resourceCulture);
+                return ((System.Drawing.Icon)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   MAPE GUI Application に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string VersionInfoWindow_ApplicationDescription {
+            get {
+                return ResourceManager.GetString("VersionInfoWindow_ApplicationDescription", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   MAPE (May Authentication Proxy Explode) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string VersionInfoWindow_ApplicationName {
+            get {
+                return ResourceManager.GetString("VersionInfoWindow_ApplicationName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   OK に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string VersionInfoWindow_okButton_Content {
+            get {
+                return ResourceManager.GetString("VersionInfoWindow_okButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   MAPE に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string VersionInfoWindow_Title {
+            get {
+                return ResourceManager.GetString("VersionInfoWindow_Title", resourceCulture);
+            }
+        }
     }
 }

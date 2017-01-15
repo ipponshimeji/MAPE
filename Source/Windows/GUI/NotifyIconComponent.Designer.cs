@@ -31,57 +31,71 @@
 			this.StopMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemSeparator1 = new System.Windows.Forms.ToolStripSeparator();
 			this.OpenMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.SettingsMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+			this.VersionInfoMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.menuItemSeparator2 = new System.Windows.Forms.ToolStripSeparator();
 			this.ExitMenuItem = new System.Windows.Forms.ToolStripMenuItem();
 			this.contextMenuStrip.SuspendLayout();
 			// 
 			// notifyIcon
 			// 
-			this.notifyIcon.ContextMenuStrip = this.contextMenuStrip;
 			resources.ApplyResources(this.notifyIcon, "notifyIcon");
+			this.notifyIcon.ContextMenuStrip = this.contextMenuStrip;
 			// 
 			// contextMenuStrip
 			// 
+			resources.ApplyResources(this.contextMenuStrip, "contextMenuStrip");
 			this.contextMenuStrip.ImageScalingSize = new System.Drawing.Size(20, 20);
 			this.contextMenuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.StartMenuItem,
             this.StopMenuItem,
             this.menuItemSeparator1,
             this.OpenMenuItem,
+            this.SettingsMenuItem,
+            this.VersionInfoMenuItem,
             this.menuItemSeparator2,
             this.ExitMenuItem});
 			this.contextMenuStrip.Name = "contextMenuStrip";
-			resources.ApplyResources(this.contextMenuStrip, "contextMenuStrip");
 			// 
 			// StartMenuItem
 			// 
-			this.StartMenuItem.Name = "StartMenuItem";
 			resources.ApplyResources(this.StartMenuItem, "StartMenuItem");
+			this.StartMenuItem.Name = "StartMenuItem";
 			// 
 			// StopMenuItem
 			// 
-			this.StopMenuItem.Name = "StopMenuItem";
 			resources.ApplyResources(this.StopMenuItem, "StopMenuItem");
+			this.StopMenuItem.Name = "StopMenuItem";
 			// 
 			// menuItemSeparator1
 			// 
-			this.menuItemSeparator1.Name = "menuItemSeparator1";
 			resources.ApplyResources(this.menuItemSeparator1, "menuItemSeparator1");
+			this.menuItemSeparator1.Name = "menuItemSeparator1";
 			// 
 			// OpenMenuItem
 			// 
-			this.OpenMenuItem.Name = "OpenMenuItem";
 			resources.ApplyResources(this.OpenMenuItem, "OpenMenuItem");
+			this.OpenMenuItem.Name = "OpenMenuItem";
+			// 
+			// SettingsMenuItem
+			// 
+			resources.ApplyResources(this.SettingsMenuItem, "SettingsMenuItem");
+			this.SettingsMenuItem.Name = "SettingsMenuItem";
+			// 
+			// VersionInfoMenuItem
+			// 
+			resources.ApplyResources(this.VersionInfoMenuItem, "VersionInfoMenuItem");
+			this.VersionInfoMenuItem.Name = "VersionInfoMenuItem";
 			// 
 			// menuItemSeparator2
 			// 
-			this.menuItemSeparator2.Name = "menuItemSeparator2";
 			resources.ApplyResources(this.menuItemSeparator2, "menuItemSeparator2");
+			this.menuItemSeparator2.Name = "menuItemSeparator2";
 			// 
 			// ExitMenuItem
 			// 
-			this.ExitMenuItem.Name = "ExitMenuItem";
 			resources.ApplyResources(this.ExitMenuItem, "ExitMenuItem");
+			this.ExitMenuItem.Name = "ExitMenuItem";
 			this.contextMenuStrip.ResumeLayout(false);
 
 		}
@@ -96,5 +110,7 @@
 		internal System.Windows.Forms.ToolStripMenuItem StopMenuItem;
 		internal System.Windows.Forms.ToolStripMenuItem OpenMenuItem;
 		internal System.Windows.Forms.ToolStripMenuItem ExitMenuItem;
+		internal System.Windows.Forms.ToolStripMenuItem SettingsMenuItem;
+		internal System.Windows.Forms.ToolStripMenuItem VersionInfoMenuItem;
 	}
 }

@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.Data;
+using System.Drawing;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using MAPE.Utils;
 using System.Windows.Navigation;
+using MAPE.Utils;
+using AssemblyResources = MAPE.Windows.GUI.Properties.Resources;
+
 
 namespace MAPE.Windows.GUI {
 	public partial class App: Application {
@@ -18,8 +21,10 @@ namespace MAPE.Windows.GUI {
 			ExitEnabled = 0x01,
 			StartEnabled = 0x02,
 			StopEnabled = 0x04,
+			SettingsEnabled = 0x08,
+			VersionInfoEnabled = 0x10,
 
-			InitialState = ExitEnabled | StartEnabled,
+			InitialState = ExitEnabled | StartEnabled | SettingsEnabled | VersionInfoEnabled,
 		}
 
 		#endregion
@@ -36,6 +41,10 @@ namespace MAPE.Windows.GUI {
 		private NotifyIconComponent notifyIcon;
 
 		private Window mainWindow;
+
+		private Window settingsWindow;
+
+		private Window versionInfoWindow;
 
 		#endregion
 
@@ -78,6 +87,7 @@ namespace MAPE.Windows.GUI {
 
 				// start the proxy
 				command.StartProxy();
+				this.notifyIcon.Icon = AssemblyResources.OnIcon;
 			} catch (Exception exception) {
 				// restore UI 
 				this.runningProxy = false;
@@ -99,6 +109,7 @@ namespace MAPE.Windows.GUI {
 
 			try {
 				// stop the proxy
+				this.notifyIcon.Icon = AssemblyResources.OffIcon;
 				command.StopProxy();
 			} finally {
 				// update UI not to be selected 'Stop' menu
@@ -130,6 +141,8 @@ namespace MAPE.Windows.GUI {
 			notifyIcon.StartMenuItem.Click += this.StartMenuItem_Click;
 			notifyIcon.StopMenuItem.Click += this.StopMenuItem_Click;
 			notifyIcon.OpenMenuItem.Click += this.OpenMenuItem_Click;
+			notifyIcon.SettingsMenuItem.Click += this.SettingsMenuItem_Click;
+			notifyIcon.VersionInfoMenuItem.Click += this.VersionInfoMenuItem_Click;
 			notifyIcon.ExitMenuItem.Click += this.ExitMenuItem_Click;
 			this.notifyIcon = notifyIcon;
 
@@ -163,11 +176,12 @@ namespace MAPE.Windows.GUI {
 		#region privates
 
 		private UIState GetUIState() {
-			UIState state = UIState.ExitEnabled;
+			UIState state = UIState.ExitEnabled | UIState.VersionInfoEnabled;
 			if (this.runningProxy) {
 				state |= UIState.StopEnabled;
 			} else {
 				state |= UIState.StartEnabled;
+				state |= UIState.SettingsEnabled;
 			}
 
 			return state;
@@ -189,6 +203,8 @@ namespace MAPE.Windows.GUI {
 				notifyIcon.ExitMenuItem.Enabled = ((newState & UIState.ExitEnabled) != 0);
 				notifyIcon.StartMenuItem.Enabled = ((newState & UIState.StartEnabled) != 0);
 				notifyIcon.StopMenuItem.Enabled = ((newState & UIState.StopEnabled) != 0);
+				notifyIcon.SettingsMenuItem.Enabled = ((newState & UIState.SettingsEnabled) != 0);
+				notifyIcon.VersionInfoMenuItem.Enabled = ((newState & UIState.VersionInfoEnabled) != 0);
 			}
 
 			return;
@@ -231,12 +247,52 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
+		private void SettingsMenuItem_Click(object sender, EventArgs e) {
+			try {
+				Window window = this.settingsWindow;
+				if (window != null) {
+					window.Activate();
+				} else {
+					window = new SettingsWindow();
+					window.Closed += settingsWindow_Closed;
+					this.settingsWindow = window;
+					window.Show();
+				}
+			} catch (Exception exception) {
+				ErrorMessage(exception.Message);
+			}
+		}
+
+		private void VersionInfoMenuItem_Click(object sender, EventArgs e) {
+			try {
+				Window window = this.versionInfoWindow;
+				if (window != null) {
+					window.Activate();
+				} else {
+					window = new VersionInfoWindow();
+					window.Closed += versionInfoWindow_Closed;
+					this.versionInfoWindow = window;
+					window.Show();
+				}
+			} catch (Exception exception) {
+				ErrorMessage(exception.Message);
+			}
+		}
+
 		private void ExitMenuItem_Click(object sender, EventArgs e) {
 			Shutdown();
 		}
 
 		private void mainWindow_Closed(object sender, EventArgs e) {
 			this.mainWindow = null;
+		}
+
+		private void settingsWindow_Closed(object sender, EventArgs e) {
+			this.settingsWindow = null;
+		}
+
+		private void versionInfoWindow_Closed(object sender, EventArgs e) {
+			this.versionInfoWindow = null;
 		}
 
 		#endregion

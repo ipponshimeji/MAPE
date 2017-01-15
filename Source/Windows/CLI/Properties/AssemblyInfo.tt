@@ -17,7 +17,7 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 [assembly: AssemblyTitle("mape")]
 [assembly: AssemblyDescription("MAPE - CLI command for Windows platform")]
-[assembly: AssemblyConfiguration("")]
+[assembly: AssemblyConfiguration("<#= configuration #>")]
 [assembly: AssemblyCompany("<#= companyName #>")]
 [assembly: AssemblyProduct("<#= productName #>")]
 [assembly: AssemblyCopyright("<#= copyright #>")]

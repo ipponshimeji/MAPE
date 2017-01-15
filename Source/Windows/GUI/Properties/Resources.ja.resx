@@ -147,4 +147,16 @@
   <data name="CredentialDialog_Persistency_Session" xml:space="preserve">
     <value>保存しない</value>
   </data>
+  <data name="VersionInfoWindow_Title" xml:space="preserve">
+    <value>認証プロキシ爆発しろ！</value>
+  </data>
+  <data name="VersionInfoWindow_ApplicationName" xml:space="preserve">
+    <value>認証プロキシ爆発しろ！</value>
+  </data>
+  <data name="VersionInfoWindow_ApplicationDescription" xml:space="preserve">
+    <value>認証プロキシ爆発しろ！ GUI アプリケーション</value>
+  </data>
+  <data name="VersionInfoWindow_okButton_Content" xml:space="preserve">
+    <value>OK</value>
+  </data>
 </root>
