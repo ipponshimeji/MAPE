@@ -1,5 +1,7 @@
 ﻿using System;
+using MAPE.Utils;
 using MAPE.Windows;
+using MAPE.Windows.CLI.Properties;
 
 
 namespace MAPE.Windows.CLI {
@@ -24,6 +26,19 @@ namespace MAPE.Windows.CLI {
 			this.ComponentName = "CLI command";
 
 			return;
+		}
+
+		#endregion
+
+
+		#region overrides/overridables - execution
+
+		protected override void ShowUsage(Settings settings) {
+			Console.WriteLine(Resources.Command_Usage);
+		}
+
+		protected override void OutputLogo() {
+			OutputStandardLogo(typeof(Command).Assembly);
 		}
 
 		#endregion

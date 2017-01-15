@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Net;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using MAPE.Utils;
-using MAPE.Server;
+using MAPE.Properties;
 
 
 namespace MAPE.Command {
-    public class CLICommandBase: CommandBase {
+    public abstract class CLICommandBase: CommandBase {
 		#region types
 
 		public static new class OptionNames {
@@ -18,10 +17,20 @@ namespace MAPE.Command {
 
 			public const string Save = "Save";
 
+			public const string NoLogo = SettingNames.NoLogo;
+
 			#endregion
 		}
 
-		public new class CommandKind: CommandBase.CommandKind {
+		public static new class SettingNames {
+			#region constants
+
+			public const string NoLogo = "NoLogo";
+
+			#endregion
+		}
+
+		public new class ExecutionKind: CommandBase.ExecutionKind {
 			#region constants
 
 			public const string SaveSettings = "SaveSettings";
@@ -44,13 +53,37 @@ namespace MAPE.Command {
 		#endregion
 
 
+		#region methods
+
+		protected void OutputStandardLogo(Assembly assembly) {
+			Console.WriteLine(Resources.CLICommandBase_Logo_Command);
+			if (assembly != null) {
+				string version = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
+				if (string.IsNullOrEmpty(version) == false) {
+					Console.WriteLine("version " + version);
+				}
+				string copyright = assembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright;
+				if (string.IsNullOrEmpty(copyright) == false) {
+					Console.WriteLine(copyright);
+				}
+			}
+			Console.WriteLine();
+
+			return;
+		}
+
+		#endregion
+
+
 		#region overrides/overridables - argument processing
 
 		protected override bool HandleOption(string name, string value, Settings settings) {
 			// handle option
 			bool handled = true;
 			if (AreSameOptionNames(name, OptionNames.Save)) {
-				this.Kind = CommandKind.SaveSettings;
+				this.Kind = ExecutionKind.SaveSettings;
+			} else if (AreSameOptionNames(name, OptionNames.NoLogo)) {
+				settings.SetBooleanValue(SettingNames.NoLogo, true);
 			} else {
 				handled = base.HandleOption(name, value, settings);
 			}
@@ -78,9 +111,14 @@ namespace MAPE.Command {
 			// argument checks
 			Debug.Assert(settings.IsNull == false);
 
+			// show logo
+			if (settings.GetBooleanValue(SettingNames.NoLogo, false) == false) {
+				OutputLogo();
+			}
+
 			// execute command according to the command kind 
 			switch (commandKind) {
-				case CommandKind.SaveSettings:
+				case ExecutionKind.SaveSettings:
 					SaveSettings(settings);
 					break;
 				default:
@@ -99,8 +137,8 @@ namespace MAPE.Command {
 			bool completed = false;
 			using (RunningProxyState runningProxyState = StartProxy(settings, this)) {
 				// wait for Ctrl+C
-				Console.WriteLine("Listening...");
-				Console.WriteLine("Press Ctrl+C to quit.");
+				Console.WriteLine(Resources.CLICommandBase_Message_StartListening);
+				Console.WriteLine(Resources.CLICommandBase_Message_StartingNote);
 				using (ManualResetEvent quitEvent = new ManualResetEvent(false)) {
 					// setup Ctrl+C handler
 					ConsoleCancelEventHandler ctrlCHandler = (o, e) => {
@@ -119,7 +157,7 @@ namespace MAPE.Command {
 				// stop the proxy
 				completed = runningProxyState.Stop(5000);
 			}
-			Console.WriteLine(completed ? "Completed." : "Not Completed."); // ToDo: message
+			Console.WriteLine(completed ? Resources.CLICommandBase_Message_Completed : Resources.CLICommandBase_Message_NotCompleted);
 
 			return;
 		}
@@ -129,15 +167,33 @@ namespace MAPE.Command {
 			Debug.Assert(endPoint != null);
 			Debug.Assert(realm != null);    // may be empty
 
-			return AskCredentialInfo(endPoint, realm);
+			return AskCredentialInfo(endPoint, realm, canSave: this.HasSettingsFile);
 		}
 
 		protected virtual void SaveSettings(Settings settings) {
 			// argument checks
 			Debug.Assert(settings.IsNull == false);
 
+			// state checks
+			if (this.HasSettingsFile == false) {
+				throw new Exception(Resources.CLICommandBase_Message_NoSettingsFile);
+			}
+
 			// save the settings
 			SaveSettingsToFile(settings);
+		}
+
+		protected virtual void OutputLogo() {
+			OutputStandardLogo(null);
+		}
+
+		#endregion
+
+
+		#region overrides/overridables - misc
+
+		protected override void ShowErrorMessage(string message) {
+			Console.Error.WriteLine(message);
 		}
 
 		#endregion
@@ -145,7 +201,7 @@ namespace MAPE.Command {
 
 		#region privates
 
-		private static CredentialInfo AskCredentialInfo(string endPoint, string realm) {
+		private static CredentialInfo AskCredentialInfo(string endPoint, string realm, bool canSave) {
 			// argument checks
 			Debug.Assert(realm != null);
 
@@ -156,18 +212,20 @@ namespace MAPE.Command {
 			string userName = Console.ReadLine();
 			Console.Write("Password: ");
 			string password = ReadPassword();
-			CredentialPersistence persistence = AskCredentialPersistence();
+			CredentialPersistence persistence = AskCredentialPersistence(canSave);
 
 			return new CredentialInfo(endPoint, userName, password, persistence);
 		}
 
-		private static CredentialPersistence AskCredentialPersistence() {
+		private static CredentialPersistence AskCredentialPersistence(bool canSave) {
 			// read user preference from the console
 			do {
 				Console.WriteLine($"How save password?");
 				Console.WriteLine($"  1: only during this http session");
 				Console.WriteLine($"  2: only during running this process");
-				Console.WriteLine($"  3: save the password in settings file");
+				if (canSave) {
+					Console.WriteLine($"  3: save the password in settings file");
+				}
 				Console.Write("Selection: ");
 				string answer = Console.ReadLine();
 
@@ -179,7 +237,10 @@ namespace MAPE.Command {
 						case 2:
 							return CredentialPersistence.Process;
 						case 3:
-							return CredentialPersistence.Persistent;
+							if (canSave) {
+								return CredentialPersistence.Persistent;
+							}
+							break;
 					}
 				}
 			} while (true);

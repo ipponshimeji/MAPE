@@ -109,6 +109,15 @@ namespace MAPE.ComponentBase {
 		#endregion
 
 
+		#region methods - misc
+
+		public ObjectDisposedException CreateObjectDisposedException() {
+			return new ObjectDisposedException(this.ComponentName);
+		}
+
+		#endregion
+
+
 		#region overridables
 
 		public virtual void AddSettings(Settings settings, bool omitDefault) {

@@ -7,10 +7,10 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using MAPE;
 using MAPE.Utils;
 using MAPE.ComponentBase;
 using MAPE.Server;
+using MAPE.Properties;
 using SettingNames = MAPE.Command.CommandBase.SettingNames;
 using CredentialInfo = MAPE.Command.CommandBase.CredentialInfo;
 
@@ -34,10 +34,19 @@ namespace MAPE.Command {
 			settings.SetEnumValue(settingName, value, omitDefault, defaultValue);
 		}
 
+		public static TraceLevel GetTraceLevelValue(this Settings settings, string settingName, TraceLevel defaultValue, bool createIfNotExist = false) {
+			return (TraceLevel)settings.GetEnumValue(settingName, typeof(TraceLevel), defaultValue, createIfNotExist);
+		}
+
+		public static void SetTraceLevelValue(this Settings settings, string settingName, TraceLevel value, bool omitDefault, TraceLevel defaultValue) {
+			settings.SetEnumValue(settingName, value, omitDefault, defaultValue);
+		}
+
 
 		public static IEnumerable<CredentialInfo> GetCredentialsValue(this Settings settings, string settingName) {
 			CredentialInfo[] credentials = null;
 
+			// the value is an array of CredentialInfo object
 			IEnumerable<Settings> credentialsSettings = settings.GetObjectArrayValue(settingName, defaultValue: null);
 			if (credentialsSettings != null) {
 				credentials = (
@@ -53,7 +62,7 @@ namespace MAPE.Command {
 			string endPoint = settings.GetStringValue(SettingNames.EndPoint, defaultValue: string.Empty);
 			string userName = settings.GetStringValue(SettingNames.UserName, defaultValue: string.Empty);
 			string protectedPassword = settings.GetStringValue(SettingNames.ProtectedPassword, defaultValue: null);
-			string password = (protectedPassword == null) ? string.Empty : UnprotectPassword(protectedPassword);
+			string password = string.IsNullOrEmpty(protectedPassword) ? string.Empty : UnprotectPassword(protectedPassword);
 			CredentialPersistence persistence = settings.GetCredentialPersistenceValue(SettingNames.Persistence, defaultValue: CommandBase.DefaultCredentialPersistence);
 
 			return new CredentialInfo(endPoint, userName, password, persistence);
@@ -92,8 +101,8 @@ namespace MAPE.Command {
 			// create settings of the CredentialInfo
 			Settings settings = Settings.CreateEmptySettings();
 
-			string endPoint = NormalizeNullToEmpty(value.EndPoint);
-			string userName = NormalizeNullToEmpty(value.UserName);
+			string endPoint = value.EndPoint ?? string.Empty;
+			string userName = value.UserName ?? string.Empty;
 			string password = value.Password;
 			string protectedPassword = string.IsNullOrEmpty(password)? string.Empty: ProtectPassword(password);
 
@@ -118,10 +127,6 @@ namespace MAPE.Command {
 
 
 		#region privates
-
-		private static string NormalizeNullToEmpty(string value) {
-			return (value == null) ? string.Empty : value;
-		}
 
 		private static string ProtectPassword(string password) {
 			// argument checks
@@ -158,23 +163,27 @@ namespace MAPE.Command {
 
 			public const string NoSettings = "NoSettings";
 
+			public const string LogLevel = SettingNames.LogLevel;
+
 			public const string Credential = "Credential";
 
-			public const string MainListener = "MainListener";
+			public const string MainListener = Proxy.SettingNames.MainListener;
 
-			public const string AdditionalListeners = "AdditionalListeners";
+			public const string AdditionalListeners = Proxy.SettingNames.AdditionalListeners;
 
-			public const string RetryCount = "RetryCount";
+			public const string RetryCount = Proxy.SettingNames.RetryCount;
 
-			public const string EnableSystemSettingSwitch = "EnableSystemSettingSwitch";
+			public const string EnableSystemSettingSwitch = SystemSettingsSwitcher.SettingNames.EnableSystemSettingSwitch;
 
-			public const string ActualProxy = "ActualProxy";
+			public const string ActualProxy = SystemSettingsSwitcher.SettingNames.EnableSystemSettingSwitch;
 
 			#endregion
 		}
 
 		public static class SettingNames {
 			#region constants
+
+			public const string LogLevel = "LogLevel";
 
 			public const string Credentials = "Credentials";
 
@@ -194,7 +203,7 @@ namespace MAPE.Command {
 			#endregion
 		}
 
-		public class CommandKind {
+		public class ExecutionKind {
 			#region constants
 
 			public const string RunProxy = "RunProxy";
@@ -243,7 +252,7 @@ namespace MAPE.Command {
 			public CredentialInfo(string endPoint, string userName, string password, CredentialPersistence persistence) {
 				// argument checks
 				if (endPoint == null) {
-					// endPoint can be empty
+					// endPoint cannot be null, but can be empty
 					throw new ArgumentNullException(nameof(endPoint));
 				}
 				// userName can be null
@@ -262,7 +271,8 @@ namespace MAPE.Command {
 
 			#region methods
 
-			private static bool AreSameEndPoint(string endPoint1, string endPoint2) {
+			public static bool AreSameEndPoint(string endPoint1, string endPoint2) {
+				// case-insensitive
 				return string.Compare(endPoint1, endPoint2, StringComparison.OrdinalIgnoreCase) == 0;
 			}
 
@@ -350,7 +360,7 @@ namespace MAPE.Command {
 
 				// state checks
 				if (this.proxy != null) {
-					throw new InvalidOperationException("Already started.");
+					throw new InvalidOperationException("The proxy is already started.");
 				}
 
 				try {
@@ -385,10 +395,8 @@ namespace MAPE.Command {
 					try {
 						backup.Switch(makeBackup: false);
 					} catch (Exception exception) {
-						// ToDo: the way to send the message to owner
-						// Console is not appropriate for GUI
-						Console.Error.Write($"Fail to restore the previous system settings: {exception.Message}");
-						Console.Error.Write("Please restore it manually.");
+						string message = string.Format(Resources.RunningProxyState_Message_FailToRestoreSystemSettings, exception.Message);
+						this.Owner.ShowErrorMessage(message);
 						// continue
 					}
 				}
@@ -403,7 +411,7 @@ namespace MAPE.Command {
 					try {
 						stopConfirmed = proxy.Stop(millisecondsTimeout);
 					} finally {
-						proxy.Dispose();
+						Util.DisposeWithoutFail(proxy);
 					}
 				}
 
@@ -427,11 +435,32 @@ namespace MAPE.Command {
 
 		public readonly ComponentFactory ComponentFactory;
 
+
+		// following data are not changed after execution starts (inside Execute() method)
+
 		protected string SettingsFilePath { get; set; } = null;
 
-		protected IDictionary<string, CredentialInfo> Credentials { get; private set; } = new Dictionary<string, CredentialInfo>();
+		protected string Kind { get; set; } = ExecutionKind.RunProxy;
 
-		protected string Kind { get; set; } = CommandKind.RunProxy;
+		#endregion
+
+
+		#region data - data synchronized by credentialsLocker
+
+		private readonly object credentialsLocker = new object();
+
+		private Dictionary<string, CredentialInfo> credentials = new Dictionary<string, CredentialInfo>();
+
+		#endregion
+
+
+		#region properties
+
+		protected bool HasSettingsFile {
+			get {
+				return string.IsNullOrEmpty(this.SettingsFilePath) == false;
+			}
+		}
 
 		#endregion
 
@@ -453,8 +482,8 @@ namespace MAPE.Command {
 
 		public override void Dispose() {
 			// clear members
+			this.credentials = null;
 			this.Kind = null;
-			this.Credentials = null;
 			this.SettingsFilePath = null;
 
 			return;
@@ -475,14 +504,14 @@ namespace MAPE.Command {
 			return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		}
 
-		protected Settings LoadSettingsFromFile(string settingsFilePath = null) {
+		protected Settings LoadSettingsFromFile(bool createIfNotExist, string settingsFilePath = null) {
 			// argument checks
 			if (settingsFilePath == null) {
 				settingsFilePath = EnsureSettingsFilePathSet();
 			}
 
 			// load settings from the file
-			return Settings.Load(settingsFilePath);
+			return Settings.Load(settingsFilePath, createIfNotExist);
 		}
 
 		protected void SaveSettingsToFile(Settings settings, string settingsFilePath = null) {
@@ -495,6 +524,7 @@ namespace MAPE.Command {
 				settingsFilePath = EnsureSettingsFilePathSet();
 			}
 
+			// save settings to the file
 			settings.Save(settingsFilePath);
 		}
 
@@ -502,6 +532,11 @@ namespace MAPE.Command {
 			// argument checks
 			if (proxyRunner == null) {
 				throw new ArgumentNullException(nameof(proxyRunner));
+			}
+
+			// state checks
+			if (this.credentials == null) {
+				throw CreateObjectDisposedException();
 			}
 
 			// get setting valuses to be used
@@ -526,14 +561,14 @@ namespace MAPE.Command {
 				throw new ArgumentNullException(nameof(credential));
 			}
 
-			lock (this) {
+			lock (this.credentialsLocker) {
 				// state checks
-				IDictionary<string, CredentialInfo> credentials = this.Credentials;
+				IDictionary<string, CredentialInfo> credentials = this.credentials;
 				if (credential == null) {
-					throw new ObjectDisposedException(null);
+					throw CreateObjectDisposedException();
 				}
 
-				// register the credential to the this.Credentials
+				// register the credential to the credential list
 				string endPoint = credential.EndPoint;
 				bool changed = false;
 				CredentialInfo oldCredential;
@@ -554,22 +589,28 @@ namespace MAPE.Command {
 
 					// update settings file if necessary
 					if (saveIfNecessary) {
-						// create a clone of the credential list
-						CredentialInfo[] credentialArray = credentials.Values.ToArray(); 
-						Action action = () => {
-							Settings settings;
-							try {
-								settings = LoadSettingsFromFile();
-							} catch {
-								settings = Settings.CreateEmptySettings();
-							}
+						string settingsFilePath = this.SettingsFilePath;
+						if (string.IsNullOrEmpty(settingsFilePath) == false) {
+							// create a clone of the credential list
+							CredentialInfo[] credentialArray = credentials.Values.ToArray();
+							Action saveTask = () => {
+								try {
+									Settings settings = LoadSettingsFromFile(false, settingsFilePath);
 
-							settings.SetCredentialsValue(SettingNames.Credentials, credentialArray, omitDefault: true);
-							SaveSettingsToFile(settings);
-						};
+									settings.SetCredentialsValue(SettingNames.Credentials, credentialArray, omitDefault: true);
+									SaveSettingsToFile(settings, settingsFilePath);
+								} catch (Exception exception) {
+									string message = string.Format(Resources.CommandBase_Message_FailToSaveCredentials, exception.Message);
+									ShowErrorMessage(message);
+								}
+							};
 
-						// launch save task
-						Task.Run(action);
+							// launch save task
+							Task.Run(saveTask);
+						} else {
+							string message = string.Format(Resources.CommandBase_Message_FailToSaveCredentials, Resources.CommandBase_Message_NoSettingsFile);
+							ShowErrorMessage(message);
+						}
 					}
 				}
 			}
@@ -597,7 +638,7 @@ namespace MAPE.Command {
 			}
 
 			// create settings from the arguments
-			return CreateSettings(options, normalArguments);
+			return CreateExecutingSettings(options, normalArguments);
 		}
 
 		protected virtual void AssortArgument(IEnumerator<string> argEnumerator, IDictionary<string, string> options, IList<string> normalArguments) {
@@ -654,70 +695,43 @@ namespace MAPE.Command {
 			}
 		}
 
-		protected virtual Settings CreateSettings(IDictionary<string, string> options, IList<string> normalArguments) {
+		protected virtual Settings CreateExecutingSettings(IDictionary<string, string> options, IList<string> normalArguments) {
 			// argument checks
 			Debug.Assert(options != null);
 			Debug.Assert(normalArguments != null);
 
 			// create base settings
-			Settings settings = Settings.NullSettings;
-			bool noSetting = options.ContainsKey(OptionNames.NoSettings);
-			if (noSetting == false) {
-				// load the settings
+			Settings settings = GetBaseSettings(options);
 
-				// find the settings file path 
-				string settingsFilePath;
-				if (options.TryGetValue(OptionNames.SettingsFile, out settingsFilePath) == false) {
-					// default location is %LOCALAPPDATA%\MAPE
-					string settingsFolderPath = Path.Combine(
-						Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-						"MAPE"
-					);
-					settingsFilePath = Path.Combine(settingsFolderPath, "Settings.json");
-				}
-				this.SettingsFilePath = settingsFilePath;
-
-				// load settings from the config file
-				if (File.Exists(settingsFilePath) == false) {
-					LogInformation("The settings file is not found. Assuming empty one.");
-				} else {
-					try {
-						settings = LoadSettingsFromFile(settingsFilePath);
-					} catch (Exception exception) {
-						LogError($"Error on loading settings file '{settingsFilePath}': {exception.Message}");
-					}
-				}
-			}
-			if (settings.IsNull) {
-				settings = Settings.CreateEmptySettings();
-			}
-
-			// load the settings
-			LoadSettings(settings);
+			// load the base settings
+			LoadBaseSettings(settings);
 
 			// consolidate the settings and command line options
 			foreach (KeyValuePair<string, string> option in options) {
 				if (HandleOption(option.Key, option.Value, settings) == false) {
-					throw new Exception($"Unrecognized option '{option.Key}'.");
+					string message = string.Format(Resources.CommandBase_Message_InvalidOption, option.Key);
+					throw new Exception(message);
 				}
 			}
 			foreach (string arg in normalArguments) {
 				if (HandleArgument(arg, settings) == false) {
-					throw new Exception($"Unrecognized argument '{arg}'.");
+					string message = string.Format(Resources.CommandBase_Message_InvalidArgument, arg);
+					throw new Exception(message);
 				}
 			}
 
 			return settings;
 		}
 
-		protected virtual void LoadSettings(Settings settings) {
+		protected virtual void LoadBaseSettings(Settings settings) {
 			// argument checks
 			// settings can contain null
 
 			// SettingNames.Credentials
 			IEnumerable<CredentialInfo> credentials = settings.GetCredentialsValue(SettingNames.Credentials);
 			if (credentials != null) {
-				IDictionary<string, CredentialInfo> dictionary = this.Credentials;
+				IDictionary<string, CredentialInfo> dictionary = this.credentials;
+				dictionary.Clear();
 				foreach (CredentialInfo credential in credentials) {
 					dictionary.Add(credential.EndPoint, credential);
 				}
@@ -734,9 +748,11 @@ namespace MAPE.Command {
 			// handle option
 			bool handled = true;
 			if (AreSameOptionNames(name, OptionNames.Help) || AreSameOptionNames(name, "?")) {
-				this.Kind = CommandKind.ShowUsage;
+				this.Kind = ExecutionKind.ShowUsage;
 			} else if (AreSameOptionNames(name, OptionNames.SettingsFile) || AreSameOptionNames(name, OptionNames.NoSettings)) {
 				// ignore, it was already handled in CreateSettings()
+			} else if (AreSameOptionNames(name, OptionNames.LogLevel)) {
+				settings.SetJsonValue(SettingNames.LogLevel, value);
 			} else if (AreSameOptionNames(name, OptionNames.Credential)) {
 				CredentialInfo credential = Settings.Parse(value).CreateCredentialInfo();
 				SetCredential(credential, saveIfNecessary: false);
@@ -758,7 +774,7 @@ namespace MAPE.Command {
 		}
 
 		protected virtual bool HandleArgument(string arg, Settings settings) {
-			return true;	// ignore normal argument
+			return false;
 		}
 
 		#endregion
@@ -774,14 +790,22 @@ namespace MAPE.Command {
 
 			try {
 				// process arguments
-				Settings settings = ProcessArguments(args);
-				Debug.Assert(settings.IsNull == false);
+				Settings settings = Settings.NullSettings;
+				try {
+					settings = ProcessArguments(args);
+					Debug.Assert(settings.IsNull == false);
+				} catch (Exception exception) {
+					// show usage
+					ShowErrorMessage(exception.Message);
+					this.Kind = ExecutionKind.ShowUsage;
+				}
 
-				// execute command based on settings
+				// execute command based on the settings
 				Execute(this.Kind, settings);
 			} catch (Exception exception) {
-				// ToDo: Error Message
-				Console.Error.WriteLine(exception.Message);
+				ShowErrorMessage(exception.Message);
+			} finally {
+				Logger.StopLogging(1000);
 			}
 
 			return;
@@ -793,28 +817,33 @@ namespace MAPE.Command {
 
 			// execute command according to the command kind 
 			switch (commandKind) {
-				case CommandKind.RunProxy:
+				case ExecutionKind.RunProxy:
 					RunProxy(settings);
 					break;
-				case CommandKind.ShowUsage:
+				case ExecutionKind.ShowUsage:
 					ShowUsage(settings);
 					break;
 				default:
-					throw new Exception($"Internal Error: Unexpected CommandKind '{commandKind}'");
+					throw new Exception($"Internal Error: Unexpected ExecutionKind '{commandKind}'");
 			}
 
 			return;
 		}
 
-		protected virtual void ShowUsage(Settings settings) {
-			return;
-		}
+		protected abstract void ShowUsage(Settings settings);
 
 		protected abstract void RunProxy(Settings settings);
 
 		protected virtual CredentialInfo UpdateCredential(string endPoint, string realm, CredentialInfo oldCredential) {
 			return null;	// no credential by default
 		}
+
+		#endregion
+
+
+		#region overridables - misc
+
+		protected abstract void ShowErrorMessage(string message);
 
 		#endregion
 
@@ -830,13 +859,13 @@ namespace MAPE.Command {
 				realm = string.Empty;
 			}
 
-			// lock to share the user response via console.
+			// Note lock is needed not only to access this.Credentials but also to share the user response
 			CredentialInfo credential = null;
-			lock (this) {
+			lock (this.credentialsLocker) {
 				// state checks
-				IDictionary<string, CredentialInfo> credentials = this.Credentials;
+				IDictionary<string, CredentialInfo> credentials = this.credentials;
 				if (credentials == null) {
-					throw new ObjectDisposedException(null);
+					throw CreateObjectDisposedException();
 				}
 
 				// try to find the credential for the end point
@@ -851,7 +880,7 @@ namespace MAPE.Command {
 				if (needUpdate) {
 					credential = UpdateCredential(endPoint, realm, credential);
 					if (credential != null) {
-						SetCredential(credential, saveIfNecessary: true);
+						SetCredential(credential, saveIfNecessary: this.HasSettingsFile);
 					}
 				}
 			}
@@ -873,6 +902,43 @@ namespace MAPE.Command {
 			}
 
 			return settingsFilePath;
+		}
+
+		private Settings GetBaseSettings(IDictionary<string, string> options) {
+			// argument checks
+			Debug.Assert(options != null);
+
+			// create base settings
+			Settings settings = Settings.NullSettings;
+			bool noSetting = options.ContainsKey(OptionNames.NoSettings);
+			if (noSetting == false) {
+				// load the settings
+
+				// find the settings file path 
+				string settingsFilePath;
+				if (options.TryGetValue(OptionNames.SettingsFile, out settingsFilePath) == false) {
+					// default location is %LOCALAPPDATA%\MAPE
+					string settingsFolderPath = Path.Combine(
+						Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+						"MAPE"
+					);
+					settingsFilePath = Path.Combine(settingsFolderPath, "Settings.json");
+				}
+
+				// load settings from the config file
+				try {
+					settings = LoadSettingsFromFile(true, settingsFilePath);
+					this.SettingsFilePath = settingsFilePath;
+				} catch (Exception exception) {
+					string message = string.Format(Resources.CommandBase_Message_FailToLoadSettingsFile, settingsFilePath, exception.Message);
+					ShowErrorMessage(message);
+				}
+			}
+			if (settings.IsNull) {
+				settings = Settings.CreateEmptySettings();
+			}
+
+			return settings;
 		}
 
 		#endregion

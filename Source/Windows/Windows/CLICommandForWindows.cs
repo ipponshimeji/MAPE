@@ -6,7 +6,7 @@ using MAPE.Utils;
 
 
 namespace MAPE.Windows {
-    public class CLICommandForWindows: CLICommandBase {
+    public abstract class CLICommandForWindows: CLICommandBase {
 		public static new class OptionNames {
 			#region constants
 

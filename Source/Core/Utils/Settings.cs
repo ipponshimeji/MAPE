@@ -465,16 +465,28 @@ namespace MAPE.Utils {
 
 		#region methods - load & save
 
-		public static Settings Load(string filePath) {
+		public static Settings Load(string filePath, bool createIfNotExist) {
 			// argument checks
 			if (filePath == null) {
 				throw new ArgumentNullException(nameof(filePath));
 			}
 
 			// load settings from the file
-			JObject jsonObject;
-			using (TextReader reader = File.OpenText(filePath)) {
-				jsonObject = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
+			JObject jsonObject = null;
+			try {
+				using (TextReader reader = File.OpenText(filePath)) {
+					jsonObject = (JObject)JToken.ReadFrom(new JsonTextReader(reader));
+				}
+			} catch (FileNotFoundException) {
+				if (createIfNotExist == false) {
+					throw;
+				}
+
+				// create a file of an empty object
+				jsonObject = new JObject();
+				using (TextWriter writer = File.CreateText(filePath)) {
+					writer.Write(jsonObject.ToString());
+				}
 			}
 
 			return new Settings(jsonObject);
@@ -485,6 +497,8 @@ namespace MAPE.Utils {
 			if (filePath == null) {
 				throw new ArgumentNullException(nameof(filePath));
 			}
+
+			// create folder if it does not exist
 			string folderPath = Path.GetDirectoryName(filePath);
 			if (Directory.Exists(folderPath) == false) {
 				Directory.CreateDirectory(folderPath);

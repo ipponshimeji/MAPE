@@ -46,7 +46,14 @@ namespace MAPE.Windows.GUI {
 			app.InitializeComponent();
 			this.app = app;
 			try {
+				// start application
 				app.Run();
+
+				// report errors in early stages
+				while (0 < this.ErrorMessages.Count) {
+					string message = this.ErrorMessages.Dequeue();
+					ShowErrorMessage(message);
+				}
 			} finally {
 				this.app = null;
 			}
@@ -76,6 +83,28 @@ namespace MAPE.Windows.GUI {
 			};
 
 			return this.app.Dispatcher.Invoke<CredentialInfo>(callback);
+		}
+
+		#endregion
+
+
+		#region overrides/overridables - misc
+
+		protected override void ShowErrorMessage(string message) {
+			App app = this.app;
+			if (app == null) {
+				// queue the error message to display it after GUI starts
+				base.ShowErrorMessage(message);
+			} else {
+				// show error message
+				app.Dispatcher.Invoke(
+					() => {
+						MessageBox.Show(message, this.ComponentName, MessageBoxButton.OK, MessageBoxImage.Error);
+					}
+				);
+			}
+
+			return;
 		}
 
 		#endregion

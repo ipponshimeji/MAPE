@@ -38,6 +38,8 @@ namespace MAPE.Command {
 
 		private RunningProxyState runningProxyState = null;
 
+		protected Queue<string> ErrorMessages { get; private set; } = new Queue<string>();
+
 		#endregion
 
 
@@ -62,6 +64,7 @@ namespace MAPE.Command {
 			if (this.runningProxyState != null) {
 				StopProxy();
 			}
+			this.ErrorMessages = null;
 
 			// dispose the base class level
 			base.Dispose();
@@ -125,6 +128,23 @@ namespace MAPE.Command {
 			this.settings = settings;
 
 			base.Execute(commandKind, settings);
+		}
+
+		#endregion
+
+
+		#region overrides/overridables - misc
+
+		protected override void ShowErrorMessage(string message) {
+			// state checks
+			if (this.ErrorMessages == null) {
+				throw CreateObjectDisposedException();
+			}
+
+			// queue the error message
+			// Queued messages are processed by derived classes
+			// when GUI is available.
+			this.ErrorMessages.Enqueue(message);
 		}
 
 		#endregion

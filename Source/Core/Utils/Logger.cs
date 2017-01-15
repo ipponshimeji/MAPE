@@ -37,6 +37,8 @@ namespace MAPE.Utils {
 
 		private static int nextComponentId = 0;
 
+		private static bool loggingStopped = false;
+
 		#endregion
 
 
@@ -74,7 +76,7 @@ namespace MAPE.Utils {
 			}
 			set {
 				lock (Logger.classLocker) {
-					if (Logger.logLevel != value) {
+					if (Logger.logLevel != value && Logger.loggingStopped == false) {
 						Logger.logLevel = value;
 						Logger.sourceLevelsCache = FromTraceLevel(Logger.Switch.Level, value);
 						Logger.Switch.Level = Logger.sourceLevelsCache;
@@ -103,7 +105,9 @@ namespace MAPE.Utils {
 
 		public static int AllocComponentId() {
 			lock (classLocker) {
-				// ToDo: how handle overflow? ignore?
+				if (Logger.nextComponentId == int.MaxValue) {
+					throw new Exception("Internal resource overflow: no more component id to be allocated.");
+				}
 				return Logger.nextComponentId++;
 			}
 		}
@@ -119,7 +123,7 @@ namespace MAPE.Utils {
 				throw new ArgumentNullException(nameof(monitor));
 			}
 
-			// add the monitor
+			// add the monitor to the monitor list
 			lock (Logger.monitorsLocker) {
 				Logger.monitors.Add(monitor);
 			}
@@ -129,11 +133,9 @@ namespace MAPE.Utils {
 
 		public static bool RemoveLogMonitor(ILogMonitor monitor) {
 			// argument checks
-			if (monitor == null) {
-				throw new ArgumentNullException(nameof(monitor));
-			}
+			// monitor can be null (but may not be found in the monitor list)
 
-			// remove the monitor
+			// remove the monitor from the monitor list
 			lock (Logger.monitorsLocker) {
 				return Logger.monitors.Remove(monitor);
 			}
@@ -144,6 +146,34 @@ namespace MAPE.Utils {
 
 		#region methods - logging
 
+		public static bool StopLogging(int millisecondsTimeout = 0) {
+			bool stopConfirmed = false;
+			try {
+				// stop logging
+				lock (Logger.classLocker) {
+					Logger.LogLevel = TraceLevel.Off;
+					Logger.loggingStopped = true;
+				}
+
+				// wait for the completion of the delivering task
+				Task deliveringTask;
+				lock (Logger.deliveringLocker) {
+					deliveringTask = Logger.deliveringTask;
+				}
+				if (deliveringTask == null) {
+					stopConfirmed = true;
+				} else if (millisecondsTimeout != 0) {
+					stopConfirmed = deliveringTask.Wait(millisecondsTimeout);
+				}
+			} catch (Exception exception) {
+				TraceInternalError(null, $"Fail to stop logging system: {exception.Message}");
+				// continue
+			}
+
+			return stopConfirmed;
+		}
+
+
 		public static bool ShouldLog(TraceEventType eventType) {
 			// Note that flags in SourceLevels and TraceEventType are corresponding.
 			return ((int)Logger.sourceLevelsCache & (int)eventType) != 0;
@@ -151,13 +181,13 @@ namespace MAPE.Utils {
 
 		public static void Log(Log log) {
 			if (ShouldLog(log.EventType)) {
-				LogInternal(log);
+				EnqueueLog(log);
 			}
 		}
 
 		public static void Log(int parentComponentId, int componentId, string componentName, TraceEventType eventType, string message, int eventId) {
 			if (ShouldLog(eventType)) {
-				LogInternal(new Log(parentComponentId, componentId, componentName, eventType, message, eventId));
+				EnqueueLog(new Log(parentComponentId, componentId, componentName, eventType, message, eventId));
 			}
 		}
 
@@ -166,31 +196,31 @@ namespace MAPE.Utils {
 
 		public static void LogCritical(string componentName, string message, int eventId = 0) {
 			if (ShouldLog(TraceEventType.Critical)) {
-				LogInternal(new Log(NoComponent, NoComponent, componentName, TraceEventType.Critical, message, eventId));
+				EnqueueLog(new Log(NoComponent, NoComponent, componentName, TraceEventType.Critical, message, eventId));
 			}
 		}
 
 		public static void LogError(string componentName, string message, int eventId = 0) {
 			if (ShouldLog(TraceEventType.Error)) {
-				LogInternal(new Log(NoComponent, NoComponent, componentName, TraceEventType.Error, message, eventId));
+				EnqueueLog(new Log(NoComponent, NoComponent, componentName, TraceEventType.Error, message, eventId));
 			}
 		}
 
 		public static void LogWarning(string componentName, string message, int eventId = 0) {
 			if (ShouldLog(TraceEventType.Warning)) {
-				LogInternal(new Log(NoComponent, NoComponent, componentName, TraceEventType.Warning, message, eventId));
+				EnqueueLog(new Log(NoComponent, NoComponent, componentName, TraceEventType.Warning, message, eventId));
 			}
 		}
 
 		public static void LogInformation(string componentName, string message, int eventId = 0) {
 			if (ShouldLog(TraceEventType.Information)) {
-				LogInternal(new Log(NoComponent, NoComponent, componentName, TraceEventType.Information, message, eventId));
+				EnqueueLog(new Log(NoComponent, NoComponent, componentName, TraceEventType.Information, message, eventId));
 			}
 		}
 
 		public static void LogVerbose(string componentName, string message, int eventId = 0) {
 			if (ShouldLog(TraceEventType.Verbose)) {
-				LogInternal(new Log(NoComponent, NoComponent, componentName, TraceEventType.Verbose, message, eventId));
+				EnqueueLog(new Log(NoComponent, NoComponent, componentName, TraceEventType.Verbose, message, eventId));
 			}
 		}
 
@@ -257,7 +287,7 @@ namespace MAPE.Utils {
 		}
 
 
-		private static void LogInternal(Log log) {
+		private static void EnqueueLog(Log log) {
 			// argument checks
 			Debug.Assert(ShouldLog(log.EventType));
 
@@ -276,6 +306,8 @@ namespace MAPE.Utils {
 		}
 
 		private static void DeliverLogs() {
+			// deliver logs
+			int count = 0;
 			do {
 				Log log;
 
@@ -283,7 +315,7 @@ namespace MAPE.Utils {
 				lock (Logger.deliveringLocker) {
 					if (Logger.logQueue.Count <= 0) {
 						Logger.deliveringTask = null;
-						return;
+						break;
 					}
 
 					log = Logger.logQueue.Dequeue();
@@ -292,7 +324,15 @@ namespace MAPE.Utils {
 				// process the log
 				DeliverToTraceListeners(log);
 				DeliverToLogMonitors(log);
+				++count;
 			} while (true);
+
+			// log
+			if (Logger.ShouldLog(TraceEventType.Verbose)) {
+				TraceInternalVerbose(null, $"This delivering thread is quitting after delivered '{count}' log(s).");
+			}
+
+			return;
 		}
 
 		private static void DeliverToTraceListeners(Log log) {
@@ -309,7 +349,7 @@ namespace MAPE.Utils {
 				// trace the log
 				Logger.Source.TraceEvent(log.EventType, log.EventId, message);
 			} catch (Exception exception) {
-				LogLoggingError($"An exception on calling TraceSource.TraceEvent(): {exception.Message}");
+				TraceInternalError(null, $"An exception on calling TraceSource.TraceEvent(): {exception.Message}");
 				// continue
 			}
 		}
@@ -322,7 +362,7 @@ namespace MAPE.Utils {
 							try {
 								monitor.OnLog(log);
 							} catch (Exception exception) {
-								LogLoggingError($"An exception on calling ILogMonitor.OnLog(): {exception.Message}");
+								TraceInternalError(null, $"An exception on calling ILogMonitor.OnLog(): {exception.Message}");
 								// continue
 							}
 						}
@@ -331,8 +371,25 @@ namespace MAPE.Utils {
 			}
 		}
 
-		private static void LogLoggingError(string message) {
-			Logger.Source.TraceEvent(TraceEventType.Error, 0, $"Logging Error: {message}");
+
+		private static void TraceInternal(TraceEventType eventType, string methodName, string message, int eventId = 0) {
+			// argument checks
+			if (string.IsNullOrEmpty(methodName) == false) {
+				message = $"Logger: at {methodName}(), {message}";
+			} else {
+				message = $"Logger: {message}";
+			}
+
+			// trace the message
+			Logger.Source.TraceEvent(eventType, 0, message);
+		}
+
+		private static void TraceInternalError(string methodName, string message, int eventId = 0) {
+			TraceInternal(TraceEventType.Error, methodName, message, eventId);
+		}
+
+		private static void TraceInternalVerbose(string methodName, string message, int eventId = 0) {
+			TraceInternal(TraceEventType.Verbose, methodName, message, eventId);
 		}
 
 		#endregion
