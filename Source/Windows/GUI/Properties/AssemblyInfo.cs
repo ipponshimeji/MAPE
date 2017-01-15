@@ -1,55 +1,36 @@
-﻿using System.Reflection;
-using System.Resources;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Windows;
+﻿// This source file is generated using T4 text template processor
+// Do not change this file directly.
 
-// アセンブリに関する一般情報は以下の属性セットをとおして制御されます。
-// アセンブリに関連付けられている情報を変更するには、
-// これらの属性値を変更してください。
-[assembly: AssemblyTitle("GUI")]
-[assembly: AssemblyDescription("")]
+using System.Reflection;
+using System.Runtime.InteropServices;
+
+
+// General Information about an assembly is controlled through the following 
+// set of attributes. Change these attribute values to modify the information
+// associated with an assembly.
+[assembly: AssemblyTitle("mapegui")]
+[assembly: AssemblyDescription("MAPE - GUI application for Windows platform")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("GUI")]
-[assembly: AssemblyCopyright("Copyright ©  2017")]
+[assembly: AssemblyCompany("Takamasa Uramoto")]
+[assembly: AssemblyProduct("MAPE")]
+[assembly: AssemblyCopyright("Copyright 2016-2017 Takamasa Uramoto")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
-// ComVisible を false に設定すると、その型はこのアセンブリ内で COM コンポーネントから
-// 参照不可能になります。COM からこのアセンブリ内の型にアクセスする場合は、
-// その型の ComVisible 属性を true に設定してください。
+// Setting ComVisible to false makes the types in this assembly not visible
+// to COM components.  If you need to access a type in this assembly from
+// COM, set the ComVisible attribute to true on that type.
 [assembly: ComVisible(false)]
 
-//ローカライズ可能なアプリケーションのビルドを開始するには、
-//.csproj ファイルの <UICulture>CultureYouAreCodingWith</UICulture> を
-//<PropertyGroup> 内部で設定します。たとえば、
-//ソース ファイルで英語を使用している場合、<UICulture> を en-US に設定します。次に、
-//下の NeutralResourceLanguage 属性のコメントを解除します。下の行の "en-US" を
-//プロジェクト ファイルの UICulture 設定と一致するよう更新します。
-
-// [assembly: NeutralResourcesLanguage("en-US", UltimateResourceFallbackLocation.Satellite)]
-
-
-[assembly: ThemeInfo(
-	ResourceDictionaryLocation.None, //テーマ固有のリソース ディクショナリが置かれている場所
-									 //(リソースがページ、
-									 //またはアプリケーション リソース ディクショナリに見つからない場合に使用されます)
-	ResourceDictionaryLocation.SourceAssembly //汎用リソース ディクショナリが置かれている場所
-											  //(リソースがページ、
-											  //アプリケーション、またはいずれのテーマ固有のリソース ディクショナリにも見つからない場合に使用されます)
-)]
-
-
-// アセンブリのバージョン情報は次の 4 つの値で構成されています:
+// Version information for an assembly consists of the following four values:
 //
-//      メジャー バージョン
-//      マイナー バージョン
-//      ビルド番号
+//      Major Version
+//      Minor Version 
+//      Build Number
 //      Revision
 //
-// すべての値を指定するか、下のように '*' を使ってビルドおよびリビジョン番号を 
-// 既定値にすることができます:
+// You can specify all the values or you can default the Build and Revision Numbers 
+// by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyVersion("0.1.0.0")]
+[assembly: AssemblyFileVersion("0.1.0.0")]

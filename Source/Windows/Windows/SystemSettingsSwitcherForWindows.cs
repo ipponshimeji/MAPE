@@ -4,9 +4,10 @@ using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using MAPE.Utils;
 using MAPE.Server;
+using MAPE.Command;
 
 
-namespace MAPE.Command {
+namespace MAPE.Windows {
 	public class SystemSettingsSwitcherForWindows: SystemSettingsSwitcher {
 		#region types
 

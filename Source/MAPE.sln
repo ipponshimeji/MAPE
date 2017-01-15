@@ -13,6 +13,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CLI", "Windows\CLI\CLI.cspr
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GUI", "Windows\GUI\GUI.csproj", "{77DCBEA5-F56E-4071-8186-492CA812E826}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{75C6F70A-89AF-4925-9A10-E754329B07FB}"
+	ProjectSection(SolutionItems) = preProject
+		Properties.t4 = Properties.t4
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

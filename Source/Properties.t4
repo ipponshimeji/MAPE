@@ -1,0 +1,13 @@
+<#
+	#pragma warning disable 219
+
+	string companyName = "Takamasa Uramoto";
+	string productName = "MAPE";
+	string copyright = "Copyright 2016-2017 Takamasa Uramoto";
+	int majorVersion = 0;
+	int minorVersion = 1;
+	int buildNumber = 0;
+	int revision = 0;
+
+	string version = string.Format("{0}.{1}.{2}.{3}", majorVersion, minorVersion, buildNumber, revision);
+#>
