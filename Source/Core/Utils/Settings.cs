@@ -481,8 +481,16 @@ namespace MAPE.Utils {
 				if (createIfNotExist == false) {
 					throw;
 				}
-
-				// create a file of an empty object
+				// continue
+			} catch (DirectoryNotFoundException) {
+				if (createIfNotExist == false) {
+					throw;
+				}
+				Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+				// continue
+			}
+			if (jsonObject == null && createIfNotExist) {
+				// create empty one
 				jsonObject = new JObject();
 				using (TextWriter writer = File.CreateText(filePath)) {
 					writer.Write(jsonObject.ToString());
