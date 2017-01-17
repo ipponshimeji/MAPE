@@ -61,6 +61,78 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
+        ///   Credential for {0} is required. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_AskCredential_Description {
+            get {
+                return ResourceManager.GetString("CLICommandBase_AskCredential_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Password:  に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_AskCredential_Password {
+            get {
+                return ResourceManager.GetString("CLICommandBase_AskCredential_Password", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   How save password? に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_AskCredential_Persistence_Description {
+            get {
+                return ResourceManager.GetString("CLICommandBase_AskCredential_Persistence_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   save the encrypted password in settings file に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_AskCredential_Persistence_Persistent {
+            get {
+                return ResourceManager.GetString("CLICommandBase_AskCredential_Persistence_Persistent", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   only during running this process に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_AskCredential_Persistence_Process {
+            get {
+                return ResourceManager.GetString("CLICommandBase_AskCredential_Persistence_Process", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Selection:  に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_AskCredential_Persistence_Prompt {
+            get {
+                return ResourceManager.GetString("CLICommandBase_AskCredential_Persistence_Prompt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   only during this http session に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_AskCredential_Persistence_Session {
+            get {
+                return ResourceManager.GetString("CLICommandBase_AskCredential_Persistence_Session", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   UserName:  に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_AskCredential_UserName {
+            get {
+                return ResourceManager.GetString("CLICommandBase_AskCredential_UserName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   MAPE (May Authentication Proxy Explode) に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CLICommandBase_Logo_Command {
@@ -111,6 +183,15 @@ namespace MAPE.Properties {
         internal static string CLICommandBase_Message_StartListening {
             get {
                 return ResourceManager.GetString("CLICommandBase_Message_StartListening", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The settings are saved to &apos;{0}&apos;. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_SaveSettings_Completed {
+            get {
+                return ResourceManager.GetString("CLICommandBase_SaveSettings_Completed", resourceCulture);
             }
         }
         

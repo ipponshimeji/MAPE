@@ -154,6 +154,33 @@ Please restore it manually.</value>
   <data name="CLICommandBase_Logo_Command" xml:space="preserve">
     <value>MAPE (May Authentication Proxy Explode)</value>
   </data>
+  <data name="CLICommandBase_SaveSettings_Completed" xml:space="preserve">
+    <value>The settings are saved to '{0}'.</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Description" xml:space="preserve">
+    <value>Credential for {0} is required.</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_UserName" xml:space="preserve">
+    <value>UserName: </value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Password" xml:space="preserve">
+    <value>Password: </value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Persistence_Description" xml:space="preserve">
+    <value>How save password?</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Persistence_Session" xml:space="preserve">
+    <value>only during this http session</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Persistence_Process" xml:space="preserve">
+    <value>only during running this process</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Persistence_Persistent" xml:space="preserve">
+    <value>save the encrypted password in settings file</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Persistence_Prompt" xml:space="preserve">
+    <value>Selection: </value>
+  </data>
   <data name="SystemSettingsSwitcher_NoActualProxy" xml:space="preserve">
     <value>Tha actual proxy is not detected automatically. Specify it explicitly by settings file or command line.</value>
   </data>

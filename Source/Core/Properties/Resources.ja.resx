@@ -154,6 +154,33 @@
   <data name="CLICommandBase_Logo_Command" xml:space="preserve">
     <value>認証プロキシ爆発しろ！ (MAPE: May Authentication Proxy Explode)</value>
   </data>
+  <data name="CLICommandBase_SaveSettings_Completed" xml:space="preserve">
+    <value>設定は'{0}'に保存されました。</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Description" xml:space="preserve">
+    <value>{0}に対する認証情報が必要です。</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_UserName" xml:space="preserve">
+    <value>ユーザー名: </value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Password" xml:space="preserve">
+    <value>パスワード: </value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Persistence_Description" xml:space="preserve">
+    <value>パスワードの保存方法はどうしますか？</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Persistence_Session" xml:space="preserve">
+    <value>このhttpセッションのみ保持する</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Persistence_Process" xml:space="preserve">
+    <value>このアプリケーションの実行中のみ保持する</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Persistence_Persistent" xml:space="preserve">
+    <value>設定ファイルに暗号化して保存する</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_Persistence_Prompt" xml:space="preserve">
+    <value>選択: </value>
+  </data>
   <data name="SystemSettingsSwitcher_NoActualProxy" xml:space="preserve">
     <value>実際のプロキシを自動的に検出することができませんでした。コマンドラインや設定ファイルで明に指定して起動してください。</value>
   </data>

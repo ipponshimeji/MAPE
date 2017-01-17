@@ -181,6 +181,9 @@ namespace MAPE.Command {
 
 			// save the settings
 			SaveSettingsToFile(settings);
+
+			string message = string.Format(Resources.CLICommandBase_SaveSettings_Completed, this.SettingsFilePath);
+			Console.WriteLine(message);
 		}
 
 		protected virtual void OutputLogo() {
@@ -206,11 +209,11 @@ namespace MAPE.Command {
 			Debug.Assert(realm != null);
 
 			// read information from the console
-			Console.WriteLine($"Credential for {endPoint} is required.");
+			Console.WriteLine(Resources.CLICommandBase_AskCredential_Description, endPoint);
 			Console.WriteLine($"Realm: {endPoint}");
-			Console.Write("UserName: ");
+			Console.Write(Resources.CLICommandBase_AskCredential_UserName);
 			string userName = Console.ReadLine();
-			Console.Write("Password: ");
+			Console.Write(Resources.CLICommandBase_AskCredential_Password);
 			string password = ReadPassword();
 			CredentialPersistence persistence = AskCredentialPersistence(canSave);
 
@@ -220,13 +223,13 @@ namespace MAPE.Command {
 		private static CredentialPersistence AskCredentialPersistence(bool canSave) {
 			// read user preference from the console
 			do {
-				Console.WriteLine($"How save password?");
-				Console.WriteLine($"  1: only during this http session");
-				Console.WriteLine($"  2: only during running this process");
+				Console.WriteLine(Resources.CLICommandBase_AskCredential_Persistence_Description);
+				Console.WriteLine($"  1: {Resources.CLICommandBase_AskCredential_Persistence_Session}");
+				Console.WriteLine($"  2: {Resources.CLICommandBase_AskCredential_Persistence_Process}");
 				if (canSave) {
-					Console.WriteLine($"  3: save the password in settings file");
+					Console.WriteLine($"  3: {Resources.CLICommandBase_AskCredential_Persistence_Persistent}");
 				}
-				Console.Write("Selection: ");
+				Console.Write(Resources.CLICommandBase_AskCredential_Persistence_Prompt);
 				string answer = Console.ReadLine();
 
 				int number;
