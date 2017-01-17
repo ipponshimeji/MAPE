@@ -10,7 +10,7 @@ namespace MAPE.Command {
 	public static class SystemSettingsSwitcherSettingsExtensions {
 		#region methods
 
-		public static IWebProxy GetWebProxyValue(this Settings settings, string settingName, WebProxy defaultValue) {
+		public static WebProxy GetWebProxyValue(this Settings settings, string settingName, WebProxy defaultValue) {
 			Settings.Value value = settings.GetValue(settingName);
 			if (value.IsNull == false) {
 				return value.GetObjectValue().CreateWebProxy();
@@ -19,7 +19,7 @@ namespace MAPE.Command {
 			}
 		}
 
-		public static IWebProxy CreateWebProxy(this Settings settings) {
+		public static WebProxy CreateWebProxy(this Settings settings) {
 			Settings.Value host = settings.GetValue(SettingNames.Host);
 			Settings.Value port = settings.GetValue(SettingNames.Port);
 			if (host.IsNull || port.IsNull) {
@@ -38,7 +38,7 @@ namespace MAPE.Command {
 		public static class SettingNames {
 			#region constants
 
-			public const string EnableSystemSettingSwitch = "EnableSystemSettingSwitch";
+			public const string EnableSystemSettingsSwitch = "EnableSystemSettingsSwitch";
 
 			public const string ActualProxy = "ActualProxy";
 
@@ -65,6 +65,12 @@ namespace MAPE.Command {
 
 		#region creation and disposal
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="owner"></param>
+		/// <param name="settings"></param>
+		/// <param name="proxy">null means initialization for backup.</param>
 		public SystemSettingsSwitcher(CommandBase owner, Settings settings, Proxy proxy) {
 			// argument checks
 			if (owner == null) {
@@ -80,17 +86,32 @@ namespace MAPE.Command {
 			this.Owner = owner;
 
 			bool enabled;
-			IWebProxy actualProxy;
-			if (settings.IsNull) {
+			WebProxy actualProxy;
+			if (proxy == null) {
+				// simple initialization for backup
+				Debug.Assert(settings.IsNull);
 				enabled = true;
 				actualProxy = null;
 			} else {
-				enabled = settings.GetBooleanValue(SettingNames.EnableSystemSettingSwitch, defaultValue: true);
+				// usual initialization
+				enabled = settings.GetBooleanValue(SettingNames.EnableSystemSettingsSwitch, defaultValue: true);
 				actualProxy = settings.GetWebProxyValue(SettingNames.ActualProxy, defaultValue: null);
 				if (actualProxy == null) {
 					actualProxy = DetectSystemProxy();
+					if (actualProxy == null) {
+						throw new Exception(Properties.Resources.SystemSettingsSwitcher_NoActualProxy);
+					}
+				}
+
+				// log
+				if (owner.ShouldLog(TraceEventType.Verbose)) {
+					Uri address = actualProxy.Address;
+					owner.LogVerbose($"ActualProxy is {address.Host}:{address.Port}");
+					string label = enabled ? "enabled" : "disabled";
+					owner.LogVerbose($"SystemSettingsSwitch: {label}");
 				}
 			}
+
 			this.Enabled = enabled;
 			this.ActualProxy = actualProxy;
 
@@ -176,7 +197,7 @@ namespace MAPE.Command {
 
 		#region privates
 
-		private IWebProxy DetectSystemProxy() {
+		private WebProxy DetectSystemProxy() {
 			// detect the system web proxy by try to give external urls
 			// ToDo: return IWebProxy which can emulate the *.pac file currently effective.
 			// Note this implementation simply detect a possible typical proxy.

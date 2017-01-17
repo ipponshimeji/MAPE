@@ -154,4 +154,7 @@ Please restore it manually.</value>
   <data name="CLICommandBase_Logo_Command" xml:space="preserve">
     <value>MAPE (May Authentication Proxy Explode)</value>
   </data>
+  <data name="SystemSettingsSwitcher_NoActualProxy" xml:space="preserve">
+    <value>Tha actual proxy is not detected automatically. Specify it explicitly by settings file or command line.</value>
+  </data>
 </root>

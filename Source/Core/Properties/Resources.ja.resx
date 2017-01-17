@@ -154,4 +154,7 @@
   <data name="CLICommandBase_Logo_Command" xml:space="preserve">
     <value>認証プロキシ爆発しろ！ (MAPE: May Authentication Proxy Explode)</value>
   </data>
+  <data name="SystemSettingsSwitcher_NoActualProxy" xml:space="preserve">
+    <value>実際のプロキシを自動的に検出することができませんでした。コマンドラインや設定ファイルで明に指定して起動してください。</value>
+  </data>
 </root>

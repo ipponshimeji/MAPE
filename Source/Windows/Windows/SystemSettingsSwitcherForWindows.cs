@@ -87,7 +87,11 @@ namespace MAPE.Windows {
 			// settings can contain null
 
 			// initialize members
-			if (settings.IsNull == false) {
+			if (proxy == null) {
+				// simple initialization for backup
+				// all members are already initialized
+			} else {
+				// usual initialization
 				Debug.Assert(proxy != null);
 				string proxyEndPoint = proxy.MainListenerEndPoint.ToString();
 

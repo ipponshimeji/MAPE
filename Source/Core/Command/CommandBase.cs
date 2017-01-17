@@ -120,7 +120,7 @@ namespace MAPE.Command {
 		}
 
 		public static Settings GetSystemSettingSwitcherSettings(this Settings settings, bool createIfNotExist = true) {
-			return settings.GetObjectValue(CommandBase.SettingNames.SystemSettingSwitcher, Settings.EmptySettingsGenerator, createIfNotExist);
+			return settings.GetObjectValue(CommandBase.SettingNames.SystemSettingsSwitcher, Settings.EmptySettingsGenerator, createIfNotExist);
 		}
 
 		#endregion
@@ -173,9 +173,9 @@ namespace MAPE.Command {
 
 			public const string RetryCount = Proxy.SettingNames.RetryCount;
 
-			public const string EnableSystemSettingSwitch = SystemSettingsSwitcher.SettingNames.EnableSystemSettingSwitch;
+			public const string EnableSystemSettingsSwitch = SystemSettingsSwitcher.SettingNames.EnableSystemSettingsSwitch;
 
-			public const string ActualProxy = SystemSettingsSwitcher.SettingNames.EnableSystemSettingSwitch;
+			public const string ActualProxy = SystemSettingsSwitcher.SettingNames.ActualProxy;
 
 			#endregion
 		}
@@ -198,7 +198,7 @@ namespace MAPE.Command {
 
 			public const string Proxy = "Proxy";
 
-			public const string SystemSettingSwitcher = "SystemSettingSwitcher";
+			public const string SystemSettingsSwitcher = "SystemSettingsSwitcher";
 
 			#endregion
 		}
@@ -540,7 +540,7 @@ namespace MAPE.Command {
 			}
 
 			// get setting valuses to be used
-			Settings systemSettingSwitcherSettings = settings.GetObjectValue(SettingNames.SystemSettingSwitcher);
+			Settings systemSettingSwitcherSettings = settings.GetObjectValue(SettingNames.SystemSettingsSwitcher);
 			Settings proxySettings = settings.GetObjectValue(SettingNames.Proxy);
 
 			// create a RunningProxyState and start the proxy
@@ -762,8 +762,8 @@ namespace MAPE.Command {
 				settings.GetProxySettings(createIfNotExist: true).SetJsonValue(Proxy.SettingNames.AdditionalListeners, value);
 			} else if (AreSameOptionNames(name, OptionNames.RetryCount)) {
 				settings.GetProxySettings(createIfNotExist: true).SetJsonValue(Proxy.SettingNames.RetryCount, value);
-			} else if (AreSameOptionNames(name, OptionNames.EnableSystemSettingSwitch)) {
-				settings.GetSystemSettingSwitcherSettings(createIfNotExist: true).SetJsonValue(SystemSettingsSwitcher.SettingNames.EnableSystemSettingSwitch, value);
+			} else if (AreSameOptionNames(name, OptionNames.EnableSystemSettingsSwitch)) {
+				settings.GetSystemSettingSwitcherSettings(createIfNotExist: true).SetJsonValue(SystemSettingsSwitcher.SettingNames.EnableSystemSettingsSwitch, value);
 			} else if (AreSameOptionNames(name, OptionNames.ActualProxy)) {
 				settings.GetSystemSettingSwitcherSettings(createIfNotExist: true).SetJsonValue(SystemSettingsSwitcher.SettingNames.ActualProxy, value);
 			} else {
@@ -813,7 +813,7 @@ namespace MAPE.Command {
 
 		public virtual void Execute(string commandKind, Settings settings) {
 			// argument checks
-			Debug.Assert(settings.IsNull == false);
+			Debug.Assert(commandKind != null);
 
 			// execute command according to the command kind 
 			switch (commandKind) {

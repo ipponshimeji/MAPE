@@ -109,7 +109,7 @@ namespace MAPE.Command {
 
 		public override void Execute(string commandKind, Settings settings) {
 			// argument checks
-			Debug.Assert(settings.IsNull == false);
+			Debug.Assert(commandKind != null);
 
 			// show logo
 			if (settings.GetBooleanValue(SettingNames.NoLogo, false) == false) {
