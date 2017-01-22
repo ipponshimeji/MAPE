@@ -121,15 +121,15 @@ namespace MAPE.Windows.GUI {
 			CultureInfo culture = CultureInfo.CurrentUICulture;
 			while (string.IsNullOrEmpty(culture.Name) == false) {
 				string filePath = Path.Combine(folderPath, $"Usage.{culture.Name}.html");
-				if (File.Exists(filePath)) {
-					return filePath;
+				if (string.Compare(culture.Name, "ja", StringComparison.OrdinalIgnoreCase) == 0) {
+					return "https://github.com/ipponshimeji/MAPE/blob/master/Documentation/ja/Usage.md";
 				}
 
 				culture = culture.Parent;
 			}
 
-			// returns the usage page for the neutral locale
-			return Path.Combine(folderPath, "Usage.html");
+			// ToDo: English Pages
+			return "https://github.com/ipponshimeji/MAPE";
 		}
 
 		#endregion

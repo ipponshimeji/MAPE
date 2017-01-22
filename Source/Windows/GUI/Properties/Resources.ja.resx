@@ -156,6 +156,9 @@
   <data name="VersionInfoWindow_ApplicationDescription" xml:space="preserve">
     <value>認証プロキシ爆発しろ！ GUI アプリケーション</value>
   </data>
+  <data name="VersionInfoWindow_ComponentsLabel" xml:space="preserve">
+    <value>このソフトウェアは以下のコンポーネントを利用しています:</value>
+  </data>
   <data name="VersionInfoWindow_okButton_Content" xml:space="preserve">
     <value>OK</value>
   </data>

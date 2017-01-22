@@ -189,6 +189,25 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   This software uses following components: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string VersionInfoWindow_ComponentsLabel {
+            get {
+                return ResourceManager.GetString("VersionInfoWindow_ComponentsLabel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Newtonsoft.Json v9.0.1
+        ///System.ValueTuple v4.3.0 に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string VersionInfoWindow_ComponentsList {
+            get {
+                return ResourceManager.GetString("VersionInfoWindow_ComponentsList", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   OK に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string VersionInfoWindow_okButton_Content {

@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MAPE.Windows.GUI"
         mc:Ignorable="d"
-        Title="SettingsWindow" Height="300" Width="300">
+        Title="SettingsWindow" Height="300" Width="300" Icon="pack://siteoforigin:,,,/Resources/OnIcon.ico">
     <Grid>
         <Label Content="Not Implemented" FontSize="24" />
     </Grid>

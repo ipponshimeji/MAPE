@@ -156,90 +156,21 @@
   <data name="VersionInfoWindow_ApplicationDescription" xml:space="preserve">
     <value>MAPE GUI Application</value>
   </data>
+  <data name="VersionInfoWindow_ComponentsLabel" xml:space="preserve">
+    <value>This software uses following components:</value>
+  </data>
+  <data name="VersionInfoWindow_ComponentsList" xml:space="preserve">
+    <value>Newtonsoft.Json v9.0.1
+System.ValueTuple v4.3.0</value>
+  </data>
   <data name="VersionInfoWindow_okButton_Content" xml:space="preserve">
     <value>OK</value>
   </data>
-  <assembly alias="System.Drawing" name="System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a" />
-  <data name="OffIcon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        AAABAAIAICAQAAAAAADoAgAAJgAAABAQAAAAAAAAaAUAAA4DAAAoAAAAIAAAAEAAAAABAAQAAAAAAIAC
-        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAgAAAAICAAIAAAACAAIAAgIAAAMDAwACAgIAAAAD/AAD/
-        AAAA//8A/wAAAP8A/wD//wAA////AAAAAAAAB3d3d3d3AAAAAAAAAAAAB3d3d3d3d3cAAAAAAAAAB3d3
-        iIiIiId3dwAAAAAAAHd3iIiIiIiIh3dwAAAAAAd3iIiIiIiIiIiHdwAAAAB3eIiIiIiIiIiIiHdwAAAA
-        d4iIiIiIiIiIiIiHcAAAB3iIiIiIiIiIiIiIiHcAAHd4iIiIiIiIiIiIiIh3cAB3iIiIiIiIiIiIiIiI
-        h3AAd4iIiIiIiIiIiIiIiIdwB3iIiIiIiIiIiIiIiIiIdwd4iIiIiIiIiIiIiIiIiHcHeIiIiIiIiIiI
-        iIiIiIh3B3iIiIiIiIiIiIiIiIiId3eIiIiIiIiIiIiIiIiIiHcHeIiIiIiIiIiIiIiIiIh3B3iIiIiI
-        iIiIiIiIiIiIdwd4iIiIiIiIiIiIiIiIiHcHeIiIiIiIiIiIiIiIiIh3AHeIiIiIiIiIiIiIiIiHcAB3
-        iIiIiIiIiIiIiIiIh3AAd3iIiIiIiIiIiIiIiHdwAAd4iIiIiIiIiIiIiIh3AAAAd4iIiIiIiIiIiIiH
-        cAAAAHd4iIiIiIiIiIiId3AAAAAHd4iIiIiIiIiIh3cAAAAAAHd3iIiIiIiIh3dwAAAAAAAHd3eIiIiI
-        h3d3AAAAAAAAAAd3d3d3d3d3AAAAAAAAAAAAB3d3d3d3AAAAAAAAAAAAAAAAAHAAAAAAAAAA/+AD//+A
-        AP/+AAA//AAAH/gAAA/wAAAH8AAAB+AAAAPAAAABwAAAAcAAAAGAAAAAgAAAAIAAAACAAAAAAAAAAIAA
-        AACAAAAAgAAAAIAAAADAAAABwAAAAcAAAAHgAAAD8AAAB/AAAAf4AAAP/AAAH/4AAD//gAD//+AD////
-        f/8oAAAAEAAAACAAAAABAAgAAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAgAAAAICAAIAA
-        AACAAIAAgIAAAMDAwADA3MAA8MqmAAQEBAAICAgADAwMABEREQAWFhYAHBwcACIiIgApKSkAVVVVAE1N
-        TQBCQkIAOTk5AIB8/wBQUP8AkwDWAP/szADG1u8A1ufnAJCprQAAADMAAABmAAAAmQAAAMwAADMAAAAz
-        MwAAM2YAADOZAAAzzAAAM/8AAGYAAABmMwAAZmYAAGaZAABmzAAAZv8AAJkAAACZMwAAmWYAAJmZAACZ
-        zAAAmf8AAMwAAADMMwAAzGYAAMyZAADMzAAAzP8AAP9mAAD/mQAA/8wAMwAAADMAMwAzAGYAMwCZADMA
-        zAAzAP8AMzMAADMzMwAzM2YAMzOZADMzzAAzM/8AM2YAADNmMwAzZmYAM2aZADNmzAAzZv8AM5kAADOZ
-        MwAzmWYAM5mZADOZzAAzmf8AM8wAADPMMwAzzGYAM8yZADPMzAAzzP8AM/8zADP/ZgAz/5kAM//MADP/
-        /wBmAAAAZgAzAGYAZgBmAJkAZgDMAGYA/wBmMwAAZjMzAGYzZgBmM5kAZjPMAGYz/wBmZgAAZmYzAGZm
-        ZgBmZpkAZmbMAGaZAABmmTMAZplmAGaZmQBmmcwAZpn/AGbMAABmzDMAZsyZAGbMzABmzP8AZv8AAGb/
-        MwBm/5kAZv/MAMwA/wD/AMwAmZkAAJkzmQCZAJkAmQDMAJkAAACZMzMAmQBmAJkzzACZAP8AmWYAAJlm
-        MwCZM2YAmWaZAJlmzACZM/8AmZkzAJmZZgCZmZkAmZnMAJmZ/wCZzAAAmcwzAGbMZgCZzJkAmczMAJnM
-        /wCZ/wAAmf8zAJnMZgCZ/5kAmf/MAJn//wDMAAAAmQAzAMwAZgDMAJkAzADMAJkzAADMMzMAzDNmAMwz
-        mQDMM8wAzDP/AMxmAADMZjMAmWZmAMxmmQDMZswAmWb/AMyZAADMmTMAzJlmAMyZmQDMmcwAzJn/AMzM
-        AADMzDMAzMxmAMzMmQDMzMwAzMz/AMz/AADM/zMAmf9mAMz/mQDM/8wAzP//AMwAMwD/AGYA/wCZAMwz
-        AAD/MzMA/zNmAP8zmQD/M8wA/zP/AP9mAAD/ZjMAzGZmAP9mmQD/ZswAzGb/AP+ZAAD/mTMA/5lmAP+Z
-        mQD/mcwA/5n/AP/MAAD/zDMA/8xmAP/MmQD/zMwA/8z/AP//MwDM/2YA//+ZAP//zABmZv8AZv9mAGb/
-        /wD/ZmYA/2b/AP//ZgAhAKUAX19fAHd3dwCGhoYAlpaWAMvLywCysrIA19fXAN3d3QDj4+MA6urqAPHx
-        8QD4+PgA8Pv/AKSgoACAgIAAAAD/AAD/AAAA//8A/wAAAP8A/wD//wAA////AAoKCgoKBwcHBwcHCgoK
-        CgoKCgoKB+zs7Ozs7AcKCgoKCgoHB+zs7Ozs7OzsBwcKCgoKB+zs7Ozs7Ozs7OwHCgoKB+zs7Ozs7Ozs
-        7Ozs7AcKB+zs7Ozs7Ozs7Ozs7OzsBwfs7Ozs7Ozs7Ozs7Ozs7AcH7Ozs7Ozs7Ozs7Ozs7OwHB+zs7Ozs
-        7Ozs7Ozs7OzsBwfs7Ozs7Ozs7Ozs7Ozs7AcH7Ozs7Ozs7Ozs7Ozs7OwHCgfs7Ozs7Ozs7Ozs7OwHCgoK
-        B+zs7Ozs7Ozs7OwHCgoKCgcH7Ozs7Ozs7OwHBwoKCgoKCgfs7Ozs7OwHCgoKCgoKCgoKBwcHBwcHCgoK
-        Cgr4HwAA8A8AAMADAADAAwAAgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIABAADAAwAAwAMAAPAP
-        AAD4HwAA
-</value>
+  <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
+  <data name="OffIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OffIcon.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
-  <data name="OnIcon" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
-    <value>
-        AAABAAIAICAQAAAAAADoAgAAJgAAABAQAAAAAAAAaAUAAA4DAAAoAAAAIAAAAEAAAAABAAQAAAAAAIAC
-        AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAgAAAAICAAIAAAACAAIAAgIAAAMDAwACAgIAAAAD/AAD/
-        AAAA//8A/wAAAP8A/wD//wAA////AAAAAAAACIiIiIiAAAAAAAAAAAAACIiIiIiIiIAAAAAAAAAACIiI
-        mZmZmYiIgAAAAAAAAIiImZmZmZmZiIgAAAAAAAiImZmZmZmZmZmIgAAAAACIiZmZmZmZmZmZmIgAAAAA
-        iJmZmZmZmZmZmZmIAAAACImZmZmZmZmZmZmZmIAAAIiJmZmZmZmZmZmZmZiIAACImZmZmZmZmZmZmZmZ
-        iAAIiZmZmZmZmZmZmZmZmZiACImZmZmZmZmZmZmZmZmYgAiJmZmZmZmZmZmZmZmZmICIiZmZmZmZmZmZ
-        mZmZmZiIiImZmZmZmZmZmZmZmZmYiIiZmZmZmZmZmZmZmZmZmIiIiZmZmZmZmZmZmZmZmZiIiImZmZmZ
-        mZmZmZmZmZmYiIiJmZmZmZmZmZmZmZmZmIgIiZmZmZmZmZmZmZmZmZiACImZmZmZmZmZmZmZmZmYgAiI
-        mZmZmZmZmZmZmZmZiIAAiImZmZmZmZmZmZmZmIgAAIiJmZmZmZmZmZmZmZiIAAAIiJmZmZmZmZmZmZmI
-        gAAAAIiJmZmZmZmZmZmYiAAAAACIiJmZmZmZmZmZiIgAAAAACIiImZmZmZmZiIiAAAAAAAAIiIiZmZmZ
-        iIiAAAAAAAAAAIiIiIiIiIiIAAAAAAAAAAAAiIiIiIiIAAAAAAAAAAAAAAAAiIgAAAAAAAAA/+AH//+A
-        Af/+AAB//AAAP/gAAB/wAAAP8AAAD+AAAAfAAAADwAAAA4AAAAGAAAABgAAAAQAAAAAAAAAAAAAAAAAA
-        AAAAAAAAAAAAAIAAAAGAAAABgAAAAcAAAAPAAAAD4AAAB/AAAA/wAAAP+AAAH/4AAH//AAD//8AD///8
-        P/8oAAAAEAAAACAAAAABAAgAAAAAAEABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAgAAAAICAAIAA
-        AACAAIAAgIAAAMDAwADA3MAA8MqmAAQEBAAICAgADAwMABEREQAWFhYAHBwcACIiIgApKSkAVVVVAE1N
-        TQBCQkIAOTk5AIB8/wBQUP8AkwDWAP/szADG1u8A1ufnAJCprQAAADMAAABmAAAAmQAAAMwAADMAAAAz
-        MwAAM2YAADOZAAAzzAAAM/8AAGYAAABmMwAAZmYAAGaZAABmzAAAZv8AAJkAAACZMwAAmWYAAJmZAACZ
-        zAAAmf8AAMwAAADMMwAAzGYAAMyZAADMzAAAzP8AAP9mAAD/mQAA/8wAMwAAADMAMwAzAGYAMwCZADMA
-        zAAzAP8AMzMAADMzMwAzM2YAMzOZADMzzAAzM/8AM2YAADNmMwAzZmYAM2aZADNmzAAzZv8AM5kAADOZ
-        MwAzmWYAM5mZADOZzAAzmf8AM8wAADPMMwAzzGYAM8yZADPMzAAzzP8AM/8zADP/ZgAz/5kAM//MADP/
-        /wBmAAAAZgAzAGYAZgBmAJkAZgDMAGYA/wBmMwAAZjMzAGYzZgBmM5kAZjPMAGYz/wBmZgAAZmYzAGZm
-        ZgBmZpkAZmbMAGaZAABmmTMAZplmAGaZmQBmmcwAZpn/AGbMAABmzDMAZsyZAGbMzABmzP8AZv8AAGb/
-        MwBm/5kAZv/MAMwA/wD/AMwAmZkAAJkzmQCZAJkAmQDMAJkAAACZMzMAmQBmAJkzzACZAP8AmWYAAJlm
-        MwCZM2YAmWaZAJlmzACZM/8AmZkzAJmZZgCZmZkAmZnMAJmZ/wCZzAAAmcwzAGbMZgCZzJkAmczMAJnM
-        /wCZ/wAAmf8zAJnMZgCZ/5kAmf/MAJn//wDMAAAAmQAzAMwAZgDMAJkAzADMAJkzAADMMzMAzDNmAMwz
-        mQDMM8wAzDP/AMxmAADMZjMAmWZmAMxmmQDMZswAmWb/AMyZAADMmTMAzJlmAMyZmQDMmcwAzJn/AMzM
-        AADMzDMAzMxmAMzMmQDMzMwAzMz/AMz/AADM/zMAmf9mAMz/mQDM/8wAzP//AMwAMwD/AGYA/wCZAMwz
-        AAD/MzMA/zNmAP8zmQD/M8wA/zP/AP9mAAD/ZjMAzGZmAP9mmQD/ZswAzGb/AP+ZAAD/mTMA/5lmAP+Z
-        mQD/mcwA/5n/AP/MAAD/zDMA/8xmAP/MmQD/zMwA/8z/AP//MwDM/2YA//+ZAP//zABmZv8AZv9mAGb/
-        /wD/ZmYA/2b/AP//ZgAhAKUAX19fAHd3dwCGhoYAlpaWAMvLywCysrIA19fXAN3d3QDj4+MA6urqAPHx
-        8QD4+PgA8Pv/AKSgoACAgIAAAAD/AAD/AAAA//8A/wAAAP8A/wD//wAA////AAoKCgoK7Ozs7OzsCgoK
-        CgoKCgoK7Pn5+fn5+ewKCgoKCgrs7Pn5+fn5+fn57OwKCgoK7Pn5+fn5+fn5+fnsCgoK7Pn5+fn5+fn5
-        +fn5+ewK7Pn5+fn5+fn5+fn5+fn57Oz5+fn5+fn5+fn5+fn5+ezs+fn5+fn5+fn5+fn5+fns7Pn5+fn5
-        +fn5+fn5+fn57Oz5+fn5+fn5+fn5+fn5+ezs+fn5+fn5+fn5+fn5+fnsCuz5+fn5+fn5+fn5+fnsCgoK
-        7Pn5+fn5+fn5+fnsCgoKCuzs+fn5+fn5+fns7AoKCgoKCuz5+fn5+fnsCgoKCgoKCgoK7Ozs7OzsCgoK
-        Cgr4HwAA8A8AAMADAADAAwAAgAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIABAADAAwAAwAMAAPAP
-        AAD4HwAA
-</value>
+  <data name="OnIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\OnIcon.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
   </data>
 </root>

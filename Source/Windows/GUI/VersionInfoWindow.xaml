@@ -6,22 +6,27 @@
         xmlns:local="clr-namespace:MAPE.Windows.GUI"
         xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
         mc:Ignorable="d"
-        Title="{x:Static properties:Resources.VersionInfoWindow_Title}" Height="200" Width="466.4" Loaded="Window_Loaded">
+        Title="{x:Static properties:Resources.VersionInfoWindow_Title}" Height="300" Width="450" Loaded="Window_Loaded" Icon="pack://siteoforigin:,,,/Resources/OnIcon.ico">
     <Grid Margin="4,0,4,4">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <StackPanel>
-            <Label Content="{x:Static properties:Resources.VersionInfoWindow_ApplicationName}" FontSize="24" />
+        <StackPanel Orientation="Horizontal">
+            <Image Margin="4" Stretch="None" Source="pack://siteoforigin:,,,/Resources/OnIcon.ico" />
+            <Label Content="{x:Static properties:Resources.VersionInfoWindow_ApplicationName}" FontSize="24" VerticalAlignment="Center" />
         </StackPanel>
         <Label Grid.Row="1" Content="{x:Static properties:Resources.VersionInfoWindow_ApplicationDescription}" />
         <Label x:Name="versionLabel" Content="version" Grid.Row="2" />
         <Label x:Name="copyrightLabel" Content="copyright" Grid.Row="3" />
-        <StackPanel Grid.Row="4" VerticalAlignment="Bottom" HorizontalAlignment="Right">
+        <Label Content="{x:Static properties:Resources.VersionInfoWindow_ComponentsLabel}" Grid.Row="4" />
+        <TextBlock Grid.Row="5" Text="{x:Static properties:Resources.VersionInfoWindow_ComponentsList}" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="24,4,4,4" />
+        <StackPanel Grid.Row="6" VerticalAlignment="Bottom" HorizontalAlignment="Right">
             <Button Content="{x:Static properties:Resources.VersionInfoWindow_okButton_Content}" Width="100" Margin="8" IsDefault="True" Padding="1,4" Click="okButton_Click" />
         </StackPanel>
     </Grid>
