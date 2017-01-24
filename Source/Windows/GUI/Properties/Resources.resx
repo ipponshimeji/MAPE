@@ -141,6 +141,9 @@
   <data name="MainWindow_logMenu_Header" xml:space="preserve">
     <value>_Log</value>
   </data>
+  <data name="MainWindow_loglevelMenu_Header" xml:space="preserve">
+    <value>Log _Level</value>
+  </data>
   <data name="MainWindow_clearMenu_Header" xml:space="preserve">
     <value>_Clear</value>
   </data>
@@ -158,6 +161,9 @@
   </data>
   <data name="MainWindow_logLabel_Content" xml:space="preserve">
     <value>Lo_g</value>
+  </data>
+  <data name="MainWindow_levelLabel_Content" xml:space="preserve">
+    <value>Level: </value>
   </data>
   <data name="MainWindow_Timestamp_Header" xml:space="preserve">
     <value>Time</value>

@@ -32,6 +32,13 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
+		public string EventTypeName {
+			get {
+				TraceEventType eventType = this.log.EventType;
+				return (eventType == TraceEventType.Information) ? "Info" : eventType.ToString();
+			}
+		}
+
 		public string Message {
 			get {
 				return this.log.Message;

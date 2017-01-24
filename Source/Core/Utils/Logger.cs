@@ -93,6 +93,11 @@ namespace MAPE.Utils {
 		static Logger() {
 			// initialize members
 			sourceLevelsCache = Switch.Level;
+
+			// adjust Switch.Level to include Start/Stop event
+			sourceLevelsCache |= SourceLevels.ActivityTracing;
+			Switch.Level = sourceLevelsCache;
+
 			logLevel = ToTraceLevel(Switch.Level);
 
 			return;

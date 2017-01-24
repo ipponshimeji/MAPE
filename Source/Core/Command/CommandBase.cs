@@ -752,7 +752,7 @@ namespace MAPE.Command {
 			} else if (AreSameOptionNames(name, OptionNames.SettingsFile) || AreSameOptionNames(name, OptionNames.NoSettings)) {
 				// ignore, it was already handled in CreateSettings()
 			} else if (AreSameOptionNames(name, OptionNames.LogLevel)) {
-				settings.SetJsonValue(SettingNames.LogLevel, value);
+				settings.SetStringValue(SettingNames.LogLevel, value);
 			} else if (AreSameOptionNames(name, OptionNames.Credential)) {
 				CredentialInfo credential = Settings.Parse(value).CreateCredentialInfo();
 				SetCredential(credential, saveIfNecessary: false);
@@ -799,6 +799,10 @@ namespace MAPE.Command {
 					ShowErrorMessage(exception.Message);
 					this.Kind = ExecutionKind.ShowUsage;
 				}
+
+				// set log level
+				TraceLevel logLevel = settings.GetTraceLevelValue(SettingNames.LogLevel, defaultValue: Logger.LogLevel);
+				Logger.LogLevel = logLevel;
 
 				// execute command based on the settings
 				Execute(this.Kind, settings);

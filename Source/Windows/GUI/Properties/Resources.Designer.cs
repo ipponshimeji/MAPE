@@ -214,11 +214,29 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   Level:  に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_levelLabel_Content {
+            get {
+                return ResourceManager.GetString("MainWindow_levelLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Lo_g に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string MainWindow_logLabel_Content {
             get {
                 return ResourceManager.GetString("MainWindow_logLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Log _Level に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_loglevelMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_loglevelMenu_Header", resourceCulture);
             }
         }
         

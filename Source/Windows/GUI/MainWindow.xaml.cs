@@ -14,6 +14,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using MAPE.Utils;
+using MAPE.Server;
+using MAPE.Command;
 
 
 namespace MAPE.Windows.GUI {
@@ -77,6 +79,8 @@ namespace MAPE.Windows.GUI {
 
 		private LogMonitor logMonitor;
 
+		private Tuple<MenuItem, TraceLevel>[] logLevelMenuItemGroup;
+
 		private int maxLogCount;
 
 		private SettingsWindow settingsWindow;
@@ -127,6 +131,7 @@ namespace MAPE.Windows.GUI {
 			this.app = app;
 			this.UIState = UIStateFlags.InitialState;
 			this.logMonitor = new LogMonitor(this);
+			this.logLevelMenuItemGroup = null;
 			this.maxLogCount = 300;
 			this.settingsWindow = null;
 			this.aboutWindow = null;
@@ -212,6 +217,7 @@ namespace MAPE.Windows.GUI {
 			base.OnInitialized(e);
 
 			// initialize this class level
+			this.logLevelMenuItemGroup = InitializeLogLevelUI(Logger.LogLevel);
 			this.app.UIStateChanged += app_UIStateChanged;
 			OnUIStateChanged(this.UIState);
 			Logger.AddLogMonitor(this.logMonitor);
@@ -278,11 +284,13 @@ namespace MAPE.Windows.GUI {
 				this.Icon = this.app.OnIcon;
 				this.stopMenuItem.IsEnabled = true;
 				this.proxyToggleButton.IsChecked = true;
+				this.proxyInfoLabel.Content = GetProxyInfo();
 			} else {
 				// proxy is not running
 				this.Icon = this.app.OffIcon;
 				this.stopMenuItem.IsEnabled = false;
 				this.proxyToggleButton.IsChecked = false;
+				this.proxyInfoLabel.Content = string.Empty;
 			}
 
 			// invariables
@@ -294,6 +302,69 @@ namespace MAPE.Windows.GUI {
 			}
 
 			return;
+		}
+
+		private Tuple<MenuItem, TraceLevel>[] InitializeLogLevelUI(TraceLevel level) {
+			// create
+			Tuple<MenuItem, TraceLevel>[] logLevelMenuItems = new Tuple<MenuItem, TraceLevel>[] {
+				new Tuple<MenuItem, TraceLevel>(this.offMenuItem, TraceLevel.Off),
+				new Tuple<MenuItem, TraceLevel>(this.errorMenuItem, TraceLevel.Error),
+				new Tuple<MenuItem, TraceLevel>(this.warningMenuItem, TraceLevel.Warning),
+				new Tuple<MenuItem, TraceLevel>(this.infoMenuItem, TraceLevel.Info),
+				new Tuple<MenuItem, TraceLevel>(this.verboseMenuItem, TraceLevel.Verbose)
+			};
+
+			// set menu item
+			MenuItem menuItem = null;
+			foreach (var pair in logLevelMenuItems) {
+				if (pair.Item2 == level) {
+					menuItem = pair.Item1;
+					break;
+				}
+			}
+			if (menuItem != null) {
+				menuItem.IsChecked = true;
+			}
+
+			// set label
+			this.levelValueLabel.Content = level.ToString();
+
+			return logLevelMenuItems;
+		}
+
+		private string GetProxyInfo() {
+			StringBuilder buf = new StringBuilder("listening at ");
+			Settings rootSettings = this.Command.Settings;
+			Settings proxySettings = rootSettings.GetProxySettings(createIfNotExist: false);
+
+			// MainListener
+			Settings listenerSettings = proxySettings.GetObjectValue(Proxy.SettingNames.MainListener);
+			buf.Append(GetListenerEndpoint(listenerSettings));
+
+			// AdditionalListeners
+			IEnumerable<Settings> additionalListeners = proxySettings.GetObjectArrayValue(Proxy.SettingNames.AdditionalListeners, null);
+			if (additionalListeners != null) {
+				foreach (Settings settings in additionalListeners) {
+					buf.Append(", ");
+					buf.Append(GetListenerEndpoint(settings));
+				}
+			}
+
+			return buf.ToString();
+		}
+
+		private string GetListenerEndpoint(Settings listenerSettings) {
+			string address;
+			int port;
+			if (listenerSettings.IsNull) {
+				address = Listener.DefaultAddress.ToString();
+				port = Listener.DefaultPort;
+			} else {
+				address = listenerSettings.GetStringValue(Listener.SettingNames.Address, defaultValue: string.Empty);
+				port = listenerSettings.GetInt32Value(Listener.SettingNames.Port, defaultValue: 0);
+			}
+
+			return $"{address}:{port}";
 		}
 
 		private string GetHelpTopicUrl() {
@@ -379,6 +450,28 @@ namespace MAPE.Windows.GUI {
 		private void stopMenuItem_Click(object sender, RoutedEventArgs e) {
 			try {
 				this.app.StopProxy();
+			} catch (Exception exception) {
+				ErrorMessage(exception.Message);
+			}
+		}
+
+		private void loglevelMenuItem_Click(object sender, RoutedEventArgs e) {
+			try {
+				// update UI
+				TraceLevel level = TraceLevel.Error;
+				foreach (var pair in this.logLevelMenuItemGroup) {
+					if (pair.Item1 == sender) {
+						pair.Item1.IsChecked = true;
+						level = pair.Item2;
+					} else {
+						pair.Item1.IsChecked = false;
+					}
+				}
+
+				this.levelValueLabel.Content = level.ToString();
+
+				// set log level
+				Logger.LogLevel = level;
 			} catch (Exception exception) {
 				ErrorMessage(exception.Message);
 			}

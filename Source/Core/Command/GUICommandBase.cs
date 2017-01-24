@@ -51,6 +51,12 @@ namespace MAPE.Command {
 			}
 		}
 
+		public Settings Settings {
+			get {
+				return this.settings;
+			}
+		}
+
 		#endregion
 
 

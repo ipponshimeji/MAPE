@@ -22,6 +22,13 @@
                 <MenuItem x:Name="stopMenuItem" Header="{x:Static properties:Resources.MainWindow_stopMenu_Header}" Click="stopMenuItem_Click"/>
             </MenuItem>
             <MenuItem Header="{x:Static properties:Resources.MainWindow_logMenu_Header}">
+                <MenuItem x:Name="loglevelMenuItem" Header="{x:Static properties:Resources.MainWindow_loglevelMenu_Header}">
+                    <MenuItem x:Name="offMenuItem" Header="_Off" IsCheckable="True" Click="loglevelMenuItem_Click" />
+                    <MenuItem x:Name="errorMenuItem" Header="_Error" IsCheckable="True" Click="loglevelMenuItem_Click" />
+                    <MenuItem x:Name="warningMenuItem" Header="_Warning" IsCheckable="True" Click="loglevelMenuItem_Click" />
+                    <MenuItem x:Name="infoMenuItem" Header="_Info" IsCheckable="True" Click="loglevelMenuItem_Click" />
+                    <MenuItem x:Name="verboseMenuItem" Header="_Verbose" IsCheckable="True" Click="loglevelMenuItem_Click" />
+                </MenuItem>
                 <MenuItem x:Name="clearMenuItem" Header="{x:Static properties:Resources.MainWindow_clearMenu_Header}" Click="clearMenuItem_Click" />
             </MenuItem>
             <MenuItem Header="{x:Static properties:Resources.MainWindow_helpMenu_Header}">
@@ -31,18 +38,21 @@
             </MenuItem>
         </Menu>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
-            <ToggleButton x:Name="proxyToggleButton" Content="{x:Static properties:Resources.MainWindow_proxyToggleButton_Content}" Margin="4" MinWidth="2" Padding="2" Width="60" Click="proxyToggleButton_Click"/>
+            <ToggleButton x:Name="proxyToggleButton" Content="{x:Static properties:Resources.MainWindow_proxyToggleButton_Content}" Margin="4,4,12,4" MinWidth="2" Padding="2" Width="60" Click="proxyToggleButton_Click"/>
+            <Label x:Name="proxyInfoLabel" VerticalAlignment="Center" />
         </StackPanel>
-        <StackPanel DockPanel.Dock="Top">
-            <Label Content="{x:Static properties:Resources.MainWindow_logLabel_Content}" Target="{Binding ElementName=logListView}" />
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <Label Content="{x:Static properties:Resources.MainWindow_logLabel_Content}" Target="{Binding ElementName=logListView}" Margin="0,0,4,0" />
+            <Label Content="{x:Static properties:Resources.MainWindow_levelLabel_Content}" />
+            <Label x:Name="levelValueLabel" />
         </StackPanel>
         <ListView x:Name="logListView" ItemContainerStyleSelector="{StaticResource logListViewItemSelector}">
             <ListView.View>
                 <GridView>
-                    <GridViewColumn Header="{x:Static properties:Resources.MainWindow_Timestamp_Header}" Width="60" DisplayMemberBinding="{Binding Path=Time}" />
-                    <GridViewColumn Header="{x:Static properties:Resources.MainWindow_Severity_Header}" Width="80" DisplayMemberBinding="{Binding Path=EventType}" />
+                    <GridViewColumn Header="{x:Static properties:Resources.MainWindow_Timestamp_Header}" Width="65" DisplayMemberBinding="{Binding Path=Time}" />
+                    <GridViewColumn Header="{x:Static properties:Resources.MainWindow_Severity_Header}" Width="60" DisplayMemberBinding="{Binding Path=EventTypeName}" />
                     <GridViewColumn Header="{x:Static properties:Resources.MainWindow_ComponentName_Header}" Width="180" DisplayMemberBinding="{Binding Path=ComponentName}" />
-                    <GridViewColumn Header="{x:Static properties:Resources.MainWindow_Message_Header}" Width="300" DisplayMemberBinding="{Binding Path=Message}"/>
+                    <GridViewColumn Header="{x:Static properties:Resources.MainWindow_Message_Header}" Width="320" DisplayMemberBinding="{Binding Path=Message}"/>
                 </GridView>
             </ListView.View>
         </ListView>
