@@ -76,27 +76,36 @@ namespace MAPE.Command {
 		#region methods
 
 		public void StartProxy() {
+			// start proxy
 			lock (this) {
 				// state checks
 				if (this.runningProxyState != null) {
-					throw new InvalidOperationException("Already started.");
+					return;
 				}
 
 				this.runningProxyState = StartProxy(this.settings, this);
 			}
 
+			// log
+			LogStart("Proxy Started.");
+
 			return;
 		}
 
-		public void StopProxy() {
+		public void StopProxy(int millisecondsTimeout = 0) {
+			// stop proxy
 			lock (this) {
 				// state checks
 				if (this.runningProxyState == null) {
 					return;
 				}
 
+				this.runningProxyState.Stop(millisecondsTimeout);
 				Util.DisposeWithoutFail(ref this.runningProxyState);
 			}
+
+			// log
+			LogStop("Proxy Stopped.");
 
 			return;
 		}

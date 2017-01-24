@@ -4,9 +4,47 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MAPE.Windows.GUI"
+        xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525" Icon="pack://siteoforigin:,,,/Resources/OnIcon.ico">
-    <Grid>
-        <Label Content="Not Implemented" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" FontSize="48" />
-    </Grid>
+        Title="{x:Static properties:Resources.App_Title}" Height="350" Width="640" Icon="pack://siteoforigin:,,,/Resources/OnIcon.ico">
+    <Window.Resources>
+        <local:LogListViewItemStyleSelector x:Key="logListViewItemSelector"/>
+    </Window.Resources>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" >
+            <MenuItem Header="{x:Static properties:Resources.MainWindow_fileMenu_Header}">
+                <MenuItem x:Name="settingsMenuItem" Header="{x:Static properties:Resources.MainWindow_settingsMenu_Header}" Click="settingsMenuItem_Click"/>
+                <Separator/>
+                <MenuItem x:Name="closeMenuItem" Header="{x:Static properties:Resources.MainWindow_closeMenu_Header}" Click="closeMenuItem_Click" />
+            </MenuItem>
+            <MenuItem Header="{x:Static properties:Resources.MainWindow_proxyMenu_Header}">
+                <MenuItem x:Name="startMenuItem" Header="{x:Static properties:Resources.MainWindow_startMenu_Header}" Click="startMenuItem_Click"/>
+                <MenuItem x:Name="stopMenuItem" Header="{x:Static properties:Resources.MainWindow_stopMenu_Header}" Click="stopMenuItem_Click"/>
+            </MenuItem>
+            <MenuItem Header="{x:Static properties:Resources.MainWindow_logMenu_Header}">
+                <MenuItem x:Name="clearMenuItem" Header="{x:Static properties:Resources.MainWindow_clearMenu_Header}" Click="clearMenuItem_Click" />
+            </MenuItem>
+            <MenuItem Header="{x:Static properties:Resources.MainWindow_helpMenu_Header}">
+                <MenuItem x:Name="helptopicMenuItem" Header="{x:Static properties:Resources.MainWindow_helptopicMenu_Header}" Click="helptopicMenuItem_Click"/>
+                <Separator/>
+                <MenuItem x:Name="aboutMenuItem" Header="{x:Static properties:Resources.MainWindow_aboutMenu_Header}" Click="aboutMenuItem_Click" />
+            </MenuItem>
+        </Menu>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <ToggleButton x:Name="proxyToggleButton" Content="{x:Static properties:Resources.MainWindow_proxyToggleButton_Content}" Margin="4" MinWidth="2" Padding="2" Width="60" Click="proxyToggleButton_Click"/>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Top">
+            <Label Content="{x:Static properties:Resources.MainWindow_logLabel_Content}" Target="{Binding ElementName=logListView}" />
+        </StackPanel>
+        <ListView x:Name="logListView" ItemContainerStyleSelector="{StaticResource logListViewItemSelector}">
+            <ListView.View>
+                <GridView>
+                    <GridViewColumn Header="{x:Static properties:Resources.MainWindow_Timestamp_Header}" Width="60" DisplayMemberBinding="{Binding Path=Time}" />
+                    <GridViewColumn Header="{x:Static properties:Resources.MainWindow_Severity_Header}" Width="80" DisplayMemberBinding="{Binding Path=EventType}" />
+                    <GridViewColumn Header="{x:Static properties:Resources.MainWindow_ComponentName_Header}" Width="180" DisplayMemberBinding="{Binding Path=ComponentName}" />
+                    <GridViewColumn Header="{x:Static properties:Resources.MainWindow_Message_Header}" Width="300" DisplayMemberBinding="{Binding Path=Message}"/>
+                </GridView>
+            </ListView.View>
+        </ListView>
+    </DockPanel>
 </Window>

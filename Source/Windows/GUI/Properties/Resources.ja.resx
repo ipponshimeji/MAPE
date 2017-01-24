@@ -120,6 +120,57 @@
   <data name="App_Title" xml:space="preserve">
     <value>認証プロキシ爆発しろ！</value>
   </data>
+  <data name="MainWindow_fileMenu_Header" xml:space="preserve">
+    <value>ファイル(_F)</value>
+  </data>
+  <data name="MainWindow_settingsMenu_Header" xml:space="preserve">
+    <value>設定(_S) ...</value>
+  </data>
+  <data name="MainWindow_closeMenu_Header" xml:space="preserve">
+    <value>ウィンドウを閉じる(_C)</value>
+  </data>
+  <data name="MainWindow_proxyMenu_Header" xml:space="preserve">
+    <value>中継(_P)</value>
+  </data>
+  <data name="MainWindow_startMenu_Header" xml:space="preserve">
+    <value>開始(_S)</value>
+  </data>
+  <data name="MainWindow_stopMenu_Header" xml:space="preserve">
+    <value>停止(_T)</value>
+  </data>
+  <data name="MainWindow_logMenu_Header" xml:space="preserve">
+    <value>ログ(_L)</value>
+  </data>
+  <data name="MainWindow_clearMenu_Header" xml:space="preserve">
+    <value>クリア(_C)</value>
+  </data>
+  <data name="MainWindow_helpMenu_Header" xml:space="preserve">
+    <value>ヘルプ(_H)</value>
+  </data>
+  <data name="MainWindow_helptopicMenu_Header" xml:space="preserve">
+    <value>ヘルプの表示(_H)</value>
+  </data>
+  <data name="MainWindow_aboutMenu_Header" xml:space="preserve">
+    <value>認証プロキシ爆発しろ！ について(_A) ...</value>
+  </data>
+  <data name="MainWindow_proxyToggleButton_Content" xml:space="preserve">
+    <value>中継(_X)</value>
+  </data>
+  <data name="MainWindow_logLabel_Content" xml:space="preserve">
+    <value>ログ(_G):</value>
+  </data>
+  <data name="MainWindow_Timestamp_Header" xml:space="preserve">
+    <value>時刻</value>
+  </data>
+  <data name="MainWindow_Severity_Header" xml:space="preserve">
+    <value>重大度</value>
+  </data>
+  <data name="MainWindow_ComponentName_Header" xml:space="preserve">
+    <value>コンポーネント</value>
+  </data>
+  <data name="MainWindow_Message_Header" xml:space="preserve">
+    <value>メッセージ</value>
+  </data>
   <data name="CredentialDialog_Description" xml:space="preserve">
     <value>{0}に対する認証情報が必要です。</value>
   </data>
@@ -148,7 +199,7 @@
     <value>保存しない</value>
   </data>
   <data name="VersionInfoWindow_Title" xml:space="preserve">
-    <value>認証プロキシ爆発しろ！</value>
+    <value>認証プロキシ爆発しろ！について</value>
   </data>
   <data name="VersionInfoWindow_ApplicationName" xml:space="preserve">
     <value>認証プロキシ爆発しろ！</value>

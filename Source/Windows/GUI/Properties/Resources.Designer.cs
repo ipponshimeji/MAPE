@@ -151,6 +151,159 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   _About MAPE ... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_aboutMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_aboutMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Clear に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_clearMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_clearMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Close に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_closeMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_closeMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Component に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_ComponentName_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_ComponentName_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _File に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_fileMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_fileMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Help に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_helpMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_helpMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Help Topics に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_helptopicMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_helptopicMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Lo_g に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_logLabel_Content {
+            get {
+                return ResourceManager.GetString("MainWindow_logLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Log に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_logMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_logMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Message に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_Message_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_Message_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Proxy に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_proxyMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_proxyMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Pro_xy に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_proxyToggleButton_Content {
+            get {
+                return ResourceManager.GetString("MainWindow_proxyToggleButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Settings ... に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_settingsMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_settingsMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Severity に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_Severity_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_Severity_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Start に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_startMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_startMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   S_top に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_stopMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_stopMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Time に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_Timestamp_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_Timestamp_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   (アイコン) に類似した型 System.Drawing.Icon のローカライズされたリソースを検索します。
         /// </summary>
         public static System.Drawing.Icon OffIcon {
@@ -217,7 +370,7 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
-        ///   MAPE に類似しているローカライズされた文字列を検索します。
+        ///   About MAPE に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string VersionInfoWindow_Title {
             get {

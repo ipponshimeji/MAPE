@@ -120,6 +120,57 @@
   <data name="App_Title" xml:space="preserve">
     <value>MAPE</value>
   </data>
+  <data name="MainWindow_fileMenu_Header" xml:space="preserve">
+    <value>_File</value>
+  </data>
+  <data name="MainWindow_settingsMenu_Header" xml:space="preserve">
+    <value>_Settings ...</value>
+  </data>
+  <data name="MainWindow_closeMenu_Header" xml:space="preserve">
+    <value>_Close</value>
+  </data>
+  <data name="MainWindow_proxyMenu_Header" xml:space="preserve">
+    <value>_Proxy</value>
+  </data>
+  <data name="MainWindow_startMenu_Header" xml:space="preserve">
+    <value>_Start</value>
+  </data>
+  <data name="MainWindow_stopMenu_Header" xml:space="preserve">
+    <value>S_top</value>
+  </data>
+  <data name="MainWindow_logMenu_Header" xml:space="preserve">
+    <value>_Log</value>
+  </data>
+  <data name="MainWindow_clearMenu_Header" xml:space="preserve">
+    <value>_Clear</value>
+  </data>
+  <data name="MainWindow_helpMenu_Header" xml:space="preserve">
+    <value>_Help</value>
+  </data>
+  <data name="MainWindow_helptopicMenu_Header" xml:space="preserve">
+    <value>_Help Topics</value>
+  </data>
+  <data name="MainWindow_aboutMenu_Header" xml:space="preserve">
+    <value>_About MAPE ...</value>
+  </data>
+  <data name="MainWindow_proxyToggleButton_Content" xml:space="preserve">
+    <value>Pro_xy</value>
+  </data>
+  <data name="MainWindow_logLabel_Content" xml:space="preserve">
+    <value>Lo_g</value>
+  </data>
+  <data name="MainWindow_Timestamp_Header" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="MainWindow_Severity_Header" xml:space="preserve">
+    <value>Severity</value>
+  </data>
+  <data name="MainWindow_ComponentName_Header" xml:space="preserve">
+    <value>Component</value>
+  </data>
+  <data name="MainWindow_Message_Header" xml:space="preserve">
+    <value>Message</value>
+  </data>
   <data name="CredentialDialog_Description" xml:space="preserve">
     <value>The credential for {0} is required.</value>
   </data>
@@ -148,7 +199,7 @@
     <value>do not save the credential</value>
   </data>
   <data name="VersionInfoWindow_Title" xml:space="preserve">
-    <value>MAPE</value>
+    <value>About MAPE</value>
   </data>
   <data name="VersionInfoWindow_ApplicationName" xml:space="preserve">
     <value>MAPE (May Authentication Proxy Explode)</value>

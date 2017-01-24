@@ -6,10 +6,10 @@ using System.Windows;
 
 
 namespace MAPE.Windows.GUI {
-	public partial class VersionInfoWindow: Window {
+	public partial class AboutWindow: Window {
 		#region creation and disposal
 
-		public VersionInfoWindow() {
+		public AboutWindow() {
 			InitializeComponent();
 		}
 
@@ -24,7 +24,7 @@ namespace MAPE.Windows.GUI {
 
 		private void Window_Loaded(object sender, RoutedEventArgs e) {
 			// initialize UI
-			Assembly assembly = typeof(VersionInfoWindow).Assembly;
+			Assembly assembly = typeof(AboutWindow).Assembly;
 			string version = assembly.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version;
 			string copyright = assembly.GetCustomAttribute<AssemblyCopyrightAttribute>()?.Copyright;
 			string configuration = assembly.GetCustomAttribute<AssemblyConfigurationAttribute>()?.Configuration;
