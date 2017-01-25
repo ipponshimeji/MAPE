@@ -22,6 +22,7 @@
 
 ### 設定ファイルの格納場所
 
+コマンド版もGUI版も同じ設定ファイルを利用します。
 設定ファイルは以下のパスにあります。
 
 ```
@@ -50,7 +51,7 @@ C:\Users\<ユーザー名>\AppData\Local
 | 名前 | 型 | 省略時の値 | 内容 |
 |:----|:----|:----|:----|
 | Credential | [Credentialオブジェクト](#Credentialオブジェクト)の配列 | [] |認証プロキシに対する認証情報。 |
-| LogLevel | 文字列 | "Error" | 【未実装】出力するログのレベル。下の[LogLevelの値](#LogLevelの値)を参照してください。 |
+| LogLevel | 文字列 | "Error" | 出力するログのレベル。下の[LogLevelの値](#LogLevelの値)を参照してください。 |
 | Proxy | [Proxyオブジェクト](#Proxyオブジェクト) | {} | 中継機能に対する設定。 |
 | SystemSettingsSwitcher | [SystemSettingsSwitcherオブジェクト](#SystemSettingsSwitcherオブジェクト) | {} | プロキシ設定書き換え機能に対する設定。 |
 
