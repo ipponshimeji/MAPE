@@ -219,7 +219,7 @@ namespace MAPE.Windows.GUI {
 			// initialize this class level
 			this.logLevelMenuItemGroup = InitializeLogLevelUI(Logger.LogLevel);
 			this.app.UIStateChanged += app_UIStateChanged;
-			OnUIStateChanged(this.UIState);
+			OnUIStateChanged(GetUIState());
 			Logger.AddLogMonitor(this.logMonitor);
 		}
 

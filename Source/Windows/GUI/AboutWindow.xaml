@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MAPE.Windows.GUI"
         xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
         mc:Ignorable="d"
-        Title="{x:Static properties:Resources.VersionInfoWindow_Title}" Height="300" Width="450" Loaded="Window_Loaded" Icon="pack://siteoforigin:,,,/Resources/OnIcon.ico">
+        Title="{x:Static properties:Resources.VersionInfoWindow_Title}" Height="300" Width="450" Loaded="Window_Loaded">
     <Grid Margin="4,0,4,4">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

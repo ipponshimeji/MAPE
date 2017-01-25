@@ -16,6 +16,19 @@ namespace MAPE.Windows.GUI {
 		#endregion
 
 
+		#region overrides
+
+		protected override void OnInitialized(EventArgs e) {
+			// initialize the base class level
+			base.OnInitialized(e);
+
+			// initialize this class level
+			this.Icon = App.Current.OnIcon;
+		}
+
+		#endregion
+
+
 		#region event handlers
 
 		private void okButton_Click(object sender, RoutedEventArgs e) {

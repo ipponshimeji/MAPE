@@ -17,8 +17,25 @@ namespace MAPE.Windows.GUI {
 	/// SettingsWindow.xaml の相互作用ロジック
 	/// </summary>
 	public partial class SettingsWindow: Window {
+		#region creation and disposal
+
 		public SettingsWindow() {
 			InitializeComponent();
 		}
+
+		#endregion
+
+
+		#region overrides
+
+		protected override void OnInitialized(EventArgs e) {
+			// initialize the base class level
+			base.OnInitialized(e);
+
+			// initialize this class level
+			this.Icon = App.Current.OnIcon;
+		}
+
+		#endregion
 	}
 }

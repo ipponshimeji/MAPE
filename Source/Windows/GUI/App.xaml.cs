@@ -50,6 +50,12 @@ namespace MAPE.Windows.GUI {
 
 		#region properties
 
+		internal static new App Current {
+			get {
+				return (App)Application.Current;
+			}
+		}
+
 		internal BitmapFrame OnIcon {
 			get {
 				return this.onIcon;
@@ -183,7 +189,7 @@ namespace MAPE.Windows.GUI {
 			this.notifyIcon = notifyIcon;
 
 			// process this class level tasks
-			OnUIStateChanged(this.UIState);
+			OnUIStateChanged(GetUIState());
 
 			return;
 		}

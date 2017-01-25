@@ -28,32 +28,15 @@ namespace MAPE.Windows.GUI {
 		#endregion
 
 
-		#region event handlers
+		#region overrides
 
-		private void okButton_Click(object sender, RoutedEventArgs e) {
-			// check result
-			string endPoint = this.EndPoint ?? string.Empty;
-			string userName = this.userNameTextBox.Text;
-			string password = this.passwordBox.Password;
-			CredentialPersistence persistence;
-			if (this.sessionRadioButton.IsChecked ?? false) {
-				persistence = CredentialPersistence.Session;
-			} else if (this.persistentRadioButton.IsChecked ?? false) {
-				persistence = CredentialPersistence.Persistent;
-			} else {
-				// CredentialPersistence.Process is default
-				persistence = CredentialPersistence.Process;
-			}
+		protected override void OnInitialized(EventArgs e) {
+			// initialize the base class level
+			base.OnInitialized(e);
 
-			// commit the result
-			this.Credential = new CommandBase.CredentialInfo(endPoint, userName, password, persistence);
-			this.DialogResult = true;
+			// initialize this class level
+			this.Icon = App.Current.OnIcon;
 
-			return;
-		}
-
-		private void Window_Loaded(object sender, RoutedEventArgs e) {
-			// initialize UI
 			string endPoint = this.EndPoint ?? "(unidentified proxy)";
 			this.descriptionTextBlock.Text = string.Format(Properties.Resources.CredentialDialog_Description, endPoint);
 
@@ -78,10 +61,37 @@ namespace MAPE.Windows.GUI {
 				}
 				radioButton.IsChecked = true;
 			}
-			this.passwordBox.Password = string.Empty;	// Do not give default value
+			this.passwordBox.Password = string.Empty;   // Do not give default value
 
 			// set initial focus on userNameTextBox
 			this.userNameTextBox.Focus();
+
+			return;
+		}
+
+		#endregion
+
+
+		#region event handlers
+
+		private void okButton_Click(object sender, RoutedEventArgs e) {
+			// check result
+			string endPoint = this.EndPoint ?? string.Empty;
+			string userName = this.userNameTextBox.Text;
+			string password = this.passwordBox.Password;
+			CredentialPersistence persistence;
+			if (this.sessionRadioButton.IsChecked ?? false) {
+				persistence = CredentialPersistence.Session;
+			} else if (this.persistentRadioButton.IsChecked ?? false) {
+				persistence = CredentialPersistence.Persistent;
+			} else {
+				// CredentialPersistence.Process is default
+				persistence = CredentialPersistence.Process;
+			}
+
+			// commit the result
+			this.Credential = new CommandBase.CredentialInfo(endPoint, userName, password, persistence);
+			this.DialogResult = true;
 
 			return;
 		}
