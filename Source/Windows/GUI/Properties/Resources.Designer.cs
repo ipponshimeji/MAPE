@@ -61,6 +61,52 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   MAPE (May Authentication Proxy Explode) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string AboutWindow_ApplicationName {
+            get {
+                return ResourceManager.GetString("AboutWindow_ApplicationName", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   This software uses following components に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string AboutWindow_ComponentsGroupBox_Header {
+            get {
+                return ResourceManager.GetString("AboutWindow_ComponentsGroupBox_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Newtonsoft.Json v9.0.1
+        ///System.ValueTuple v4.3.0 に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string AboutWindow_ComponentsList {
+            get {
+                return ResourceManager.GetString("AboutWindow_ComponentsList", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   OK に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string AboutWindow_okButton_Content {
+            get {
+                return ResourceManager.GetString("AboutWindow_okButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   About MAPE に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string AboutWindow_Title {
+            get {
+                return ResourceManager.GetString("AboutWindow_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   MAPE に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string App_Title {
@@ -342,57 +388,11 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
-        ///   MAPE GUI Application に類似しているローカライズされた文字列を検索します。
+        ///   Not implemented now. に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        public static string VersionInfoWindow_ApplicationDescription {
+        public static string SettingsWindow_Notice {
             get {
-                return ResourceManager.GetString("VersionInfoWindow_ApplicationDescription", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   MAPE (May Authentication Proxy Explode) に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string VersionInfoWindow_ApplicationName {
-            get {
-                return ResourceManager.GetString("VersionInfoWindow_ApplicationName", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   This software uses following components: に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string VersionInfoWindow_ComponentsLabel {
-            get {
-                return ResourceManager.GetString("VersionInfoWindow_ComponentsLabel", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Newtonsoft.Json v9.0.1
-        ///System.ValueTuple v4.3.0 に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string VersionInfoWindow_ComponentsList {
-            get {
-                return ResourceManager.GetString("VersionInfoWindow_ComponentsList", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   OK に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string VersionInfoWindow_okButton_Content {
-            get {
-                return ResourceManager.GetString("VersionInfoWindow_okButton_Content", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   About MAPE に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string VersionInfoWindow_Title {
-            get {
-                return ResourceManager.GetString("VersionInfoWindow_Title", resourceCulture);
+                return ResourceManager.GetString("SettingsWindow_Notice", resourceCulture);
             }
         }
     }

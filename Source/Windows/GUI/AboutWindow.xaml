@@ -6,28 +6,26 @@
         xmlns:local="clr-namespace:MAPE.Windows.GUI"
         xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
         mc:Ignorable="d"
-        Title="{x:Static properties:Resources.VersionInfoWindow_Title}" Height="300" Width="450" Loaded="Window_Loaded">
+        Title="{x:Static properties:Resources.AboutWindow_Title}" Height="300" Width="450">
     <Grid Margin="4,0,4,4">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <StackPanel Orientation="Horizontal">
-            <Image Margin="4" Stretch="None" Source="pack://siteoforigin:,,,/Resources/OnIcon.ico" />
-            <Label Content="{x:Static properties:Resources.VersionInfoWindow_ApplicationName}" FontSize="24" VerticalAlignment="Center" />
+        <StackPanel Orientation="Horizontal" Margin="4,0">
+            <Image x:Name="appImage" Margin="4" Stretch="None" />
+            <Label Content="{x:Static properties:Resources.AboutWindow_ApplicationName}" FontSize="24" VerticalAlignment="Center" />
         </StackPanel>
-        <Label Grid.Row="1" Content="{x:Static properties:Resources.VersionInfoWindow_ApplicationDescription}" />
-        <Label x:Name="versionLabel" Content="version" Grid.Row="2" />
-        <Label x:Name="copyrightLabel" Content="copyright" Grid.Row="3" />
-        <Label Content="{x:Static properties:Resources.VersionInfoWindow_ComponentsLabel}" Grid.Row="4" />
-        <TextBlock Grid.Row="5" Text="{x:Static properties:Resources.VersionInfoWindow_ComponentsList}" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="24,4,4,4" />
-        <StackPanel Grid.Row="6" VerticalAlignment="Bottom" HorizontalAlignment="Right">
-            <Button Content="{x:Static properties:Resources.VersionInfoWindow_okButton_Content}" Width="100" Margin="8" IsDefault="True" Padding="1,4" Click="okButton_Click" />
+        <Label x:Name="versionLabel" Content="version" Grid.Row="1" Padding="4" Margin="4,0" />
+        <Label x:Name="copyrightLabel" Content="copyright" Grid.Row="2" Padding="4" Margin="4,0" />
+        <GroupBox x:Name="componentGroupBox" Grid.Row="3" Margin="4" Padding="4" Header="{x:Static properties:Resources.AboutWindow_ComponentsGroupBox_Header}">
+            <TextBlock Text="{x:Static properties:Resources.AboutWindow_ComponentsList}" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Left" VerticalAlignment="Top" />
+        </GroupBox>
+        <StackPanel Grid.Row="4" VerticalAlignment="Bottom" HorizontalAlignment="Right">
+            <Button Content="{x:Static properties:Resources.AboutWindow_okButton_Content}" Width="100" Margin="8,8,6,8" IsDefault="True" Padding="1,4" Click="okButton_Click" />
         </StackPanel>
     </Grid>
 </Window>

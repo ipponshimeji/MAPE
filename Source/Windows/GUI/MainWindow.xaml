@@ -12,6 +12,9 @@
     </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top" >
+            <Menu.Background>
+                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.ControlLightLightColorKey}}"/>
+            </Menu.Background>
             <MenuItem Header="{x:Static properties:Resources.MainWindow_fileMenu_Header}">
                 <MenuItem x:Name="settingsMenuItem" Header="{x:Static properties:Resources.MainWindow_settingsMenu_Header}" Click="settingsMenuItem_Click"/>
                 <Separator/>

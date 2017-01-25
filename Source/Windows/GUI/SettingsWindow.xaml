@@ -4,9 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MAPE.Windows.GUI"
+        xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
         mc:Ignorable="d"
         Title="SettingsWindow" Height="300" Width="300">
     <Grid>
-        <Label Content="Not Implemented" FontSize="24" />
+        <Label Content="{x:Static properties:Resources.SettingsWindow_Notice}" FontSize="24" />
     </Grid>
 </Window>
