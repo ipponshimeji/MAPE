@@ -162,7 +162,7 @@ namespace MAPE.Windows {
 			// adjust settings
 			SystemSettingsSwitcherForWindows actualBackup = backup as SystemSettingsSwitcherForWindows;
 			string proxyOverride = this.ProxyOverride;
-			if (actualBackup != null && string.IsNullOrEmpty(actualBackup.ProxyOverride)) {
+			if (actualBackup != null && string.IsNullOrEmpty(actualBackup.ProxyOverride) == false) {
 				// use the current ProxyOverride if it is defined explicitly
 				proxyOverride = actualBackup.ProxyOverride;
 			}
