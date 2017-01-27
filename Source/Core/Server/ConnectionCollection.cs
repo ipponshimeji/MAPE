@@ -112,7 +112,9 @@ namespace MAPE.Server {
 		}
 
 		public Task[] GetActiveTaskList() {
-			return TaskingComponent.GetActiveTaskList(this.connectionList);
+			lock (this) {
+				return TaskingComponent.GetActiveTaskList(this.connectionList);
+			}
 		}
 
 		#endregion
