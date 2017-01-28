@@ -118,11 +118,32 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Command_Usage" xml:space="preserve">
-    <value>
+    <value>Usage
+Pattern1: Proxying http/https communication, 
+makes the communication pass the authentication proxy.
 mape [Options]
 
-Options
-  ToBeUpdated
+Pattern2: Merges settings into the MAPE settings file and saves it.
+mape /Save [Options]
+
+Pattern3: Shows its usage.
+mape /Help or /?
+
+Options (not written yet)
+Show the following page for more information.
+(Currently only Japanese pages are provided.)
+https://github.com/ipponshimeji/MAPE/blob/master/Documentation/ja/Reference_Options.md
+
+/ActualProxy
+/AdditionalListeners
+/Culture
+/EnableSystemSettingsSwitch
+/MainListener
+/NoLogo
+/NoSettings
+/ProxyOverride
+/RetryCount
+/SettingsFile
 </value>
   </data>
 </root>
