@@ -219,7 +219,10 @@ namespace MAPE.Windows.GUI {
 			base.OnInitialized(e);
 
 			// initialize this class level
+			Settings settings = this.Command.GUISettings;
 			this.logLevelMenuItemGroup = InitializeLogLevelUI(Logger.LogLevel);
+			this.chaseLastLogMenuItem.IsChecked = settings.GetBooleanValue(GUISettings.SettingNames.ChaseLastLog, defaultValue: true);
+
 			this.app.UIStateChanged += app_UIStateChanged;
 			OnUIStateChanged(GetUIState());
 			Logger.AddLogMonitor(this.logMonitor);
@@ -377,10 +380,15 @@ namespace MAPE.Windows.GUI {
 		private void ProcessLog() {
 			ItemCollection items = this.logListView.Items;
 			Log log;
+			LogAdapter item = null; 
 			do {
 				// get a log from the log queue
 				lock (this.logQueueLocker) {
 					if (this.logQueue.Count <= 0) {
+						if (item != null && this.chaseLastLogMenuItem.IsChecked) {
+							// ensure the added item is visible
+							this.logListView.ScrollIntoView(item);
+						}
 						this.processing = false;
 						break;
 					}
@@ -396,10 +404,8 @@ namespace MAPE.Windows.GUI {
 				}
 
 				// add to the list view
-				LogAdapter item = new LogAdapter(log);
+				item = new LogAdapter(log);
 				items.Add(item);
-				// ensure the added item is visible
-				this.logListView.ScrollIntoView(item);
 			} while (true);
 
 			return;

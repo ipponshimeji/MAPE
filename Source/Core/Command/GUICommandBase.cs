@@ -26,6 +26,8 @@ namespace MAPE.Command {
 
 			public const string Start = "Start";
 
+			public const string GUI = "GUI";
+
 			#endregion
 		}
 
@@ -54,6 +56,12 @@ namespace MAPE.Command {
 		public Settings Settings {
 			get {
 				return this.settings;
+			}
+		}
+
+		public Settings GUISettings {
+			get {
+				return this.settings.GetObjectValue(SettingNames.GUI);
 			}
 		}
 

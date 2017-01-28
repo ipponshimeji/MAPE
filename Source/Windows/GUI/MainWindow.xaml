@@ -32,6 +32,7 @@
                     <MenuItem x:Name="infoMenuItem" Header="_Info" IsCheckable="True" Click="loglevelMenuItem_Click" />
                     <MenuItem x:Name="verboseMenuItem" Header="_Verbose" IsCheckable="True" Click="loglevelMenuItem_Click" />
                 </MenuItem>
+                <MenuItem x:Name="chaseLastLogMenuItem" Header="{x:Static properties:Resources.MainWindow_chaseLastLogMenu_Header}" IsCheckable="True" />
                 <MenuItem x:Name="clearMenuItem" Header="{x:Static properties:Resources.MainWindow_clearMenu_Header}" Click="clearMenuItem_Click" />
             </MenuItem>
             <MenuItem Header="{x:Static properties:Resources.MainWindow_helpMenu_Header}">

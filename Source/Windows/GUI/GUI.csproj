@@ -53,6 +53,7 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GUISettings.cs" />
     <Compile Include="LogAdapter.cs" />
     <Compile Include="LogListViewItemStyleSelector.cs" />
     <Compile Include="SettingsWindow.xaml.cs">

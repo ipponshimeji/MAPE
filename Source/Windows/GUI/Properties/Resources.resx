@@ -144,6 +144,9 @@
   <data name="MainWindow_loglevelMenu_Header" xml:space="preserve">
     <value>Log _Level</value>
   </data>
+  <data name="MainWindow_chaseLastLogMenu_Header" xml:space="preserve">
+    <value>C_hase the last log in the Log list</value>
+  </data>
   <data name="MainWindow_clearMenu_Header" xml:space="preserve">
     <value>_Clear</value>
   </data>

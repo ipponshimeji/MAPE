@@ -13,6 +13,7 @@
     * [ルートオブジェクト](#ルートオブジェクト)
     * [ActualProxyオブジェクト](#ActualProxyオブジェクト)
     * [Credentialオブジェクト](#Credentialオブジェクト)
+    * [GUIオブジェクト](#GUIオブジェクト)
     * [Listenerオブジェクト](#Listenerオブジェクト)
     * [Proxyオブジェクト](#Proxyオブジェクト)
     * [SystemSettingsSwitcherオブジェクト](#SystemSettingsSwitcherオブジェクト)
@@ -52,6 +53,7 @@ C:\Users\<ユーザー名>\AppData\Local
 |:----|:----|:----|:----|
 | Credential | [Credentialオブジェクト](#Credentialオブジェクト)の配列 | [] | 認証プロキシに対する認証情報。 |
 | Culture | 文字列 | 下の注記を参照してください | UIのカルチャ。 |
+| GUI | [GUIオブジェクト](#GUIオブジェクト) | {} | GUIに対する設定。 |
 | LogLevel | 文字列 | "Error" | 出力するログのレベル。下の[LogLevelの値](#LogLevelの値)を参照してください。 |
 | Proxy | [Proxyオブジェクト](#Proxyオブジェクト) | {} | 中継機能に対する設定。 |
 | SystemSettingsSwitcher | [SystemSettingsSwitcherオブジェクト](#SystemSettingsSwitcherオブジェクト) | {} | プロキシ設定書き換え機能に対する設定。 |
@@ -107,6 +109,15 @@ Cultureが設定されていない場合は、
 * `ProtectedPassword`プロパティの暗号化のキーはユーザーごとに異なります。
 つまり、この値を別ユーザーや別PCにコピーすると復号できなくなります。
 この値は、WindowsのData Protection APIを用いて暗号化しています。
+
+
+### GUIオブジェクト
+
+GUIの設定を表すオブジェクトです。
+
+| 名前 | 型 | 省略時の値 | 内容 |
+|:----|:----|:----|:----|
+| ChaseLastLog | bool | true | ログ一覧にログが追加された際に、最後のログを自動的に追尾するかどうか。 |
 
 
 ### Listenerオブジェクト
