@@ -99,6 +99,26 @@ mape.exe /AdditionalListeners:"[{\"Address\": \"10.0.75.1\", \"Port\": 8888},{\"
 ```
 
 
+### Culture
+
+* サポート対象
+    * [x] Windows コマンド
+    * [x] Windows GUI
+* 値の型: 文字列
+* 対応する設定: [ルートオブジェクト](Reference_Settings.md#ルートオブジェクト)の`Culture`プロパティ
+* 指定しなかった場合: 現在のスレッドのカルチャ/UIカルチャがそのまま利用されます。
+
+UIで用いるカルチャを指定します。
+
+#### 例
+
+UIのカルチャを英語にします。
+
+```
+mape.exe /Culture:en-US
+```
+
+
 ### EnableSystemSettingsSwitch
 
 * サポート対象

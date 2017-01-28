@@ -2,10 +2,12 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using MAPE.Utils;
 using MAPE.ComponentBase;
@@ -42,6 +44,10 @@ namespace MAPE.Command {
 			settings.SetEnumValue(settingName, value, omitDefault, defaultValue);
 		}
 
+		public static CultureInfo GetCultureInfoValue(this Settings settings, string settingName, CultureInfo defaultValue, bool createIfNotExist = false) {
+			string value = settings.GetStringValue(settingName, null);
+			return (value == null) ? null : new CultureInfo(value);
+		}
 
 		public static IEnumerable<CredentialInfo> GetCredentialsValue(this Settings settings, string settingName) {
 			CredentialInfo[] credentials = null;
@@ -163,6 +169,8 @@ namespace MAPE.Command {
 
 			public const string NoSettings = "NoSettings";
 
+			public const string Culture = SettingNames.Culture;
+
 			public const string LogLevel = SettingNames.LogLevel;
 
 			public const string Credential = "Credential";
@@ -184,6 +192,8 @@ namespace MAPE.Command {
 			#region constants
 
 			public const string LogLevel = "LogLevel";
+
+			public const string Culture = "Culture";
 
 			public const string Credentials = "Credentials";
 
@@ -753,6 +763,8 @@ namespace MAPE.Command {
 				// ignore, it was already handled in CreateSettings()
 			} else if (AreSameOptionNames(name, OptionNames.LogLevel)) {
 				settings.SetStringValue(SettingNames.LogLevel, value);
+			} else if (AreSameOptionNames(name, OptionNames.Culture)) {
+				settings.SetStringValue(SettingNames.Culture, value);
 			} else if (AreSameOptionNames(name, OptionNames.Credential)) {
 				CredentialInfo credential = Settings.Parse(value).CreateCredentialInfo();
 				SetCredential(credential, saveIfNecessary: false);
@@ -798,6 +810,13 @@ namespace MAPE.Command {
 					// show usage
 					ShowErrorMessage(exception.Message);
 					this.Kind = ExecutionKind.ShowUsage;
+				}
+
+				// set culture
+				CultureInfo culture = settings.GetCultureInfoValue(SettingNames.Culture, null);
+				if (culture != null) {
+					Thread.CurrentThread.CurrentCulture = culture;
+					Thread.CurrentThread.CurrentUICulture = culture;
 				}
 
 				// set log level

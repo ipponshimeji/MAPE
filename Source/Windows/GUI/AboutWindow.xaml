@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MAPE.Windows.GUI"
         xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
         mc:Ignorable="d"
-        Title="{x:Static properties:Resources.AboutWindow_Title}" Height="300" Width="450">
+        Title="{x:Static properties:Resources.AboutWindow_Title}" Height="320" Width="480">
     <Grid Margin="4,0,4,4">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>

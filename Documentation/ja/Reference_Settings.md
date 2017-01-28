@@ -50,10 +50,17 @@ C:\Users\<ユーザー名>\AppData\Local
 
 | 名前 | 型 | 省略時の値 | 内容 |
 |:----|:----|:----|:----|
-| Credential | [Credentialオブジェクト](#Credentialオブジェクト)の配列 | [] |認証プロキシに対する認証情報。 |
+| Credential | [Credentialオブジェクト](#Credentialオブジェクト)の配列 | [] | 認証プロキシに対する認証情報。 |
+| Culture | 文字列 | 下の注記を参照してください | UIのカルチャ。 |
 | LogLevel | 文字列 | "Error" | 出力するログのレベル。下の[LogLevelの値](#LogLevelの値)を参照してください。 |
 | Proxy | [Proxyオブジェクト](#Proxyオブジェクト) | {} | 中継機能に対する設定。 |
 | SystemSettingsSwitcher | [SystemSettingsSwitcherオブジェクト](#SystemSettingsSwitcherオブジェクト) | {} | プロキシ設定書き換え機能に対する設定。 |
+
+#### Cultureの省略値
+
+Cultureが設定されていない場合は、
+スレッドの現在のカルチャ/UIカルチャがそのまま使用されます。
+スレッドの現在のカルチャ/UIカルチャは通常システムの既定値です。
 
 #### LogLevelの値
 

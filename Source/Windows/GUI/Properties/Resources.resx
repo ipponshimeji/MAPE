@@ -211,7 +211,8 @@
     <value>About MAPE</value>
   </data>
   <data name="AboutWindow_ApplicationName" xml:space="preserve">
-    <value>MAPE (May Authentication Proxy Explode)</value>
+    <value>MAPE
+(May Authentication Proxy Explode)</value>
   </data>
   <data name="AboutWindow_ComponentsGroupBox_Header" xml:space="preserve">
     <value>This software uses following components</value>

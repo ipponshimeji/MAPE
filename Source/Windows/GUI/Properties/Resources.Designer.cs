@@ -61,7 +61,8 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
-        ///   MAPE (May Authentication Proxy Explode) に類似しているローカライズされた文字列を検索します。
+        ///   MAPE
+        ///(May Authentication Proxy Explode) に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string AboutWindow_ApplicationName {
             get {
