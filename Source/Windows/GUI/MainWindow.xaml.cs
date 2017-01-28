@@ -163,6 +163,7 @@ namespace MAPE.Windows.GUI {
 
 				// open the settings window as dialog
 				window = new SettingsWindow();
+				window.Owner = this;
 				this.settingsWindow = window;
 				try {
 					UpdateUIState();
@@ -192,6 +193,7 @@ namespace MAPE.Windows.GUI {
 
 				// open about window as dialog
 				window = new AboutWindow();
+				window.Owner = this;
 				this.aboutWindow = window;
 				try {
 					UpdateUIState();
