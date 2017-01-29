@@ -18,6 +18,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Properties.t4 = Properties.t4
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "_Packaging", "_Packaging\_Packaging.csproj", "{4B1E3915-287F-406F-B788-E136F078896F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E03BAD5D-F2FD-4FE6-89C9-67D6AE1D0637} = {E03BAD5D-F2FD-4FE6-89C9-67D6AE1D0637}
+		{77DCBEA5-F56E-4071-8186-492CA812E826} = {77DCBEA5-F56E-4071-8186-492CA812E826}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -40,6 +46,10 @@ Global
 		{77DCBEA5-F56E-4071-8186-492CA812E826}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{77DCBEA5-F56E-4071-8186-492CA812E826}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{77DCBEA5-F56E-4071-8186-492CA812E826}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B1E3915-287F-406F-B788-E136F078896F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B1E3915-287F-406F-B788-E136F078896F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B1E3915-287F-406F-B788-E136F078896F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B1E3915-287F-406F-B788-E136F078896F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
