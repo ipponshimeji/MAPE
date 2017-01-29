@@ -20,7 +20,7 @@
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
-    <OutputPath>..\..\__Bin\Windows\Debug\</OutputPath>
+    <OutputPath>..\..\__Bin\Debug\Windows\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -29,7 +29,7 @@
     <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>..\..\__Bin\Windows\Release\</OutputPath>
+    <OutputPath>..\..\__Bin\Release\Windows\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -53,6 +53,7 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GUISettings.cs" />
     <Compile Include="LogAdapter.cs" />
     <Compile Include="LogListViewItemStyleSelector.cs" />
     <Compile Include="SettingsWindow.xaml.cs">

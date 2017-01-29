@@ -61,12 +61,24 @@ namespace MAPE.Windows.CLI.Properties {
         }
         
         /// <summary>
-        ///   
+        ///   Usage
+        ///Pattern1: Proxying http/https communication, 
+        ///makes the communication pass the authentication proxy.
         ///mape [Options]
         ///
-        ///Options
-        ///  ToBeUpdated
-        /// に類似しているローカライズされた文字列を検索します。
+        ///Pattern2: Merges settings into the MAPE settings file and saves it.
+        ///mape /Save [Options]
+        ///
+        ///Pattern3: Shows its usage.
+        ///mape /Help or /?
+        ///
+        ///Options (not written yet)
+        ///Show the following page for more information.
+        ///(Currently only Japanese pages are provided.)
+        ///https://github.com/ipponshimeji/MAPE/blob/master/Documentation/ja/Reference_Options.md
+        ///
+        ////ActualProxy
+        ////AdditionalListene [残りの文字列は切り詰められました]&quot;; に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string Command_Usage {
             get {

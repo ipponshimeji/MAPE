@@ -207,6 +207,15 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   C_hase the last log in the Log list に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string MainWindow_chaseLastLogMenu_Header {
+            get {
+                return ResourceManager.GetString("MainWindow_chaseLastLogMenu_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   _Clear に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string MainWindow_clearMenu_Header {

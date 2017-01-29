@@ -144,6 +144,9 @@
   <data name="MainWindow_loglevelMenu_Header" xml:space="preserve">
     <value>レベル(_L)</value>
   </data>
+  <data name="MainWindow_chaseLastLogMenu_Header" xml:space="preserve">
+    <value>ログリストで最後のログを追尾する(_H)</value>
+  </data>
   <data name="MainWindow_clearMenu_Header" xml:space="preserve">
     <value>クリア(_C)</value>
   </data>

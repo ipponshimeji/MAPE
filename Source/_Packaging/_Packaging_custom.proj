@@ -1,0 +1,33 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+      <Packaging_WindowsInputDir>$(OutputPath)Windows\</Packaging_WindowsInputDir>
+      <Packaging_WorkDir>..\__Obj\$(Configuration)\_Packaging\</Packaging_WorkDir>
+      <Packaging_WindowsWorkDir>$(Packaging_WorkDir)Windows\</Packaging_WindowsWorkDir>
+      <Packaging_OutputDir>..\__Package\$(Configuration)\</Packaging_OutputDir>
+  </PropertyGroup>
+
+  <Target
+    Name="Packaging_Package"
+    Condition="'$(Configuration)' == 'Release'"
+  >
+    <!-- Use Exec task instead of Delete or RemoveDir task to remove the whole target directory tree -->
+    <Exec Command="del /Q $(Packaging_OutputDir)*.*" Condition="Exists('$(Packaging_OutputDir)')" />
+    <Exec Command="rmdir /S /Q $(Packaging_WorkDir)" />
+
+    <!-- for Windows -->
+    <ReadLinesFromFile File="FilesForWindows.txt" >  
+      <Output  TaskParameter="Lines" ItemName="Packaging_FileForWindows"/>  
+    </ReadLinesFromFile>  
+    <Copy
+      SourceFiles="$(OutputPath)Version.txt"  
+      DestinationFolder="$(Packaging_WindowsWorkDir)MAPE"
+    /> 
+    <Copy
+      SourceFiles="@(Packaging_FileForWindows -> '$(Packaging_WindowsInputDir)%(Identity)')"  
+      DestinationFiles="@(Packaging_FileForWindows -> '$(Packaging_WindowsWorkDir)MAPE\%(Identity)')"  
+    />
+    <MakeDir Directories="$(Packaging_OutputDir)" />
+    <Exec Command="PowerShell $lines = Get-Content $(OutputPath)Version.txt; $targetpath = '$(Packaging_OutputDir)MAPE_' + $lines[0] + '_Windows.zip'; Compress-Archive -Path $(Packaging_WindowsWorkDir)MAPE -DestinationPath $targetpath" />
+  </Target>
+</Project>

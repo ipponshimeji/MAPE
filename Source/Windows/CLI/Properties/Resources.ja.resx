@@ -118,11 +118,30 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="Command_Usage" xml:space="preserve">
-    <value>
+    <value>使い方
+パターン1: http/https通信を中継し、認証プロキシを通すようにします。
 mape [Options]
 
-Options
-  未稿
+パターン2: 「認証プロキシ爆発しろ！」の設定ファイルに値を保存します。
+mape /Save [Options]
+
+パターン3: 使い方を表示します。
+mape /Help または /?
+
+オプション（未稿）
+詳細は以下のページを参照してください。
+https://github.com/ipponshimeji/MAPE/blob/master/Documentation/ja/Reference_Options.md
+
+/ActualProxy
+/AdditionalListeners
+/Culture
+/EnableSystemSettingsSwitch
+/MainListener
+/NoLogo
+/NoSettings
+/ProxyOverride
+/RetryCount
+/SettingsFile
 </value>
   </data>
 </root>

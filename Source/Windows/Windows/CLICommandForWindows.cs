@@ -7,6 +7,8 @@ using MAPE.Utils;
 
 namespace MAPE.Windows {
     public abstract class CLICommandForWindows: CLICommandBase {
+		#region types
+
 		public static new class OptionNames {
 			#region constants
 
@@ -14,6 +16,8 @@ namespace MAPE.Windows {
 
 			#endregion
 		}
+
+		#endregion
 
 
 		#region creation and disposal
