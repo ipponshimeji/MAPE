@@ -440,7 +440,22 @@ namespace MAPE.Server {
 					string direction = communicationSubType.ToString();
 					if (exception != null) {
 						StopCommunication();
-						LogError($"Error in {direction} tunneling: {exception.Message}");
+
+						TraceEventType eventType = TraceEventType.Error;
+						if (exception is IOException) {
+							SocketException socketException = exception.InnerException as SocketException;
+							if (socketException != null) {
+								switch (socketException.SocketErrorCode) {
+									case SocketError.ConnectionReset:
+									case SocketError.Interrupted:
+									case SocketError.TimedOut:
+										// may be terminated
+										eventType = TraceEventType.Warning;
+										break;
+								}
+							}
+						}
+						Log(eventType, $"Error in {direction} tunneling: {exception.Message}");
 					} else {
 						// shutdown the communication
 						bool downStream = (communicationSubType == CommunicationSubType.DownStream);
