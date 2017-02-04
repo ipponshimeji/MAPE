@@ -8,30 +8,30 @@
     <Packaging_SignAndZipCommand_FileName>SignAndZip.bat</Packaging_SignAndZipCommand_FileName>
   </PropertyGroup>
 
+  <Target Name="Packaging_GetVersion">
+    <ReadLinesFromFile File="Version.txt" >
+      <Output TaskParameter="Lines" PropertyName="Packaging_VersionFile_Lines"/>
+    </ReadLinesFromFile>
+    <CreateProperty Value="$(Packaging_VersionFile_Lines.Substring(0, $(Packaging_VersionFile_Lines.IndexOf(';'))))">
+      <Output TaskParameter="Value" PropertyName="Packaging_Version" />
+    </CreateProperty>
+
+    <CreateProperty Value="$([System.IO.Path]::GetFullPath('$(Packaging_OutputDir)MAPE_$(Packaging_Version)_Windows.zip'))">
+      <Output TaskParameter="Value" PropertyName="Packaging_PackageFilePath_Windows" />
+    </CreateProperty>
+  </Target>
+
   <Target Name="Packaging_Prepare">
     <!-- Use Exec task instead of Delete or RemoveDir task to remove the whole target directory tree -->
     <Exec Command="del /Q $(Packaging_OutputDir)*.*" Condition="Exists('$(Packaging_OutputDir)')" />
     <Exec Command="rmdir /S /Q $(Packaging_WorkDir)" />
 
-    <ReadLinesFromFile File="$(OutputPath)Version.txt" >
-      <Output TaskParameter="Lines" PropertyName="Packaging_Version_Lines"/>
-    </ReadLinesFromFile>
-    <CreateProperty Value="$(Packaging_Version_Lines.Substring(0, $(Packaging_Version_Lines.IndexOf(';'))))">
-      <Output TaskParameter="Value" PropertyName="Packaging_Version" />
-    </CreateProperty>
-    <CreateProperty Value="$(Packaging_OutputDir)MAPE_$(Packaging_Version)_Windows.zip">
-      <Output TaskParameter="Value" ItemName="Packaging_PackageFile_Windows" />
-    </CreateProperty>
-    <CreateProperty Value="@(Packaging_PackageFile_Windows->'%(FullPath)')">
-      <Output TaskParameter="Value" PropertyName="Packaging_PackageFilePath_Windows" />
-    </CreateProperty>
-
-    <!-- Windows version -->
+    <!-- for Windows version -->
     <ReadLinesFromFile File="FilesForWindows.txt" >
       <Output  TaskParameter="Lines" ItemName="Packaging_Files_Windows"/>
     </ReadLinesFromFile>
     <Copy
-      SourceFiles="$(OutputPath)Version.txt"  
+      SourceFiles="Version.txt"  
       DestinationFolder="$(Packaging_WorkDir_Windows)MAPE"
     /> 
     <Copy
@@ -42,7 +42,7 @@
 
   <Target
     Name="Packaging_Zip"
-    DependsOnTargets="Packaging_Prepare"
+    DependsOnTargets="Packaging_Prepare;Packaging_GetVersion"
     Condition="'$(Configuration)' == 'Release'"
   >
     <MakeDir Directories="$(Packaging_OutputDir)" />
@@ -51,18 +51,18 @@
   </Target>
 
   <Target
-    Name="Packaging_CreateSignAndZipBatchFile"
-    DependsOnTargets="Packaging_Prepare"
+    Name="Packaging_CreateSignAndZipCommandFile"
+    DependsOnTargets="Packaging_Prepare;Packaging_GetVersion"
     Condition="'$(Configuration)' == 'Release_Signed'"
   >
     <ItemGroup>
-      <Packaging_FileToBeSigned_Windows Include="$(Packaging_WorkDir_Windows)MAPE\**\mape*.dll;$(Packaging_WorkDir_Windows)MAPE\**\mape*.exe" />
+      <Packaging_FilesToBeSigned_Windows Include="$(Packaging_WorkDir_Windows)MAPE\**\mape*.dll;$(Packaging_WorkDir_Windows)MAPE\**\mape*.exe" />
       <Packaging_SignAndZipCommand_Windows Include="$(Packaging_WorkDir_Windows)$(Packaging_SignAndZipCommand_FileName)" />
-      <Packaging_FilesDir_Windows Include="$(Packaging_WorkDir_Windows)MAPE" />
     </ItemGroup>
-    <CreateProperty Value="@(Packaging_FilesDir_Windows->'%(FullPath)')">
+    <CreateProperty Value="$([System.IO.Path]::GetFullPath('$(Packaging_WorkDir_Windows)MAPE'))">
       <Output TaskParameter="Value" PropertyName="Packaging_FilesDirPath_Windows" />
     </CreateProperty>
+
     <WriteLinesToFile  
       File="@(Packaging_SignAndZipCommand_Windows)"
       Lines="
@@ -74,7 +74,7 @@
           echo ex. $(Packaging_SignAndZipCommand_FileName) YourKey.snk;
           exit /b;
         );
-        @(Packaging_FileToBeSigned_Windows -> 'sn -R &quot;%(FullPath)&quot; &quot;%25KEYFILE%25&quot;');
+        @(Packaging_FilesToBeSigned_Windows -> 'sn -R &quot;%(FullPath)&quot; &quot;%25KEYFILE%25&quot; &amp; if ERRORLEVEL 1 (echo Failed. &amp; exit /b)');
         endlocal;
         PowerShell Compress-Archive -Path &quot;$(Packaging_FilesDirPath_Windows)&quot; -DestinationPath &quot;$(Packaging_PackageFilePath_Windows)&quot;;
         PowerShell (Get-FileHash &quot;$(Packaging_PackageFilePath_Windows)&quot; -Algorithm SHA256).Hash &gt; &quot;$(Packaging_PackageFilePath_Windows).sha256&quot;"
@@ -86,7 +86,7 @@
 
   <Target
     Name="Packaging_Package"
-    DependsOnTargets="Packaging_Zip;Packaging_CreateSignAndZipBatchFile"
+    DependsOnTargets="Packaging_Zip;Packaging_CreateSignAndZipCommandFile"
     Condition="'$(Configuration)' == 'Release' Or '$(Configuration)' == 'Release_Signed'"
   >
   </Target>
