@@ -196,6 +196,7 @@ namespace MAPE.Windows.GUI {
 
 		protected override void OnExit(ExitEventArgs e) {
 			// process this class level tasks
+			StopProxy();
 			Util.DisposeWithoutFail(ref this.notifyIcon);
 
 			// process the base class level tasks

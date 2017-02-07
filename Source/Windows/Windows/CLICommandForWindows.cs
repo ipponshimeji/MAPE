@@ -44,5 +44,23 @@ namespace MAPE.Windows {
 		}
 
 		#endregion
+
+
+		#region overrides/overridables - execution
+
+		protected override void RunProxy(Settings settings) {
+			SessionEndingEventHandler quit = (o, e) => {
+				Quit();
+			};
+
+			SystemEvents.SessionEnding += quit;
+			try {
+				base.RunProxy(settings);
+			} finally {
+				SystemEvents.SessionEnding -= quit;
+			}
+		}
+
+		#endregion
 	}
 }

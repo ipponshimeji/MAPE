@@ -49,11 +49,12 @@ namespace MAPE.Windows.GUI {
 				// start application
 				app.Run();
 
+				// ToDo: move to appropriate timing
 				// report errors in early stages
-				while (0 < this.ErrorMessages.Count) {
-					string message = this.ErrorMessages.Dequeue();
-					ShowErrorMessage(message);
-				}
+//				while (0 < this.ErrorMessages.Count) {
+//					string message = this.ErrorMessages.Dequeue();
+//					ShowErrorMessage(message);
+//				}
 			} finally {
 				this.app = null;
 			}

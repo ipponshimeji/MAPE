@@ -41,7 +41,28 @@ namespace MAPE.Command {
 		#endregion
 
 
-		#region data
+		#region data - data synchronized by quitLocker
+
+		private object quitLocker = new object();
+
+		private ManualResetEvent quitEvent = null;
+
+		#endregion
+
+
+		#region properties
+
+		private ManualResetEvent QuitEvent {
+			get {
+				return this.quitEvent;
+			}
+			set {
+				lock (this.quitLocker) {
+					this.quitEvent = value;
+				}
+			}
+		}
+
 		#endregion
 
 
@@ -68,6 +89,17 @@ namespace MAPE.Command {
 				}
 			}
 			Console.WriteLine();
+
+			return;
+		}
+
+		protected void Quit() {
+			lock (this.quitLocker) {
+				ManualResetEvent quitEvent = this.QuitEvent;
+				if (quitEvent != null) {
+					quitEvent.Set();
+				}
+			}
 
 			return;
 		}
@@ -140,18 +172,23 @@ namespace MAPE.Command {
 				Console.WriteLine(Resources.CLICommandBase_Message_StartListening);
 				Console.WriteLine(Resources.CLICommandBase_Message_StartingNote);
 				using (ManualResetEvent quitEvent = new ManualResetEvent(false)) {
-					// setup Ctrl+C handler
-					ConsoleCancelEventHandler ctrlCHandler = (o, e) => {
-						e.Cancel = true;
-						quitEvent.Set();
-					};
-					Console.CancelKeyPress += ctrlCHandler;
+					this.QuitEvent = quitEvent;
+					try {
+						// setup Ctrl+C handler
+						ConsoleCancelEventHandler ctrlCHandler = (o, e) => {
+							e.Cancel = true;
+							Quit();
+						};
+						Console.CancelKeyPress += ctrlCHandler;
 
-					// wait for Ctrl+C
-					quitEvent.WaitOne();
+						// wait for Ctrl+C
+						quitEvent.WaitOne();
 
-					// cleanup Ctrl+C handler
-					Console.CancelKeyPress -= ctrlCHandler;
+						// cleanup Ctrl+C handler
+						Console.CancelKeyPress -= ctrlCHandler;
+					} finally {
+						this.QuitEvent = null;
+					}
 				}
 
 				// stop the proxy
