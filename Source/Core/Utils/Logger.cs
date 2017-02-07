@@ -20,8 +20,6 @@ namespace MAPE.Utils {
 
 		#region data
 
-		public static readonly SourceSwitch Switch = new SourceSwitch(SourceSwitchName);
-
 		public static readonly TraceSource Source = new TraceSource(SourceName);
 
 		#endregion
@@ -78,8 +76,8 @@ namespace MAPE.Utils {
 				lock (Logger.classLocker) {
 					if (Logger.logLevel != value && Logger.loggingStopped == false) {
 						Logger.logLevel = value;
-						Logger.sourceLevelsCache = FromTraceLevel(Logger.Switch.Level, value);
-						Logger.Switch.Level = Logger.sourceLevelsCache;
+						Logger.sourceLevelsCache = FromTraceLevel(Logger.Source.Switch.Level, value);
+						Logger.Source.Switch.Level = Logger.sourceLevelsCache;
 					}
 				}
 			}
@@ -92,13 +90,13 @@ namespace MAPE.Utils {
 
 		static Logger() {
 			// initialize members
-			sourceLevelsCache = Switch.Level;
+			sourceLevelsCache = Logger.Source.Switch.Level;
 
 			// adjust Switch.Level to include Start/Stop event
 			sourceLevelsCache |= SourceLevels.ActivityTracing;
-			Switch.Level = sourceLevelsCache;
+			Logger.Source.Switch.Level = sourceLevelsCache;
 
-			logLevel = ToTraceLevel(Switch.Level);
+			logLevel = ToTraceLevel(Logger.Source.Switch.Level);
 
 			return;
 		}
