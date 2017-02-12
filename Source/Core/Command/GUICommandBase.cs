@@ -61,7 +61,7 @@ namespace MAPE.Command {
 
 		public Settings GUISettings {
 			get {
-				return this.settings.GetObjectValue(SettingNames.GUI);
+				return this.settings.GetObjectValue(SettingNames.GUI, Settings.EmptySettingsGenerator, createIfNotExist: true);
 			}
 		}
 

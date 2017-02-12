@@ -15,7 +15,11 @@
     * [Credentialオブジェクト](#Credentialオブジェクト)
     * [GUIオブジェクト](#GUIオブジェクト)
     * [Listenerオブジェクト](#Listenerオブジェクト)
+    * [MainWindowオブジェクト](#MainWindowオブジェクト)
+    * [Placementオブジェクト](#Placementオブジェクト)
+    * [Pointオブジェクト](#Pointオブジェクト)
     * [Proxyオブジェクト](#Proxyオブジェクト)
+    * [Rectオブジェクト](#Rectオブジェクト)
     * [SystemSettingsSwitcherオブジェクト](#SystemSettingsSwitcherオブジェクト)
 
 
@@ -53,7 +57,7 @@ C:\Users\<ユーザー名>\AppData\Local
 |:----|:----|:----|:----|
 | Credential | [Credentialオブジェクト](#Credentialオブジェクト)の配列 | [] | 認証プロキシに対する認証情報。 |
 | Culture | 文字列 | 下の注記を参照してください | UIのカルチャ。 |
-| GUI | [GUIオブジェクト](#GUIオブジェクト) | {} | GUIに対する設定。 |
+| GUI | [GUIオブジェクト](#GUIオブジェクト) | {} | GUIに対する設定。 Windows版のみで有効です。 |
 | LogLevel | 文字列 | "Error" | 出力するログのレベル。下の[LogLevelの値](#LogLevelの値)を参照してください。 |
 | Proxy | [Proxyオブジェクト](#Proxyオブジェクト) | {} | 中継機能に対する設定。 |
 | SystemSettingsSwitcher | [SystemSettingsSwitcherオブジェクト](#SystemSettingsSwitcherオブジェクト) | {} | プロキシ設定書き換え機能に対する設定。 |
@@ -114,10 +118,12 @@ Cultureが設定されていない場合は、
 ### GUIオブジェクト
 
 GUIの設定を表すオブジェクトです。
+Windows版のみで有効です。
 
 | 名前 | 型 | 省略時の値 | 内容 |
 |:----|:----|:----|:----|
 | ChaseLastLog | bool | true | ログ一覧にログが追加された際に、最後のログを自動的に追尾するかどうか。 |
+| MainWindow | [MainWindowオブジェクト](#MainWindowオブジェクト) | {} | メインウィンドウのレイアウト設定。 |
 
 
 ### Listenerオブジェクト
@@ -129,6 +135,41 @@ GUIの設定を表すオブジェクトです。
 | Address | 文字列 | "127.0.0.1" | 待ち受けるIPアドレス。 |
 | Backlog | 整数 | 8 | 接続受付キューの長さ（socketに指定するbacklog）。正整数でなければなりません。 |
 | Port | 整数 | 8888 | 待ち受けるポート。 |
+
+
+### MainWindowオブジェクト
+
+メインウィンドウのレイアウト設定を表すオブジェクトです。
+
+| 名前 | 型 | 省略時の値 | 内容 |
+|:----|:----|:----|:----|
+| LogListViewColumnWidths | 浮動小数点数の配列 | なし | ログ表示リストビューの各カラムの幅です。 |
+| Placement | [Placementオブジェクト](#Placementオブジェクト) | {} | メインウィンドウのウィンドウ位置設定。 |
+
+
+### Placementオブジェクト
+
+ウィンドウの位置設定を表すオブジェクトです。
+Win32 APIの`WINDOWPLACEMENT`構造体に対応しています。
+
+| 名前 | 型 | 省略時の値 | 内容 |
+|:----|:----|:----|:----|
+| Flags | 整数 | ０ | `WINDOWPLACEMENT`構造体の`flags`メンバに対応。 |
+| MaxPosition | [Pointオブジェクト](#Pointオブジェクト) | {"X": 0, "Y": 0} | `WINDOWPLACEMENT`構造体の`ptMaxPosition`メンバに対応。 |
+| MinPosition | [Pointオブジェクト](#Pointオブジェクト) | {"X": 0, "Y": 0} | `WINDOWPLACEMENT`構造体の`ptMinPosition`メンバに対応。 |
+| NormalPosition | [Rectオブジェクト](#Rectオブジェクト) | {"Left": 0, "Top": 0, "Right": 0, "Bottom": 0} | `WINDOWPLACEMENT`構造体の`rcNormalPosition`メンバに対応。 |
+| ShowCmd | 整数 | ０ | `WINDOWPLACEMENT`構造体の`showCmd`メンバに対応。 |
+
+
+### Pointオブジェクト
+
+座標平面上の点を表すオブジェクトです。
+Win32 APIの`POINT`構造体に対応しています。
+
+| 名前 | 型 | 省略時の値 | 内容 |
+|:----|:----|:----|:----|
+| X | 整数 | 0 | `POINT`構造体の`x`メンバに対応。 |
+| Y | 整数 | 0 | `POINT`構造体の`y`メンバに対応。 |
 
 
 ### Proxyオブジェクト
@@ -150,6 +191,19 @@ GUIの設定を表すオブジェクトです。
 実際には認証失敗した場合のリトライ回数とみなしてよいでしょう。
 ツールと認証プロキシの間でユーザーに見えないやり取りがあったりするので、
 「だいたいこのくらいの回数リトライする」と思ってください。
+
+
+### Rectオブジェクト
+
+座標平面上の矩形を表すオブジェクトです。
+Win32 APIの`RECT`構造体に対応しています。
+
+| 名前 | 型 | 省略時の値 | 内容 |
+|:----|:----|:----|:----|
+| Bottom | 整数 | 0 | `RECT`構造体の`bottom`メンバに対応。 |
+| Left | 整数 | 0 | `RECT`構造体の`left`メンバに対応。 |
+| Right | 整数 | 0 | `RECT`構造体の`right`メンバに対応。 |
+| Top | 整数 | 0 | `RECT`構造体の`top`メンバに対応。 |
 
 
 ### SystemSettingsSwitcherオブジェクト

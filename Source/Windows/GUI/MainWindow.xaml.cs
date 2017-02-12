@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -9,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
@@ -16,7 +18,7 @@ using System.Windows.Shapes;
 using MAPE.Utils;
 using MAPE.Server;
 using MAPE.Command;
-
+using System.ComponentModel;
 
 namespace MAPE.Windows.GUI {
 	public partial class MainWindow: Window {
@@ -73,7 +75,9 @@ namespace MAPE.Windows.GUI {
 
 		#region data
 
-		private App app;
+		private readonly App app;
+
+		private readonly Settings settings;
 
 		internal UIStateFlags UIState { get; private set; }
 
@@ -121,7 +125,7 @@ namespace MAPE.Windows.GUI {
 
 		#region creation and disposal
 
-		public MainWindow(App app) {
+		public MainWindow(App app, Settings settings) {
 			// argument checks
 			if (app == null) {
 				throw new ArgumentNullException(nameof(app));
@@ -129,6 +133,7 @@ namespace MAPE.Windows.GUI {
 
 			// initialize members
 			this.app = app;
+			this.settings = settings;
 			this.UIState = UIStateFlags.InitialState;
 			this.logMonitor = new LogMonitor(this);
 			this.logLevelMenuItemGroup = null;
@@ -228,6 +233,33 @@ namespace MAPE.Windows.GUI {
 			Logger.AddLogMonitor(this.logMonitor);
 		}
 
+		protected override void OnSourceInitialized(EventArgs e) {
+			// perform the base class level tasks
+			base.OnSourceInitialized(e);
+
+			// perform this class level tasks
+			try {
+				RestoreLayout();
+			} catch {
+				// continue;
+			}
+
+			return;
+		}
+
+		protected override void OnClosing(CancelEventArgs e) {
+			// perform this class level task
+			try {
+				// save window placement
+				SaveLayout();
+			} catch {
+				// continue
+			}
+
+			// perform the base class level task
+			base.OnClosing(e);
+		}
+
 		protected override void OnClosed(EventArgs e) {
 			// clean up this class level
 			Logger.RemoveLogMonitor(this.logMonitor);
@@ -304,6 +336,94 @@ namespace MAPE.Windows.GUI {
 			// fire event
 			if (this.UIStateChanged != null) {
 				this.UIStateChanged(this, EventArgs.Empty);
+			}
+
+			return;
+		}
+
+		private void RestoreLayout() {
+			Settings settings = this.settings;
+
+			// placement of this window
+			RestoreWindowPlacement(settings);
+
+			// column widths of logListView
+			RestoreLogListViewColumnWidths(settings);
+
+			return;
+		}
+
+		private void SaveLayout() {
+			Settings settings = this.settings;
+			string prevSettingsText = settings.ToString();
+
+			// column widths of logListView
+			SaveLogListViewColumnWidths(settings);
+
+			// placement of this window
+			SaveWindowPlacement(settings);
+
+			// save if changed
+			if (settings.ToString() != prevSettingsText) {
+				this.Command.SaveMainWindowSettings(settings);
+			}
+
+			return;
+		}
+
+		private void RestoreWindowPlacement(Settings settings) {
+			NativeMethods.WINDOWPLACEMENT? nwp = settings.GetWINDOWPLACEMENTValue(GUISettings.SettingNames.Placement);
+			if (nwp.HasValue) {
+				// restore the placement of this window
+				NativeMethods.WINDOWPLACEMENT wp = nwp.Value;
+				wp.Length = Marshal.SizeOf(typeof(NativeMethods.WINDOWPLACEMENT));
+				wp.Flags = 0;
+				wp.ShowCmd = (wp.ShowCmd == NativeMethods.SW_SHOWMINIMIZED ? NativeMethods.SW_SHOWNORMAL : wp.ShowCmd);
+				IntPtr hwnd = new WindowInteropHelper(this).Handle;
+				NativeMethods.SetWindowPlacement(hwnd, ref wp);
+			}
+
+			return;
+		}
+
+		private void SaveWindowPlacement(Settings settings) {
+			// get placement information of this window from Win32.
+			NativeMethods.WINDOWPLACEMENT wp = new NativeMethods.WINDOWPLACEMENT();
+			wp.Length = Marshal.SizeOf(typeof(NativeMethods.WINDOWPLACEMENT));
+			IntPtr hwnd = new WindowInteropHelper(this).Handle;
+			if (NativeMethods.GetWindowPlacement(hwnd, out wp)) {
+				// save the placement of this window
+				settings.SetWINDOWPLACEMENTValue(GUISettings.SettingNames.Placement, wp, omitDefault: false);
+			}
+
+			return;
+		}
+
+		private void RestoreLogListViewColumnWidths(Settings settings) {
+			IEnumerable<double> widths = settings.GetDoubleArrayValue(GUISettings.SettingNames.LogListViewColumnWidths, defaultValue: null, createIfNotExist: false);
+			if (widths != null) {
+				GridView view = this.logListView.View as GridView;
+				if (view != null) {
+					var columns = view.Columns;
+					int i = 0;
+					foreach (double width in widths) {
+						if (columns.Count <= i) {
+							break;
+						}
+						columns[i].Width = width;
+						++i;
+					}
+				}
+			}
+
+			return;
+		}
+
+		private void SaveLogListViewColumnWidths(Settings settings) {
+			GridView view = this.logListView.View as GridView;
+			if (view != null) {
+				double[] widths = (from column in view.Columns select column.Width).ToArray();
+				settings.SetDoubleArrayValue(GUISettings.SettingNames.LogListViewColumnWidths, widths);
 			}
 
 			return;

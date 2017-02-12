@@ -66,6 +66,7 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NativeMethods.cs" />
     <Compile Include="GUISettings.cs" />
     <Compile Include="LogAdapter.cs" />
     <Compile Include="LogListViewItemStyleSelector.cs" />

@@ -73,6 +73,10 @@ namespace MAPE.Utils {
 				return (int)this.NonNullInnerObject;
 			}
 
+			public double GetDoubleValue() {
+				return (double)this.NonNullInnerObject;
+			}
+
 			public bool GetBooleanValue() {
 				return (bool)this.NonNullInnerObject;
 			}
@@ -89,6 +93,11 @@ namespace MAPE.Utils {
 			public int[] GetInt32ArrayValue() {
 				IEnumerable<JToken> tokens = (JArray)this.NonNullInnerObject;
 				return (tokens == null) ? null : tokens.Select(t => (int)t).ToArray();
+			}
+
+			public double[] GetDoubleArrayValue() {
+				IEnumerable<JToken> tokens = (JArray)this.NonNullInnerObject;
+				return (tokens == null) ? null : tokens.Select(t => (double)t).ToArray();
 			}
 
 			public bool[] GetBooleanArrayValue() {
@@ -110,6 +119,7 @@ namespace MAPE.Utils {
 		#region data
 
 		public static readonly Settings NullSettings = new Settings(null);
+
 		public static readonly Settings[] EmptySettingsArray = new Settings[0];
 
 
@@ -157,6 +167,15 @@ namespace MAPE.Utils {
 			return new Settings((JObject)token);
 		}
 
+		public Settings Clone() {
+			JObject innerObject = this.InnerObject;
+			if (innerObject != null) {
+				innerObject = (JObject)innerObject.DeepClone();
+			}
+
+			return new Settings(innerObject);
+		}
+
 		#endregion
 
 
@@ -190,6 +209,18 @@ namespace MAPE.Utils {
 			Value value = GetValue(settingName);
 			if (value.IsNull == false) {
 				return value.GetInt32Value();
+			} else {
+				if (createIfNotExist) {
+					this.NonNullInnerObject[settingName] = defaultValue;
+				}
+				return defaultValue;
+			}
+		}
+
+		public double GetDoubleValue(string settingName, double defaultValue, bool createIfNotExist = false) {
+			Value value = GetValue(settingName);
+			if (value.IsNull == false) {
+				return value.GetDoubleValue();
 			} else {
 				if (createIfNotExist) {
 					this.NonNullInnerObject[settingName] = defaultValue;
@@ -255,6 +286,22 @@ namespace MAPE.Utils {
 			Value value = GetValue(settingName);
 			if (value.IsNull == false) {
 				return value.GetInt32ArrayValue();
+			} else {
+				if (createIfNotExist) {
+					if (defaultValue == null) {
+						this.NonNullInnerObject[settingName] = (JToken)null;
+					} else {
+						this.NonNullInnerObject[settingName] = new JArray(defaultValue);
+					}
+				}
+				return defaultValue;
+			}
+		}
+
+		public IEnumerable<double> GetDoubleArrayValue(string settingName, IEnumerable<double> defaultValue, bool createIfNotExist = false) {
+			Value value = GetValue(settingName);
+			if (value.IsNull == false) {
+				return value.GetDoubleArrayValue();
 			} else {
 				if (createIfNotExist) {
 					if (defaultValue == null) {
@@ -363,6 +410,26 @@ namespace MAPE.Utils {
 			return;
 		}
 
+		public void SetDoubleValue(string settingName, double value, bool omitDefault = false, double defaultValue = 0) {
+			// argument checks
+			if (settingName == null) {
+				throw new ArgumentNullException(nameof(settingName));
+			}
+
+			// state checks
+			EnsureHasStorage();
+			JObject innerObject = this.InnerObject;
+
+			// add a setting if necessary 
+			if (omitDefault && value == defaultValue) {
+				innerObject.Remove(settingName);
+			} else {
+				innerObject[settingName] = value;
+			}
+
+			return;
+		}
+
 		public void SetBooleanValue(string settingName, bool value, bool omitDefault = false, bool defaultValue = false) {
 			// argument checks
 			if (settingName == null) {
@@ -418,6 +485,29 @@ namespace MAPE.Utils {
 				innerObject.Remove(settingName);
 			} else {
 				innerObject[settingName] = value.ToString();
+			}
+
+			return;
+		}
+
+		public void SetDoubleArrayValue(string settingName, IEnumerable<double> value, bool omitIfNull = false) {
+			// argument checks
+			if (settingName == null) {
+				throw new ArgumentNullException(nameof(settingName));
+			}
+
+			// state checks
+			EnsureHasStorage();
+			JObject innerObject = this.InnerObject;
+
+			// add a setting
+			if (omitIfNull && value == null) {
+				innerObject.Remove(settingName);
+			} else {
+				if (value == null) {
+					value = new double[0];
+				}
+				this.InnerObject[settingName] = new JArray(value);
 			}
 
 			return;
@@ -548,6 +638,15 @@ namespace MAPE.Utils {
 			if (this.InnerObject == null) {
 				throw new InvalidOperationException($"This operation cannot be called on the object which is specified no {nameof(InnerObject)}.");
 			}
+		}
+
+		#endregion
+
+
+		#region overrides
+
+		public override string ToString() {
+			return this.InnerObject?.ToString();
 		}
 
 		#endregion

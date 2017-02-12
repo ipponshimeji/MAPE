@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Globalization;
+using System.Threading.Tasks;
 using System.Windows;
 using MAPE.Utils;
 using MAPE.Command;
@@ -23,6 +24,33 @@ namespace MAPE.Windows.GUI {
 			this.ComponentName = "MAPE GUI";
 
 			return;
+		}
+
+		#endregion
+
+
+		#region methods
+
+		public void SaveMainWindowSettings(Settings mainWindowSettings) {
+			string settingsFilePath = this.SettingsFilePath;
+			if (string.IsNullOrEmpty(settingsFilePath) == false) {
+				Action saveTask = () => {
+					try {
+						Settings settings = LoadSettingsFromFile(false, settingsFilePath);
+						Settings guiSettings = settings.GetObjectValue(SettingNames.GUI, Settings.EmptySettingsGenerator, createIfNotExist: true);
+						guiSettings.SetObjectValue(MAPE.Windows.GUI.GUISettings.SettingNames.MainWindow, mainWindowSettings, omitIfNull: true);
+
+						SaveSettingsToFile(settings, settingsFilePath);
+					} catch (Exception exception) {
+						LogError($"Fail to save MainWindow settings: {exception.Message}");
+					}
+				};
+
+				// launch save task
+				Task.Run(saveTask);
+			} else {
+				LogError($"Fail to save MainWindow settings: no settings file is used.");
+			}
 		}
 
 		#endregion
