@@ -75,6 +75,11 @@ namespace MAPE.Windows.GUI {
 
 		#region data
 
+		private static Brush OnBrush = Brushes.Lime;
+
+		private static Brush OffBrush = Brushes.DarkGray;
+
+
 		private readonly App app;
 
 		private readonly Settings settings;
@@ -319,12 +324,14 @@ namespace MAPE.Windows.GUI {
 			if ((newState & UIStateFlags.StopEnabled) != 0) {
 				// proxy is running
 				this.Icon = this.app.OnIcon;
+				this.lampEllipse.Fill = OnBrush;
 				this.stopMenuItem.IsEnabled = true;
 				this.proxyToggleButton.IsChecked = true;
 				this.proxyInfoLabel.Content = GetProxyInfo();
 			} else {
 				// proxy is not running
 				this.Icon = this.app.OffIcon;
+				this.lampEllipse.Fill = OffBrush;
 				this.stopMenuItem.IsEnabled = false;
 				this.proxyToggleButton.IsChecked = false;
 				this.proxyInfoLabel.Content = string.Empty;

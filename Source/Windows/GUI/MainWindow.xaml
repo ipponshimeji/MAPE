@@ -42,7 +42,12 @@
             </MenuItem>
         </Menu>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
-            <ToggleButton x:Name="proxyToggleButton" Content="{x:Static properties:Resources.MainWindow_proxyToggleButton_Content}" Margin="4,4,12,4" MinWidth="2" Padding="2" Width="60" Click="proxyToggleButton_Click"/>
+            <ToggleButton x:Name="proxyToggleButton" Margin="4,4,12,4" MinWidth="2" Padding="2" Click="proxyToggleButton_Click">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse x:Name="lampEllipse" Fill="DarkGray" Width="10" Height="10" Margin="4,0" Stroke="Gray" />
+                    <Label Content="{x:Static properties:Resources.MainWindow_proxyToggleButton_Content}" />
+                </StackPanel>
+            </ToggleButton>
             <Label x:Name="proxyInfoLabel" VerticalAlignment="Center" />
         </StackPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
