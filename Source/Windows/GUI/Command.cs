@@ -4,6 +4,7 @@ using System.IO;
 using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows;
+using Microsoft.Win32;
 using MAPE.Utils;
 using MAPE.Command;
 
@@ -69,22 +70,27 @@ namespace MAPE.Windows.GUI {
 				throw new InvalidOperationException();
 			}
 
-			// run WPF application
-			App app = new App(this);
-			app.InitializeComponent();
-			this.app = app;
+			SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
 			try {
-				// start application
-				app.Run();
+				// run WPF application
+				App app = new App(this);
+				app.InitializeComponent();
+				this.app = app;
+				try {
+					// start application
+					app.Run();
 
-				// ToDo: move to appropriate timing
-				// report errors in early stages
-//				while (0 < this.ErrorMessages.Count) {
-//					string message = this.ErrorMessages.Dequeue();
-//					ShowErrorMessage(message);
-//				}
+					// ToDo: move to appropriate timing
+					// report errors in early stages
+					//				while (0 < this.ErrorMessages.Count) {
+					//					string message = this.ErrorMessages.Dequeue();
+					//					ShowErrorMessage(message);
+					//				}
+				} finally {
+					this.app = null;
+				}
 			} finally {
-				this.app = null;
+				SystemEvents.PowerModeChanged -= SystemEvents_PowerModeChanged;
 			}
 
 			return;
@@ -159,6 +165,27 @@ namespace MAPE.Windows.GUI {
 
 			// ToDo: English Pages
 			return "https://github.com/ipponshimeji/MAPE";
+		}
+
+		#endregion
+
+
+		#region event handler
+
+		private void SystemEvents_PowerModeChanged(object sender, PowerModeChangedEventArgs e) {
+			try {
+				switch (e.Mode) {
+					case PowerModes.Suspend:
+						SuspendProxy();
+						break;
+					case PowerModes.Resume:
+						ResumeProxy();
+						break;
+				}
+			} catch (Exception exception) {
+				LogError($"Fail to {e.Mode}: {exception.Message}");
+				// continue
+			}
 		}
 
 		#endregion

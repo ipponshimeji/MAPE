@@ -120,7 +120,6 @@ namespace MAPE.Windows.GUI {
 
 			// start the proxy
 			command.StartProxy();
-			UpdateUIState();
 
 			return;
 		}
@@ -140,7 +139,6 @@ namespace MAPE.Windows.GUI {
 			// stop the proxy
 			// ToDo: should use async?
 			command.StopProxy(5000);
-			UpdateUIState();
 
 			return;
 		}
@@ -189,7 +187,8 @@ namespace MAPE.Windows.GUI {
 			notifyIcon.ExitMenuItem.Click += this.ExitMenuItem_Click;
 			this.notifyIcon = notifyIcon;
 
-			// process this class level tasks
+			this.Command.ProxyStateChanged += command_ProxyStateChanged;
+
 			OnUIStateChanged(GetUIState());
 
 			return;
@@ -198,6 +197,7 @@ namespace MAPE.Windows.GUI {
 		protected override void OnExit(ExitEventArgs e) {
 			// process this class level tasks
 			StopProxy();
+			this.Command.ProxyStateChanged -= command_ProxyStateChanged;
 			Util.DisposeWithoutFail(ref this.notifyIcon);
 
 			// process the base class level tasks
@@ -332,6 +332,11 @@ namespace MAPE.Windows.GUI {
 
 		private void mainWindow_UIStateChanged(object sender, EventArgs e) {
 			UpdateUIState();
+		}
+
+		// Note that this method may be called from non-GUI thread.
+		private void command_ProxyStateChanged(object sender, EventArgs e) {
+			this.Dispatcher.Invoke(() => { UpdateUIState(); });
 		}
 
 		#endregion

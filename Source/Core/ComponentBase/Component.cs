@@ -90,6 +90,14 @@ namespace MAPE.ComponentBase {
 			Log(TraceEventType.Stop, message, eventId);
 		}
 
+		public void LogResume(string message, int eventId = 0) {
+			Log(TraceEventType.Resume, message, eventId);
+		}
+
+		public void LogSuspend(string message, int eventId = 0) {
+			Log(TraceEventType.Suspend, message, eventId);
+		}
+
 		#endregion
 
 

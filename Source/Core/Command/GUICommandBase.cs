@@ -40,7 +40,16 @@ namespace MAPE.Command {
 
 		private RunningProxyState runningProxyState = null;
 
+		private bool suspending = false;
+
 		protected Queue<string> ErrorMessages { get; private set; } = new Queue<string>();
+
+		#endregion
+
+
+		#region events
+
+		public event EventHandler ProxyStateChanged = null;
 
 		#endregion
 
@@ -89,39 +98,68 @@ namespace MAPE.Command {
 
 		#region methods
 
-		public void StartProxy() {
+		public void StartProxy(bool resuming = false) {
 			// start proxy
 			lock (this) {
 				// state checks
+				if (resuming) {
+					this.suspending = false;
+				}
 				if (this.runningProxyState != null) {
 					return;
 				}
 
+				// start 
 				this.runningProxyState = StartProxy(this.settings, this);
 			}
 
+			// notify
+			OnProxyStateChanged();
+
 			// log
-			LogStart("Proxy Started.");
+			if (resuming) {
+				LogStart("Proxy Resumed.");
+			} else {
+				LogStart("Proxy Started.");
+			}
 
 			return;
 		}
 
-		public void StopProxy(int millisecondsTimeout = 0) {
+		public void StopProxy(int millisecondsTimeout = 0, bool suspending = false) {
 			// stop proxy
 			lock (this) {
 				// state checks
 				if (this.runningProxyState == null) {
 					return;
 				}
+				if (suspending) {
+					this.suspending = true;
+				}
 
 				this.runningProxyState.Stop(millisecondsTimeout);
 				Util.DisposeWithoutFail(ref this.runningProxyState);
 			}
 
+			// notify
+			OnProxyStateChanged();
+
 			// log
-			LogStop("Proxy Stopped.");
+			if (suspending) {
+				LogStop("Proxy Suspended.");
+			} else {
+				LogStop("Proxy Stopped.");
+			}
 
 			return;
+		}
+
+		public void SuspendProxy(int millisecondsTimeout = 0) {
+			StopProxy(millisecondsTimeout, suspending: true);
+		}
+
+		public void ResumeProxy() {
+			StartProxy(resuming: true);
 		}
 
 		#endregion
@@ -168,6 +206,18 @@ namespace MAPE.Command {
 			// Queued messages are processed by derived classes
 			// when GUI is available.
 			this.ErrorMessages.Enqueue(message);
+		}
+
+		protected virtual void OnProxyStateChanged() {
+			EventHandler proxyStateChanged = this.ProxyStateChanged;
+			if (proxyStateChanged != null) {
+				try {
+					proxyStateChanged(this, EventArgs.Empty);
+				} catch (Exception exception) {
+					LogError($"Fail to notify ProxyStateChanged event: {exception.Message}");
+					// continue
+				}
+			}
 		}
 
 		#endregion
