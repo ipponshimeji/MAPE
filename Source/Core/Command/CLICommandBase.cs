@@ -38,27 +38,36 @@ namespace MAPE.Command {
 			#endregion
 		}
 
+		protected enum ControllerThreadEventKind {
+			None = 0,
+			Quit = 1,
+			Suspend = 2,
+			Resume = 3,
+		}
+
 		#endregion
 
 
-		#region data - data synchronized by quitLocker
+		#region data - data synchronized by controllerThreadEventLocker
 
-		private object quitLocker = new object();
+		private object controllerThreadEventLocker = new object();
 
-		private ManualResetEvent quitEvent = null;
+		private ManualResetEvent controllerThreadEvent = null;
+
+		private ControllerThreadEventKind controllerThreadEventKind = ControllerThreadEventKind.None;
 
 		#endregion
 
 
 		#region properties
 
-		private ManualResetEvent QuitEvent {
+		private ManualResetEvent ControllerThreadEvent {
 			get {
-				return this.quitEvent;
+				return this.controllerThreadEvent;
 			}
 			set {
-				lock (this.quitLocker) {
-					this.quitEvent = value;
+				lock (this.controllerThreadEventLocker) {
+					this.controllerThreadEvent = value;
 				}
 			}
 		}
@@ -93,11 +102,12 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected void Quit() {
-			lock (this.quitLocker) {
-				ManualResetEvent quitEvent = this.QuitEvent;
-				if (quitEvent != null) {
-					quitEvent.Set();
+		protected void AwakeControllerThread(ControllerThreadEventKind kind) {
+			lock (this.controllerThreadEventLocker) {
+				ManualResetEvent controllerThreadEvent = this.ControllerThreadEvent;
+				if (controllerThreadEvent != null) {
+					this.controllerThreadEventKind = kind;
+					controllerThreadEvent.Set();
 				}
 			}
 
@@ -165,36 +175,55 @@ namespace MAPE.Command {
 			// argument checks
 			Debug.Assert(settings.IsNull == false);
 
-			// run the proxy
-			bool completed = false;
-			using (RunningProxyState runningProxyState = StartProxy(settings, this)) {
-				// wait for Ctrl+C
-				Console.WriteLine(Resources.CLICommandBase_Message_StartListening);
-				Console.WriteLine(Resources.CLICommandBase_Message_StartingNote);
-				using (ManualResetEvent quitEvent = new ManualResetEvent(false)) {
-					this.QuitEvent = quitEvent;
-					try {
-						// setup Ctrl+C handler
-						ConsoleCancelEventHandler ctrlCHandler = (o, e) => {
-							e.Cancel = true;
-							Quit();
-						};
-						Console.CancelKeyPress += ctrlCHandler;
+			using (ManualResetEvent controllerThreadEvent = new ManualResetEvent(false)) {
+				this.ControllerThreadEvent = controllerThreadEvent;
+				try {
+					// prepare Ctrl+C handler
+					ConsoleCancelEventHandler ctrlCHandler = (o, e) => {
+						e.Cancel = true;
+						AwakeControllerThread(ControllerThreadEventKind.Quit);
+					};
 
-						// wait for Ctrl+C
-						quitEvent.WaitOne();
+					// set up Ctrl+C handler 
+					Console.CancelKeyPress += ctrlCHandler;
+					do {
+						// run the proxy
+						bool completed = false;
+						using (RunningProxyState runningProxyState = StartProxy(settings, this)) {
+							// message "push Ctrl+C to quit"
+							Console.WriteLine(Resources.CLICommandBase_Message_StartListening);
+							Console.WriteLine(Resources.CLICommandBase_Message_StartingNote);
 
-						// cleanup Ctrl+C handler
-						Console.CancelKeyPress -= ctrlCHandler;
-					} finally {
-						this.QuitEvent = null;
-					}
+							// wait for Ctrl+C or other events
+							controllerThreadEvent.WaitOne();
+
+							// stop the proxy
+							completed = runningProxyState.Stop(5000);
+						}
+						Console.WriteLine(completed ? Resources.CLICommandBase_Message_Completed : Resources.CLICommandBase_Message_NotCompleted);
+
+						// process the event which awake this thread
+						ControllerThreadEventKind eventKind = this.controllerThreadEventKind;
+						while (eventKind == ControllerThreadEventKind.Suspend) {
+							// wait for the next event
+							controllerThreadEvent.Reset();
+							controllerThreadEvent.WaitOne();
+							eventKind = this.controllerThreadEventKind;
+						}
+						if (eventKind != ControllerThreadEventKind.Resume) {
+							// quit
+							Debug.Assert(eventKind == ControllerThreadEventKind.Quit);
+							break;
+						}
+						controllerThreadEvent.Reset();
+					} while (true);
+
+					// clean up Ctrl+C handler
+					Console.CancelKeyPress -= ctrlCHandler;
+				} finally {
+					this.ControllerThreadEvent = null;
 				}
-
-				// stop the proxy
-				completed = runningProxyState.Stop(5000);
 			}
-			Console.WriteLine(completed ? Resources.CLICommandBase_Message_Completed : Resources.CLICommandBase_Message_NotCompleted);
 
 			return;
 		}

@@ -49,16 +49,32 @@ namespace MAPE.Windows {
 		#region overrides/overridables - execution
 
 		protected override void RunProxy(Settings settings) {
-			SessionEndingEventHandler quit = (o, e) => {
-				Quit();
+			// prepare Windows system event handlers
+			SessionEndingEventHandler onSessionEnding = (o, e) => {
+				AwakeControllerThread(ControllerThreadEventKind.Quit);
+			};
+			PowerModeChangedEventHandler onPowerModeChanged = (o, e) => {
+				switch (e.Mode) {
+					case PowerModes.Suspend:
+						AwakeControllerThread(ControllerThreadEventKind.Suspend);
+						break;
+					case PowerModes.Resume:
+						AwakeControllerThread(ControllerThreadEventKind.Resume);
+						break;
+				}
 			};
 
-			SystemEvents.SessionEnding += quit;
+			// run the proxy
+			SystemEvents.SessionEnding += onSessionEnding;
+			SystemEvents.PowerModeChanged += onPowerModeChanged;
 			try {
 				base.RunProxy(settings);
 			} finally {
-				SystemEvents.SessionEnding -= quit;
+				SystemEvents.PowerModeChanged -= onPowerModeChanged;
+				SystemEvents.SessionEnding -= onSessionEnding;
 			}
+
+			return;
 		}
 
 		#endregion
