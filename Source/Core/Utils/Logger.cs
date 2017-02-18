@@ -29,7 +29,7 @@ namespace MAPE.Utils {
 
 		private static readonly object classLocker = new object();
 
-		private static SourceLevels sourceLevelsCache;
+		private static SourceLevels sourceLevels;
 
 		private static TraceLevel logLevel;
 
@@ -64,7 +64,7 @@ namespace MAPE.Utils {
 
 		public static SourceLevels SourceLevels {
 			get {
-				return Logger.sourceLevelsCache;
+				return Logger.sourceLevels;
 			}
 		}
 
@@ -76,8 +76,7 @@ namespace MAPE.Utils {
 				lock (Logger.classLocker) {
 					if (Logger.logLevel != value && Logger.loggingStopped == false) {
 						Logger.logLevel = value;
-						Logger.sourceLevelsCache = FromTraceLevel(Logger.Source.Switch.Level, value);
-						Logger.Source.Switch.Level = Logger.sourceLevelsCache;
+						Logger.sourceLevels = FromTraceLevel(Logger.sourceLevels, value);
 					}
 				}
 			}
@@ -89,14 +88,13 @@ namespace MAPE.Utils {
 		#region creation
 
 		static Logger() {
-			// initialize members
-			sourceLevelsCache = Logger.Source.Switch.Level;
+			// initialize sourceLevels from the Switch of the TraceSource
+			sourceLevels = Logger.Source.Switch.Level;
 
 			// adjust Switch.Level to include Start/Stop event
-			sourceLevelsCache |= SourceLevels.ActivityTracing;
-			Logger.Source.Switch.Level = sourceLevelsCache;
+			sourceLevels |= SourceLevels.ActivityTracing;
 
-			logLevel = ToTraceLevel(Logger.Source.Switch.Level);
+			logLevel = ToTraceLevel(sourceLevels);
 
 			return;
 		}
@@ -179,7 +177,7 @@ namespace MAPE.Utils {
 
 		public static bool ShouldLog(TraceEventType eventType) {
 			// Note that flags in SourceLevels and TraceEventType are corresponding.
-			return ((int)Logger.sourceLevelsCache & (int)eventType) != 0;
+			return ((int)Logger.sourceLevels & (int)eventType) != 0;
 		}
 
 		public static void Log(Log log) {

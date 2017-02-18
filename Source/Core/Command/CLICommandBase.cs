@@ -140,12 +140,12 @@ namespace MAPE.Command {
 
 		public override void Run(string[] args) {
 			// connect a ColorConsoleTraceListener during its execution to show color-coded log in the console
-			ColorConsoleTraceListener traceListener = new ColorConsoleTraceListener(true);
-			Logger.Source.Listeners.Add(traceListener);
+			ColorConsoleLogMonitor monitor = new ColorConsoleLogMonitor();
+			Logger.AddLogMonitor(monitor);
 			try {
 				base.Run(args);
 			} finally {
-				Logger.Source.Listeners.Remove(traceListener);
+				Logger.RemoveLogMonitor(monitor);
 			}
 		}
 
@@ -186,24 +186,28 @@ namespace MAPE.Command {
 
 					// set up Ctrl+C handler 
 					Console.CancelKeyPress += ctrlCHandler;
+
+					ControllerThreadEventKind eventKind = ControllerThreadEventKind.None;
 					do {
 						// run the proxy
 						bool completed = false;
 						using (RunningProxyState runningProxyState = StartProxy(settings, this)) {
-							// message "push Ctrl+C to quit"
+							// log & message
+							LogProxyStarted(eventKind == ControllerThreadEventKind.Resume);
 							Console.WriteLine(Resources.CLICommandBase_Message_StartListening);
 							Console.WriteLine(Resources.CLICommandBase_Message_StartingNote);
 
 							// wait for Ctrl+C or other events
 							controllerThreadEvent.WaitOne();
+							eventKind = this.controllerThreadEventKind;
 
 							// stop the proxy
 							completed = runningProxyState.Stop(5000);
 						}
+						LogProxyStopped(completed, eventKind == ControllerThreadEventKind.Suspend);
 						Console.WriteLine(completed ? Resources.CLICommandBase_Message_Completed : Resources.CLICommandBase_Message_NotCompleted);
 
 						// process the event which awake this thread
-						ControllerThreadEventKind eventKind = this.controllerThreadEventKind;
 						while (eventKind == ControllerThreadEventKind.Suspend) {
 							// wait for the next event
 							controllerThreadEvent.Reset();

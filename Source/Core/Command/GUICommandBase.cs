@@ -117,17 +117,14 @@ namespace MAPE.Command {
 			OnProxyStateChanged();
 
 			// log
-			if (resuming) {
-				LogStart("Proxy Resumed.");
-			} else {
-				LogStart("Proxy Started.");
-			}
+			LogProxyStarted(resuming);
 
 			return;
 		}
 
 		public void StopProxy(int millisecondsTimeout = 0, bool suspending = false) {
 			// stop proxy
+			bool completed = false;
 			lock (this) {
 				// state checks
 				if (this.runningProxyState == null) {
@@ -137,7 +134,7 @@ namespace MAPE.Command {
 					this.suspending = true;
 				}
 
-				this.runningProxyState.Stop(millisecondsTimeout);
+				completed = this.runningProxyState.Stop(millisecondsTimeout);
 				Util.DisposeWithoutFail(ref this.runningProxyState);
 			}
 
@@ -145,11 +142,7 @@ namespace MAPE.Command {
 			OnProxyStateChanged();
 
 			// log
-			if (suspending) {
-				LogStop("Proxy Suspended.");
-			} else {
-				LogStop("Proxy Stopped.");
-			}
+			LogProxyStopped(completed, suspending);
 
 			return;
 		}

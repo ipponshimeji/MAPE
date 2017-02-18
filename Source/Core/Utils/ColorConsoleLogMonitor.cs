@@ -3,26 +3,22 @@ using System.Diagnostics;
 
 
 namespace MAPE.Utils {
-	public class ColorConsoleTraceListener: ConsoleTraceListener {
+	public class ColorConsoleLogMonitor: ConsoleLogMonitor {
 		#region creation and disposal
 
-		public ColorConsoleTraceListener(bool useErrorStream) : base(useErrorStream) {
+		public ColorConsoleLogMonitor(): base() {
 		}
 
 		#endregion
 
 
-		#region methods
+		#region ILogMonitor
 
-		public override void TraceEvent(TraceEventCache eventCache, string source, TraceEventType eventType, int id, string format) {
-			TraceEvent(eventCache, source, eventType, id, format, null);
-		}
-
-		public override void TraceEvent(TraceEventCache eventCache, string source, TraceEventType eventType, int id, string format, params object[] args) {
+		public override void OnLog(Log log) {
 			// decide color
 			ConsoleColor currentColor = Console.ForegroundColor;
 			ConsoleColor color;
-			switch (eventType) {
+			switch (log.EventType) {
 				case TraceEventType.Critical:
 					color = ConsoleColor.Red;
 					break;
@@ -36,6 +32,10 @@ namespace MAPE.Utils {
 					color = ConsoleColor.Green;
 					break;
 				case TraceEventType.Verbose:
+				case TraceEventType.Start:
+				case TraceEventType.Stop:
+				case TraceEventType.Suspend:
+				case TraceEventType.Resume:
 					color = ConsoleColor.DarkGray;
 					break;
 				default:
@@ -43,12 +43,13 @@ namespace MAPE.Utils {
 					break;
 			}
 
+			// output the log
 			if (color == currentColor) {
-				base.TraceEvent(eventCache, source, eventType, id, format);
+				base.OnLog(log);
 			} else {
 				Console.ForegroundColor = color;
 				try {
-					base.TraceEvent(eventCache, source, eventType, id, format);
+					base.OnLog(log);
 				} finally {
 					Console.ForegroundColor = currentColor;
 				}

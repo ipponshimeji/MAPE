@@ -628,6 +628,24 @@ namespace MAPE.Command {
 			return;
 		}
 
+
+		protected void LogProxyStarted(bool resuming) {
+			if (resuming) {
+				LogResume("Proxy started due to system resuming.");
+			} else {
+				LogStart("Proxy started.");
+			}
+		}
+
+		protected void LogProxyStopped(bool completed, bool suspending) {
+			string baseMessage = completed ? "Proxy stopped" : "Proxy is stopping";
+			if (suspending) {
+				LogSuspend($"{baseMessage} due to system suspending.");
+			} else {
+				LogStop($"{baseMessage}.");
+			}
+		}
+
 		#endregion
 
 

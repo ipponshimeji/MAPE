@@ -92,7 +92,8 @@
     <Compile Include="Server\IServerComponentFactory.cs" />
     <Compile Include="Server\ReconnectableTcpClient.cs" />
     <Compile Include="Server\IProxyRunner.cs" />
-    <Compile Include="Utils\ColorConsoleTraceListener.cs" />
+    <Compile Include="Utils\ColorConsoleLogMonitor.cs" />
+    <Compile Include="Utils\ConsoleLogMonitor.cs" />
     <Compile Include="Utils\Log.cs" />
     <Compile Include="Utils\ILogMonitor.cs" />
     <Compile Include="Utils\Settings.cs" />
