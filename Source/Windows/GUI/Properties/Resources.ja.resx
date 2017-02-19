@@ -207,6 +207,9 @@
   <data name="CredentialDialog_Persistency_Session" xml:space="preserve">
     <value>保存しない</value>
   </data>
+  <data name="CredentialDialog_EnableAssumptionModeCheckBox_Content" xml:space="preserve">
+    <value>「Basic認証決めつけモード」を利用する(_A)</value>
+  </data>
   <data name="SettingsWindow_Notice" xml:space="preserve">
     <value>近日実装予定</value>
   </data>

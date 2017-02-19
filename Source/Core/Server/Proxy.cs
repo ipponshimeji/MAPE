@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using MAPE.Utils;
 using MAPE.ComponentBase;
+using MAPE.Command;
 using SettingNames = MAPE.Server.Proxy.SettingNames;
 
 
@@ -83,10 +84,12 @@ namespace MAPE.Server {
 			#endregion
 		}
 
-		public class RevisedBytes {
+		public class BasicCredential {
 			#region data
 
 			public readonly int Revision;
+
+			public readonly bool EnableAssumptionMode;
 
 			public readonly IReadOnlyCollection<byte> Bytes;
 
@@ -95,7 +98,7 @@ namespace MAPE.Server {
 
 			#region creation and disposal
 
-			public RevisedBytes(int revision, IReadOnlyCollection<byte> bytes) {
+			public BasicCredential(int revision, bool enableAssumptionMode, IReadOnlyCollection<byte> bytes) {
 				// argument checks
 				if (bytes == null) {
 					throw new ArgumentNullException(nameof(bytes));
@@ -103,6 +106,7 @@ namespace MAPE.Server {
 
 				// initialize members
 				this.Bytes = bytes;
+				this.EnableAssumptionMode = enableAssumptionMode;
 				this.Revision = revision;
 
 				return;
@@ -140,7 +144,7 @@ namespace MAPE.Server {
 
 		private ConnectionCollection connections;
 
-		private Dictionary<string, RevisedBytes> serverBasicCredentialCache;
+		private Dictionary<string, BasicCredential> serverBasicCredentialCache;
 
 		protected IProxyRunner Runner { get; private set; }
 
@@ -237,7 +241,7 @@ namespace MAPE.Server {
 
 			// misc.
 			this.connections = null;
-			this.serverBasicCredentialCache = new Dictionary<string, RevisedBytes>();
+			this.serverBasicCredentialCache = new Dictionary<string, BasicCredential>();
 			this.Runner = null;
 
 			return;
@@ -476,7 +480,7 @@ namespace MAPE.Server {
 
 		#region methods - for Connection objects
 
-		public RevisedBytes GetServerBasicCredentials(string endPoint, string realm, RevisedBytes oldBasicCredentials) {
+		public BasicCredential GetServerBasicCredentials(string endPoint, string realm, bool firstRequest, BasicCredential oldBasicCredentials) {
 			// argument checks
 			if (endPoint == null) {
 				throw new ArgumentNullException(nameof(endPoint));
@@ -484,10 +488,10 @@ namespace MAPE.Server {
 			// realm can be null
 			// oldBasicCredentials can be null
 
-			RevisedBytes basicCredential;
+			BasicCredential basicCredential;
 			lock (this) {
 				// state checks
-				IDictionary<string, RevisedBytes> basicCredentialCache = this.serverBasicCredentialCache;
+				IDictionary<string, BasicCredential> basicCredentialCache = this.serverBasicCredentialCache;
 				if (basicCredentialCache == null) {
 					throw new ObjectDisposedException(this.ComponentName);
 				}
@@ -517,22 +521,27 @@ namespace MAPE.Server {
 					}
 
 					// get the credential from the runner
-					ValueTuple<NetworkCredential, bool> tuple = this.Runner.GetCredential(endPoint, realm, needUpdate: (basicCredential != null));
-					if (tuple.Item1 == null) {
+					CredentialInfo credential = this.Runner.GetCredential(endPoint, realm, needUpdate: (basicCredential != null));
+					if (credential == null) {
 						// maybe user cancel entering a credential
 						basicCredential = null;
 					} else {
-						basicCredential = new RevisedBytes(revision, CreateBasicProxyAuthorizationBytes(tuple.Item1));
+						basicCredential = new BasicCredential(revision, credential.EnableAssumptionMode ,CreateBasicProxyAuthorizationBytes(credential.GetNetworkCredential()));
 					}
 
 					// update the cache
-					// Note credential.Item2 indicates whether the proxy can save the credential or not
-					if (basicCredential == null || tuple.Item2 == false) {
+					if (basicCredential == null || credential.Persistence == CredentialPersistence.Session) {
 						basicCredentialCache.Remove(endPoint);
 					} else {
 						basicCredentialCache[endPoint] = basicCredential;
 					}
 				}
+			}
+
+			// adjust for first time
+			if (firstRequest && basicCredential != null && basicCredential.EnableAssumptionMode == false) {
+				// In the first request, the basic credential is returned only if the AssumptionMode is enabled 
+				basicCredential = null;
 			}
 
 			return basicCredential;

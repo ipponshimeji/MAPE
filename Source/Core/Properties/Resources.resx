@@ -181,6 +181,12 @@ Please restore it manually.</value>
   <data name="CLICommandBase_AskCredential_Persistence_Prompt" xml:space="preserve">
     <value>Selection: </value>
   </data>
+  <data name="CLICommandBase_AskCredential_EnableAssumptionMode_Description" xml:space="preserve">
+    <value>Do you want to enable "Basic Authentication Assumption Mode"? The default value is "Yes".</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_EnableAssumptionMode_Prompt" xml:space="preserve">
+    <value>Y or N: </value>
+  </data>
   <data name="SystemSettingsSwitcher_NoActualProxy" xml:space="preserve">
     <value>Tha actual proxy is not detected automatically. Specify it explicitly by settings file or command line.</value>
   </data>

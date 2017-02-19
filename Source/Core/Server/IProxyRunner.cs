@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Net;
+using MAPE.Command;
 
 
 namespace MAPE.Server {
     public interface IProxyRunner {
-		ValueTuple<NetworkCredential, bool> GetCredential(string endPoint, string realm, bool needUpdate);
+		CredentialInfo GetCredential(string endPoint, string realm, bool needUpdate);
 	}
 }

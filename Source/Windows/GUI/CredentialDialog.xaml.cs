@@ -14,7 +14,7 @@ namespace MAPE.Windows.GUI {
 
 		public string EndPoint { get; set; } = null;
 
-		public CommandBase.CredentialInfo Credential { get; set; } = null;
+		public CredentialInfo Credential { get; set; } = null;
 
 		#endregion
 
@@ -40,7 +40,7 @@ namespace MAPE.Windows.GUI {
 			string endPoint = this.EndPoint ?? "(unidentified proxy)";
 			this.descriptionTextBlock.Text = string.Format(Properties.Resources.CredentialDialog_Description, endPoint);
 
-			CommandBase.CredentialInfo credential = this.Credential;
+			CredentialInfo credential = this.Credential;
 			if (credential == null) {
 				this.userNameTextBox.Text = string.Empty;
 				this.sessionRadioButton.IsChecked = true;
@@ -88,9 +88,10 @@ namespace MAPE.Windows.GUI {
 				// CredentialPersistence.Process is default
 				persistence = CredentialPersistence.Process;
 			}
+			bool enableAssumptionMode = this.enableAssumptionModeCheckBox.IsChecked ?? false;
 
 			// commit the result
-			this.Credential = new CommandBase.CredentialInfo(endPoint, userName, password, persistence);
+			this.Credential = new CredentialInfo(endPoint, userName, password, persistence, enableAssumptionMode);
 			this.DialogResult = true;
 
 			return;

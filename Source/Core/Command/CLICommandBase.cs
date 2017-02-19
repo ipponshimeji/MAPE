@@ -286,8 +286,9 @@ namespace MAPE.Command {
 			Console.Write(Resources.CLICommandBase_AskCredential_Password);
 			string password = ReadPassword();
 			CredentialPersistence persistence = AskCredentialPersistence(canSave);
+			bool enableAssumptionMode = AskEnableAssumptionMode();
 
-			return new CredentialInfo(endPoint, userName, password, persistence);
+			return new CredentialInfo(endPoint, userName, password, persistence, enableAssumptionMode);
 		}
 
 		private static CredentialPersistence AskCredentialPersistence(bool canSave) {
@@ -315,6 +316,25 @@ namespace MAPE.Command {
 							}
 							break;
 					}
+				}
+			} while (true);
+		}
+
+		private static bool AskEnableAssumptionMode() {
+			// read user preference from the console
+			do {
+				Console.WriteLine(Resources.CLICommandBase_AskCredential_EnableAssumptionMode_Description);
+				Console.Write(Resources.CLICommandBase_AskCredential_EnableAssumptionMode_Prompt);
+				string answer = Console.ReadLine().Trim();
+
+				switch (answer) {
+					case "":
+					case "Y":
+					case "y":
+						return true;
+					case "N":
+					case "n":
+						return false;
 				}
 			} while (true);
 		}

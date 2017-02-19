@@ -70,6 +70,24 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
+        ///   Do you want to enable &quot;Basic Authentication Assumption Mode&quot;? The default value is &quot;Yes&quot;. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_AskCredential_EnableAssumptionMode_Description {
+            get {
+                return ResourceManager.GetString("CLICommandBase_AskCredential_EnableAssumptionMode_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Y or N:  に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_AskCredential_EnableAssumptionMode_Prompt {
+            get {
+                return ResourceManager.GetString("CLICommandBase_AskCredential_EnableAssumptionMode_Prompt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Password:  に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CLICommandBase_AskCredential_Password {

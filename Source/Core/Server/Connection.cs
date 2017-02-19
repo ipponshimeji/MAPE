@@ -36,7 +36,7 @@ namespace MAPE.Server {
 
 		private ReconnectableTcpClient server = null;
 
-		private Proxy.RevisedBytes proxyCredential = null;
+		private Proxy.BasicCredential proxyCredential = null;
 
 		#endregion
 
@@ -236,7 +236,14 @@ namespace MAPE.Server {
 					// the client specified Proxy-Authorization
 					overridingProxyAuthorization = null;
 				} else {
-					Proxy.RevisedBytes proxyCredential = this.proxyCredential;
+					Proxy.BasicCredential proxyCredential = this.proxyCredential;
+					if (proxyCredential == null) {
+						string endPoint = this.server.EndPoint;
+						string realm = null;
+						proxyCredential = this.Proxy.GetServerBasicCredentials(endPoint, realm, firstRequest: true, oldBasicCredentials: null);
+						this.proxyCredential = proxyCredential;	// may be null
+					}
+
 					overridingProxyAuthorization = proxyCredential?.Bytes;
 				}
 			} else {
@@ -246,7 +253,7 @@ namespace MAPE.Server {
 					// the current credential seems to be invalid (or null)
 					string endPoint = this.server.EndPoint;
 					string realm = "Proxy";	// ToDo: extract realm from the field
-					Proxy.RevisedBytes proxyCredential = this.Proxy.GetServerBasicCredentials(endPoint, realm, this.proxyCredential);
+					Proxy.BasicCredential proxyCredential = this.Proxy.GetServerBasicCredentials(endPoint, realm, firstRequest: false, oldBasicCredentials: this.proxyCredential);
 					this.proxyCredential = proxyCredential;
 					overridingProxyAuthorization = proxyCredential?.Bytes;
 				} else {

@@ -126,6 +126,15 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   Enable &quot;Basic Authentication _Assumption Mode&quot; に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_EnableAssumptionModeCheckBox_Content {
+            get {
+                return ResourceManager.GetString("CredentialDialog_EnableAssumptionModeCheckBox_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   How _save the credential? に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string CredentialDialog_Group_Persistency {

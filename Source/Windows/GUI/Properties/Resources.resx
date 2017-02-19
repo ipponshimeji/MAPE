@@ -207,6 +207,9 @@
   <data name="CredentialDialog_Persistency_Session" xml:space="preserve">
     <value>do not save the credential</value>
   </data>
+  <data name="CredentialDialog_EnableAssumptionModeCheckBox_Content" xml:space="preserve">
+    <value>Enable "Basic Authentication _Assumption Mode"</value>
+  </data>
   <data name="SettingsWindow_Notice" xml:space="preserve">
     <value>Not implemented now.</value>
   </data>

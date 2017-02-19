@@ -181,6 +181,12 @@
   <data name="CLICommandBase_AskCredential_Persistence_Prompt" xml:space="preserve">
     <value>選択: </value>
   </data>
+  <data name="CLICommandBase_AskCredential_EnableAssumptionMode_Description" xml:space="preserve">
+    <value>「Basic認証決めつけモード」を利用しますか？既定値は「利用する」です。</value>
+  </data>
+  <data name="CLICommandBase_AskCredential_EnableAssumptionMode_Prompt" xml:space="preserve">
+    <value>Y または N: </value>
+  </data>
   <data name="SystemSettingsSwitcher_NoActualProxy" xml:space="preserve">
     <value>実際のプロキシを自動的に検出することができませんでした。コマンドラインや設定ファイルで明に指定して起動してください。</value>
   </data>

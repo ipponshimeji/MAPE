@@ -14,7 +14,6 @@ using MAPE.ComponentBase;
 using MAPE.Server;
 using MAPE.Properties;
 using SettingNames = MAPE.Command.CommandBase.SettingNames;
-using CredentialInfo = MAPE.Command.CommandBase.CredentialInfo;
 
 
 namespace MAPE.Command {
@@ -70,8 +69,9 @@ namespace MAPE.Command {
 			string protectedPassword = settings.GetStringValue(SettingNames.ProtectedPassword, defaultValue: null);
 			string password = string.IsNullOrEmpty(protectedPassword) ? string.Empty : UnprotectPassword(protectedPassword);
 			CredentialPersistence persistence = settings.GetCredentialPersistenceValue(SettingNames.Persistence, defaultValue: CommandBase.DefaultCredentialPersistence);
+			bool enableAssumptionMode = settings.GetBooleanValue(SettingNames.EnableAssumptionMode, defaultValue: true);
 
-			return new CredentialInfo(endPoint, userName, password, persistence);
+			return new CredentialInfo(endPoint, userName, password, persistence, enableAssumptionMode);
 		}
 
 		public static void SetCredentialsValue(this Settings settings, string settingName, IEnumerable<CredentialInfo> value, bool omitDefault) {
@@ -116,6 +116,7 @@ namespace MAPE.Command {
 			settings.SetStringValue(SettingNames.UserName, userName, omitDefault, defaultValue: string.Empty);
 			settings.SetStringValue(SettingNames.ProtectedPassword, protectedPassword, omitDefault, defaultValue: string.Empty);
 			settings.SetCredentialPersistenceValue(SettingNames.Persistence, value.Persistence, omitDefault, defaultValue: CommandBase.DefaultCredentialPersistence);
+			settings.SetBooleanValue(SettingNames.EnableAssumptionMode, value.EnableAssumptionMode, omitDefault, defaultValue: true);
 
 			return settings;
 		}
@@ -205,6 +206,8 @@ namespace MAPE.Command {
 
 			public const string Persistence = "Persistence";
 
+			public const string EnableAssumptionMode = "EnableAssumptionMode";
+
 
 			public const string Proxy = "Proxy";
 
@@ -219,102 +222,6 @@ namespace MAPE.Command {
 			public const string RunProxy = "RunProxy";
 
 			public const string ShowUsage = "ShowUsage";
-
-			#endregion
-		}
-
-		public class CredentialInfo {
-			#region data
-
-			private readonly NetworkCredential credential;
-
-			public readonly CredentialPersistence Persistence;
-
-			#endregion
-
-
-			#region properties
-
-			public string EndPoint {
-				get {
-					// Note that the endPoint is stored as 'Domain' property of the NetworkCredential object.
-					return this.credential.Domain;
-				}
-			}
-
-			public string UserName {
-				get {
-					return this.credential.UserName;
-				}
-			}
-
-			public string Password {
-				get {
-					return this.credential.Password;
-				}
-			}
-
-			#endregion
-
-
-			#region creation and disposal
-
-			public CredentialInfo(string endPoint, string userName, string password, CredentialPersistence persistence) {
-				// argument checks
-				if (endPoint == null) {
-					// endPoint cannot be null, but can be empty
-					throw new ArgumentNullException(nameof(endPoint));
-				}
-				// userName can be null
-				// password can be null
-
-				// initialize members
-				// Note that the endPoint is stored as 'Domain' property of the NetworkCredential object.
-				this.credential = new NetworkCredential(userName, password, endPoint);
-				this.Persistence = persistence;
-
-				return;
-			}
-
-			#endregion
-
-
-			#region methods
-
-			public static bool AreSameEndPoint(string endPoint1, string endPoint2) {
-				// case-insensitive
-				return string.Compare(endPoint1, endPoint2, StringComparison.OrdinalIgnoreCase) == 0;
-			}
-
-			public NetworkCredential GetNetworkCredential() {
-				// return a clone of this.credential not to be changed its contents
-				NetworkCredential credential = this.credential;
-				return new NetworkCredential(credential.UserName, credential.Password, credential.Domain);
-			}
-
-			#endregion
-
-
-			#region overrides
-
-			public override bool Equals(object obj) {
-				// argument checks
-				CredentialInfo another = obj as CredentialInfo;
-				if (another == null) {
-					return false;
-				}
-
-				return (
-					this.Persistence == another.Persistence &&
-					AreSameEndPoint(this.EndPoint, another.EndPoint) &&
-					string.CompareOrdinal(this.UserName, another.UserName) == 0 &&
-					string.CompareOrdinal(this.Password, another.Password) == 0
-				);
-			}
-
-			public override int GetHashCode() {
-				return this.credential.GetHashCode() ^ this.Persistence.GetHashCode();
-			}
 
 			#endregion
 		}
@@ -891,7 +798,7 @@ namespace MAPE.Command {
 
 		#region IProxyRunner - for Proxy class only
 
-		ValueTuple<NetworkCredential, bool> IProxyRunner.GetCredential(string endPoint, string realm, bool needUpdate) {
+		CredentialInfo IProxyRunner.GetCredential(string endPoint, string realm, bool needUpdate) {
 			// argument checks
 			if (endPoint == null) {
 				throw new ArgumentNullException(nameof(endPoint));
@@ -926,8 +833,8 @@ namespace MAPE.Command {
 				}
 			}
 
-			// return the clone of this.Credential
-			return new ValueTuple<NetworkCredential, bool>(credential.GetNetworkCredential(), credential.Persistence != CredentialPersistence.Session);
+			// return the clone of the credential not to be changed
+			return credential.Clone();
 		}
 
 		#endregion

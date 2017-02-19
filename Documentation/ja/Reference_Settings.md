@@ -95,6 +95,7 @@ Cultureが設定されていない場合は、
 
 | 名前 | 型 | 省略時の値 | 内容 |
 |:----|:----|:----|:----|
+| EnableAssumptionMode | boolean | true | 対象となる認証プロキシに[Basic認証決めつけモード](AdvancedUsage.md)を適用するかどうか。 |
 | EndPoint | 文字列 | 必須 | 対象となる認証プロキシのエンドポイント。例 "proxy.example.com:8080" |
 | Persistence | 文字列 | "Persistent" | 認証情報の保存方法。下の[Persistenceの値](#Persistenceの値)を参照してください。 |
 | ProtectedPassword | 文字列 | "" | 暗号化されたパスワード。 |
@@ -122,7 +123,7 @@ Windows版のみで有効です。
 
 | 名前 | 型 | 省略時の値 | 内容 |
 |:----|:----|:----|:----|
-| ChaseLastLog | bool | true | ログ一覧にログが追加された際に、最後のログを自動的に追尾するかどうか。 |
+| ChaseLastLog | boolean | true | ログ一覧にログが追加された際に、最後のログを自動的に追尾するかどうか。 |
 | MainWindow | [MainWindowオブジェクト](#MainWindowオブジェクト) | {} | メインウィンドウのレイアウト設定。 |
 
 
@@ -213,7 +214,7 @@ Win32 APIの`RECT`構造体に対応しています。
 | 名前 | 型 | デフォルト値 | 内容 |
 |:----|:----|:----|:----|
 | ActualProxy | [ActualProxyオブジェクト](#ActualProxyオブジェクト) | 下の注を参照 | 認証プロキシの情報。 |
-| EnableSystemSettingsSwitch | bool | true | プロキシ設定書き換えを行うかどうか。 |
+| EnableSystemSettingsSwitch | boolean | true | プロキシ設定書き換えを行うかどうか。 |
 | ProxyOverride | 文字列 | "" | 【Windowsのみ】プロキシ設定書き換え後の「プロキシを利用しないアドレス」のリスト。例 "*.example.com;*.example.local;&lt;local&gt;" |
 
 #### 注意事項
