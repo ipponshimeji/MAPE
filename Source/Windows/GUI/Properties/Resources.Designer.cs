@@ -80,8 +80,7 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
-        ///   Newtonsoft.Json v9.0.1
-        ///System.ValueTuple v4.3.0 に類似しているローカライズされた文字列を検索します。
+        ///   Newtonsoft.Json v9.0.1 に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string AboutWindow_ComponentsList {
             get {

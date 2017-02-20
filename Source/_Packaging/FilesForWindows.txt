@@ -5,7 +5,6 @@ mape.exe.config
 mapegui.exe
 mapegui.exe.config
 Newtonsoft.Json.dll
-System.ValueTuple.dll
 ja\MAPE.Core.resources.dll
 ja\mape.resources.dll
 ja\mapegui.resources.dll

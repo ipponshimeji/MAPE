@@ -224,8 +224,7 @@
     <value>This software uses following components</value>
   </data>
   <data name="AboutWindow_ComponentsList" xml:space="preserve">
-    <value>Newtonsoft.Json v9.0.1
-System.ValueTuple v4.3.0</value>
+    <value>Newtonsoft.Json v9.0.1</value>
   </data>
   <data name="AboutWindow_okButton_Content" xml:space="preserve">
     <value>OK</value>
