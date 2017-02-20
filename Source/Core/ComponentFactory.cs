@@ -12,6 +12,14 @@ namespace MAPE {
 		#region types
 
 		public class ConnectionCache: InstanceCache<Connection> {
+			#region creation and disposal
+
+			public ConnectionCache(): base(nameof(ConnectionCache)) {
+			}
+
+			#endregion
+
+
 			#region methods
 
 			public Connection AllocConnection(ConnectionCollection owner) {
@@ -61,6 +69,14 @@ namespace MAPE {
 		}
 
 		public class RequestCache: InstanceCache<Request> {
+			#region creation and disposal
+
+			public RequestCache(): base(nameof(RequestCache)) {
+			}
+
+			#endregion
+
+
 			#region methods
 
 			public Request AllocRequest(Stream input, Stream output) {
@@ -110,6 +126,14 @@ namespace MAPE {
 		}
 
 		public class ResponseCache: InstanceCache<Response> {
+			#region creation and disposal
+
+			public ResponseCache(): base(nameof(ResponseCache)) {
+			}
+
+			#endregion
+
+
 			#region methods
 
 			public Response AllocResponse(Stream input, Stream output) {
@@ -159,6 +183,14 @@ namespace MAPE {
 		}
 
 		public class MemoryBlockCache: InstanceCache<byte[]> {
+			#region creation and disposal
+
+			public MemoryBlockCache(): base(nameof(MemoryBlockCache)) {
+			}
+
+			#endregion
+
+
 			#region constants
 
 			public const int MemoryBlockSize = 2 * 1024;    // 2K
@@ -214,6 +246,15 @@ namespace MAPE {
 
 
 		#region methods
+
+		public void LogStatistics(bool recap) {
+			connectionCache.LogStatistics(recap);
+			requestCache.LogStatistics(recap);
+			responseCache.LogStatistics(recap);
+			memoryBlockCache.LogStatistics(recap);
+
+			return;
+		}
 
 		public static byte[] AllocMemoryBlock() {
 			return memoryBlockCache.AllocMemoryBlock();

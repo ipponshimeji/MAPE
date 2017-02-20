@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using MAPE.Utils;
 
 
 namespace MAPE.ComponentBase {
@@ -23,11 +24,25 @@ namespace MAPE.ComponentBase {
 		#endregion
 
 
+		#region data
+
+		public readonly string CacheName;
+
+		#endregion
+
+
 		#region data - synchronized by locking this
 
 		private Queue<T> cache = new Queue<T>();
 
 		private int maxCachedInstanceCount = DefaultMaxCachedInstanceCount;
+
+		// statistics
+		private uint allocatedCount = 0;
+
+		private uint releasedCount = 0;
+
+		private uint maxActiveCount = 0;
 
 		#endregion
 
@@ -57,7 +72,11 @@ namespace MAPE.ComponentBase {
 
 		#region creation and disposal
 
-		public InstanceCache() {
+		public InstanceCache(string cacheName) {
+			// initialize members
+			this.CacheName = cacheName;
+
+			return;
 		}
 
 		public virtual void Dispose() {
@@ -83,6 +102,36 @@ namespace MAPE.ComponentBase {
 
 		#region methods
 
+		public void LogStatistics(bool recap) {
+			// state checks
+			if (Logger.ShouldLog(TraceEventType.Verbose) == false) {
+				return;
+			}
+
+			// get data
+			string cacheName;
+			uint allocatedCount;
+			uint releasedCount;
+			uint maxActiveCount;
+			lock (this) {
+				cacheName = this.CacheName;
+				allocatedCount = this.allocatedCount;
+				releasedCount = this.releasedCount;
+				maxActiveCount = this.maxActiveCount;
+			}
+
+			// format log message
+			string message;
+			if (recap) {
+				message = $"Statistics: MaxActiveCount: {maxActiveCount}, AllocatedCount: {allocatedCount}, ReleasedCount: {releasedCount}";
+			} else {
+				message = $"Statistics: ActiveCount: {allocatedCount - releasedCount}, MaxActiveCount: {maxActiveCount}";
+			}
+
+			// log
+			Logger.LogVerbose(cacheName ?? string.Empty, message);
+		}
+
 		protected T AllocInstance() {
 			T instance = null;
 			lock (this) {
@@ -96,11 +145,18 @@ namespace MAPE.ComponentBase {
 				if (0 < cache.Count) {
 					instance = cache.Dequeue();
 				}
-			}
 
-			// create a new instance if there is no cached one
-			if (instance == null) {
-				instance = CreateInstance();
+				// create a new instance if there is no cached one
+				if (instance == null) {
+					instance = CreateInstance();
+				}
+
+				// update statistics
+				++this.allocatedCount;
+				uint activeCount = this.allocatedCount - this.releasedCount;
+				if (this.maxActiveCount < activeCount) {
+					this.maxActiveCount = activeCount;
+				}
 			}
 
 			return instance;
@@ -112,10 +168,13 @@ namespace MAPE.ComponentBase {
 				throw new ArgumentNullException(nameof(instance));
 			}
 
-			// try to cache the instance
 			try {
-				if (discardInstance == false) {
-					lock (this) {
+				lock (this) {
+					// update statistics
+					++this.releasedCount;
+
+					// try to cache the instance
+					if (discardInstance == false) {
 						Queue<T> cache = this.cache;
 						if (cache != null && cache.Count < this.maxCachedInstanceCount) {
 							cache.Enqueue(instance);

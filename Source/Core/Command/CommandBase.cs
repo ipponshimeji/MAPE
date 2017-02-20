@@ -551,6 +551,9 @@ namespace MAPE.Command {
 			} else {
 				LogStop($"{baseMessage}.");
 			}
+
+			// statistics of the ComponentFactory
+			this.ComponentFactory.LogStatistics(recap: true);
 		}
 
 		#endregion
