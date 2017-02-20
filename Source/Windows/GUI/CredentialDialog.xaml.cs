@@ -12,9 +12,64 @@ namespace MAPE.Windows.GUI {
 	public partial class CredentialDialog: Window {
 		#region data
 
-		public string EndPoint { get; set; } = null;
+		public string endPoint = null;
 
-		public CredentialInfo Credential { get; set; } = null;
+		public CredentialInfo credential = null;
+
+		#endregion
+
+
+		#region properties
+
+		public string EndPoint {
+			get {
+				return this.endPoint;
+			}
+			set {
+				if (this.endPoint != value) {
+					this.endPoint = value;
+
+					// update descriptionTextBlock
+					this.descriptionTextBlock.Text = string.Format(Properties.Resources.CredentialDialog_Description, value ?? "(unidentified proxy)");
+				}
+			}
+		}
+
+		public CredentialInfo Credential {
+			get {
+				return this.credential;
+			}
+			set {
+				this.credential = value;
+				if (value == null) {
+					this.userNameTextBox.Text = string.Empty;
+					this.sessionRadioButton.IsChecked = true;
+					this.enableAssumptionModeCheckBox.IsChecked = true;
+				} else {
+					// update userNameTextBox
+					this.userNameTextBox.Text = value.UserName ?? string.Empty;
+
+					// update persistence radio buttons
+					RadioButton radioButton = null;
+					switch (value.Persistence) {
+						case CredentialPersistence.Session:
+							radioButton = this.sessionRadioButton;
+							break;
+						case CredentialPersistence.Persistent:
+							radioButton = this.persistentRadioButton;
+							break;
+						default:
+							// CredentialPersistence.Process is default
+							radioButton = this.processRadioButton;
+							break;
+					}
+					radioButton.IsChecked = true;
+
+					// update enableAssumptionModeCheckBox
+					this.enableAssumptionModeCheckBox.IsChecked = value.EnableAssumptionMode;
+				}
+			}
+		}
 
 		#endregion
 
@@ -37,31 +92,8 @@ namespace MAPE.Windows.GUI {
 			// initialize this class level
 			this.Icon = App.Current.OnIcon;
 
-			string endPoint = this.EndPoint ?? "(unidentified proxy)";
-			this.descriptionTextBlock.Text = string.Format(Properties.Resources.CredentialDialog_Description, endPoint);
-
-			CredentialInfo credential = this.Credential;
-			if (credential == null) {
-				this.userNameTextBox.Text = string.Empty;
-				this.sessionRadioButton.IsChecked = true;
-			} else {
-				this.userNameTextBox.Text = credential.UserName ?? string.Empty;
-				RadioButton radioButton = null;
-				switch (credential.Persistence) {
-					case CredentialPersistence.Session:
-						radioButton = this.sessionRadioButton;
-						break;
-					case CredentialPersistence.Persistent:
-						radioButton = this.persistentRadioButton;
-						break;
-					default:
-						// CredentialPersistence.Process is default
-						radioButton = this.processRadioButton;
-						break;
-				}
-				radioButton.IsChecked = true;
-			}
-			this.passwordBox.Password = string.Empty;   // Do not give default value
+			// Do not give default value for password
+			this.passwordBox.Password = string.Empty;
 
 			// set initial focus on userNameTextBox
 			this.userNameTextBox.Focus();

@@ -280,7 +280,7 @@ namespace MAPE.Command {
 
 			// read information from the console
 			Console.WriteLine(Resources.CLICommandBase_AskCredential_Description, endPoint);
-			Console.WriteLine($"Realm: {endPoint}");
+			Console.WriteLine($"Realm: {realm}");
 			Console.Write(Resources.CLICommandBase_AskCredential_UserName);
 			string userName = Console.ReadLine();
 			Console.Write(Resources.CLICommandBase_AskCredential_Password);
