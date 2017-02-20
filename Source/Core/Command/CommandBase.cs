@@ -834,7 +834,7 @@ namespace MAPE.Command {
 			}
 
 			// return the clone of the credential not to be changed
-			return credential.Clone();
+			return credential?.Clone();
 		}
 
 		#endregion

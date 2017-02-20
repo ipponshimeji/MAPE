@@ -502,7 +502,7 @@ namespace MAPE.Server {
 				// need a new credential?
 				bool needGetCredential;
 				if (basicCredential == null) {
-					needGetCredential = true;
+					needGetCredential = !firstRequest;
 				} else {
 					// try the current credential if the current revision is newer than the caller's.
 					needGetCredential = ((oldBasicCredentials != null) && (basicCredential.Revision <= oldBasicCredentials.Revision));
