@@ -117,6 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
   <data name="App_Title" xml:space="preserve">
     <value>MAPE</value>
   </data>
@@ -186,12 +192,6 @@
   <data name="CredentialDialog_Group_Persistency" xml:space="preserve">
     <value>How _save the credential?</value>
   </data>
-  <data name="CredentialDialog_Label_Cancel" xml:space="preserve">
-    <value>Cancel</value>
-  </data>
-  <data name="CredentialDialog_Label_OK" xml:space="preserve">
-    <value>OK</value>
-  </data>
   <data name="CredentialDialog_Label_Password" xml:space="preserve">
     <value>_Password:</value>
   </data>
@@ -210,8 +210,104 @@
   <data name="CredentialDialog_EnableAssumptionModeCheckBox_Content" xml:space="preserve">
     <value>Enable "Basic Authentication _Assumption Mode"</value>
   </data>
-  <data name="SettingsWindow_Notice" xml:space="preserve">
-    <value>Not implemented now.</value>
+  <data name="SettingsWindow_Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="SettingsWindow_saveAsDefaultButton_Content" xml:space="preserve">
+    <value>_Save As Default</value>
+  </data>
+  <data name="SettingsWindow_proxyTab_Header" xml:space="preserve">
+    <value>Proxy</value>
+  </data>
+  <data name="SettingsWindow_listenersTab_Header" xml:space="preserve">
+    <value>Listeners</value>
+  </data>
+  <data name="SettingsWindow_credentialsTab_Header" xml:space="preserve">
+    <value>Credentials</value>
+  </data>
+  <data name="SettingsWindow_authenticationProxyGroup_Header" xml:space="preserve">
+    <value>Authentication Proxy</value>
+  </data>
+  <data name="SettingsWindow_autoDetectProxyCheckBox_Content" xml:space="preserve">
+    <value>_Detect Automatically</value>
+  </data>
+  <data name="SettingsWindow_hostNameLabel_Content" xml:space="preserve">
+    <value>_Host Name:</value>
+  </data>
+  <data name="SettingsWindow_portLabel_Content" xml:space="preserve">
+    <value>_Port:</value>
+  </data>
+  <data name="SettingsWindow_systemSettingsSwitherGroup_Header" xml:space="preserve">
+    <value>System Settings Switcher</value>
+  </data>
+  <data name="SettingsWindow_enableSystemSettingSwitherCheckBox_Content" xml:space="preserve">
+    <value>_Enable System Settings Switcher</value>
+  </data>
+  <data name="SettingsWindow_switchedSettingsGroup_Header" xml:space="preserve">
+    <value>Settings during proxying</value>
+  </data>
+  <data name="SettingsWindow_bypassProxyCheckBox_Content" xml:space="preserve">
+    <value>_Bypass proxy server for local addresses</value>
+  </data>
+  <data name="SettingsWindow_exclusionLabel_Content" xml:space="preserve">
+    <value>Do _not use proxy server for addresses beginning with:</value>
+  </data>
+  <data name="SettingsWindow_miscGroup_Header" xml:space="preserve">
+    <value>Misc</value>
+  </data>
+  <data name="SettingsWindow_retryLabel_Content" xml:space="preserve">
+    <value>_Authentication Retry Count:</value>
+  </data>
+  <data name="SettingsWindow_addButton_Content" xml:space="preserve">
+    <value>_Add</value>
+  </data>
+  <data name="SettingsWindow_removeButton_Content" xml:space="preserve">
+    <value>_Remove</value>
+  </data>
+  <data name="SettingsWindow_editButton_Content" xml:space="preserve">
+    <value>_Edit</value>
+  </data>
+  <data name="SettingsWindow_upButton_Content" xml:space="preserve">
+    <value>_Up</value>
+  </data>
+  <data name="SettingsWindow_downButton_Content" xml:space="preserve">
+    <value>_Down</value>
+  </data>
+  <data name="SettingsWindow_resetButton_Content" xml:space="preserve">
+    <value>Rese_t to Default</value>
+  </data>
+  <data name="SettingsWindow_addressColumn_Header" xml:space="preserve">
+    <value>Address</value>
+  </data>
+  <data name="SettingsWindow_portColumn_Header" xml:space="preserve">
+    <value>Port</value>
+  </data>
+  <data name="SettingsWindow_backlogColumn_Header" xml:space="preserve">
+    <value>Backlog</value>
+  </data>
+  <data name="SettingsWindow_endPointColumn_Header" xml:space="preserve">
+    <value>End Point</value>
+  </data>
+  <data name="SettingsWindow_persistenceColumn_Header" xml:space="preserve">
+    <value>Persistence</value>
+  </data>
+  <data name="SettingsWindow_assumptionModeColumn_Header" xml:space="preserve">
+    <value>Assumption Mode</value>
+  </data>
+  <data name="SettingsWindow_userNameColumn_Header" xml:space="preserve">
+    <value>User Name</value>
+  </data>
+  <data name="ListenerDialog_Title" xml:space="preserve">
+    <value>Listener</value>
+  </data>
+  <data name="ListenerDialog_addressLabel_Content" xml:space="preserve">
+    <value>_Address</value>
+  </data>
+  <data name="ListenerDialog_portLabel_Content" xml:space="preserve">
+    <value>_Port</value>
+  </data>
+  <data name="ListenerDialog_backlogLabel_Content" xml:space="preserve">
+    <value>_Backlog</value>
   </data>
   <data name="AboutWindow_Title" xml:space="preserve">
     <value>About MAPE</value>
@@ -225,9 +321,6 @@
   </data>
   <data name="AboutWindow_ComponentsList" xml:space="preserve">
     <value>Newtonsoft.Json v9.0.1</value>
-  </data>
-  <data name="AboutWindow_okButton_Content" xml:space="preserve">
-    <value>OK</value>
   </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="OffIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">

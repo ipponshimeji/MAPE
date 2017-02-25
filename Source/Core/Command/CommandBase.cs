@@ -373,7 +373,7 @@ namespace MAPE.Command {
 
 		#region properties
 
-		protected bool HasSettingsFile {
+		public bool HasSettingsFile {
 			get {
 				return string.IsNullOrEmpty(this.SettingsFilePath) == false;
 			}

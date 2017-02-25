@@ -66,6 +66,12 @@ namespace MAPE.Command {
 			get {
 				return this.settings;
 			}
+			protected set {
+				if (this.IsProxyRunning) {
+					throw new InvalidOperationException("The settings cannot be changed when the proxy is running.");
+				}
+				this.settings = value;
+			}
 		}
 
 		public Settings GUISettings {

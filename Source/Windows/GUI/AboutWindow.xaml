@@ -25,7 +25,7 @@
             <TextBlock Text="{x:Static properties:Resources.AboutWindow_ComponentsList}" ScrollViewer.VerticalScrollBarVisibility="Auto" HorizontalAlignment="Left" VerticalAlignment="Top" />
         </GroupBox>
         <StackPanel Grid.Row="4" VerticalAlignment="Bottom" HorizontalAlignment="Right">
-            <Button Content="{x:Static properties:Resources.AboutWindow_okButton_Content}" Width="100" Margin="8,8,6,8" IsDefault="True" Padding="1,4" Click="okButton_Click" />
+            <Button Content="{x:Static properties:Resources.Common_OK}" Width="100" Margin="8,8,6,8" IsDefault="True" Padding="1,4" Click="okButton_Click" />
         </StackPanel>
     </Grid>
 </Window>

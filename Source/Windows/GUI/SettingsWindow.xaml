@@ -6,8 +6,111 @@
         xmlns:local="clr-namespace:MAPE.Windows.GUI"
         xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
         mc:Ignorable="d"
-        Title="SettingsWindow" Height="300" Width="300">
+        Title="{x:Static properties:Resources.SettingsWindow_Title}" Height="400" Width="600">
     <Grid>
-        <Label Content="{x:Static properties:Resources.SettingsWindow_Notice}" FontSize="24" />
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <TabControl Grid.Row="0">
+            <TabItem Header="{x:Static properties:Resources.SettingsWindow_proxyTab_Header}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <GroupBox Header="{x:Static properties:Resources.SettingsWindow_authenticationProxyGroup_Header}" Padding="4,0,0,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <CheckBox x:Name="autoDetectProxyCheckBox" Content="{x:Static properties:Resources.SettingsWindow_autoDetectProxyCheckBox_Content}" VerticalAlignment="Center" Margin="2" Grid.IsSharedSizeScope="True" IsChecked="True" />
+                            <Label Content="{x:Static properties:Resources.SettingsWindow_hostNameLabel_Content}" Margin="12,0,0,0" Target="{Binding ElementName=hostNameTextBox}" />
+                            <TextBox x:Name="hostNameTextBox" Width="200" VerticalContentAlignment="Center" />
+                            <Label Content="{x:Static properties:Resources.SettingsWindow_portLabel_Content}" Margin="8,0,0,0" Target="{Binding ElementName=portTextBox}" />
+                            <TextBox x:Name="portTextBox" Width="80" VerticalContentAlignment="Center"/>
+                        </StackPanel>
+                    </GroupBox>
+                    <GroupBox Grid.Row="1" Header="{x:Static properties:Resources.SettingsWindow_systemSettingsSwitherGroup_Header}" Padding="4">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <CheckBox x:Name="enableSystemSettingSwitherCheckBox" Content="{x:Static properties:Resources.SettingsWindow_enableSystemSettingSwitherCheckBox_Content}" Margin="2" />
+                            <GroupBox Grid.Row="1" Header="{x:Static properties:Resources.SettingsWindow_switchedSettingsGroup_Header}" Padding="4">
+                                <Grid>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+                                    <CheckBox x:Name="bypassProxyCheckBox" Grid.Row="0" Content="{x:Static properties:Resources.SettingsWindow_bypassProxyCheckBox_Content}" Margin="2" />
+                                    <Label Grid.Row="1" Content="{x:Static properties:Resources.SettingsWindow_exclusionLabel_Content}" Margin="2,4,0,0" Padding="0" Target="{Binding ElementName=exclusionTextBox}" />
+                                    <TextBox x:Name="exclusionTextBox" Grid.Row="2" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="2,0,0,0"/>
+                                </Grid>
+                            </GroupBox>
+                        </Grid>
+                    </GroupBox>
+                    <GroupBox Grid.Row="2" Header="{x:Static properties:Resources.SettingsWindow_miscGroup_Header}" Padding="4">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="{x:Static properties:Resources.SettingsWindow_retryLabel_Content}" Padding="2" Target="{Binding ElementName=retryTextBox}" />
+                            <TextBox x:Name="retryTextBox" Text="2" VerticalAlignment="Center" Width="50" />
+                        </StackPanel>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
+            <TabItem Header="{x:Static properties:Resources.SettingsWindow_listenersTab_Header}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ListView Grid.Column="0">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_addressColumn_Header}" Width="Auto" DisplayMemberBinding="{Binding Path=Address}" />
+                                <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_portColumn_Header}" Width="Auto" DisplayMemberBinding="{Binding Path=Port}" />
+                                <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_backlogColumn_Header}" Width="Auto" DisplayMemberBinding="{Binding Path=Backlog}" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <StackPanel Grid.Column="1">
+                        <Button x:Name="addListenerButton" Content="{x:Static properties:Resources.SettingsWindow_addButton_Content}" MinWidth="100" Margin="4" Padding="4" />
+                        <Button x:Name="removeListenerButton" Content="{x:Static properties:Resources.SettingsWindow_removeButton_Content}" MinWidth="100" Margin="4" Padding="4" />
+                        <Button x:Name="editListenerButton" Content="{x:Static properties:Resources.SettingsWindow_editButton_Content}" MinWidth="100" Margin="4" Padding="4" />
+                        <Button x:Name="upListenerButton" Content="{x:Static properties:Resources.SettingsWindow_upButton_Content}" MinWidth="100" Margin="4, 12, 4, 4" Padding="4" />
+                        <Button x:Name="downListenerButton" Content="{x:Static properties:Resources.SettingsWindow_downButton_Content}" MinWidth="100" Margin="4" Padding="4" />
+                        <Button x:Name="resetListenerButton" Content="{x:Static properties:Resources.SettingsWindow_resetButton_Content}" MinWidth="100" Margin="4, 12, 4, 4" Padding="4" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+            <TabItem Header="{x:Static properties:Resources.SettingsWindow_credentialsTab_Header}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ListView Grid.Column="0">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_endPointColumn_Header}" Width="Auto" />
+                                <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_persistenceColumn_Header}" Width="Auto" />
+                                <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_assumptionModeColumn_Header}" Width="Auto" />
+                                <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_userNameColumn_Header}" Width="Auto" />
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                    <StackPanel Grid.Column="1">
+                        <Button x:Name="addCredentialButton" Content="{x:Static properties:Resources.SettingsWindow_addButton_Content}" MinWidth="100" Margin="4" Padding="4" />
+                        <Button x:Name="removeCredentialButton" Content="{x:Static properties:Resources.SettingsWindow_removeButton_Content}" MinWidth="100" Margin="4" Padding="4" />
+                        <Button x:Name="editCredentialButton" Content="{x:Static properties:Resources.SettingsWindow_editButton_Content}" MinWidth="100" Margin="4" Padding="4" />
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <StackPanel Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Orientation="Horizontal">
+            <Button x:Name="saveAsDefaultButton" Content="{x:Static properties:Resources.SettingsWindow_saveAsDefaultButton_Content}" MinWidth="100" Margin="8,8,6,8" Padding="4" />
+            <Button x:Name="okButton" Content="{x:Static properties:Resources.Common_OK}" MinWidth="100" Margin="8,8,6,8" IsDefault="True" Padding="4" />
+            <Button x:Name="cancelButton" Content="{x:Static properties:Resources.Common_Cancel}" MinWidth="100" Margin="8,8,6,8" IsCancel="True" Padding="4" />
+        </StackPanel>
     </Grid>
 </Window>

@@ -1,0 +1,33 @@
+﻿<Window x:Class="MAPE.Windows.GUI.ListenerDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MAPE.Windows.GUI"
+        xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
+        mc:Ignorable="d"
+        Title="{x:Static properties:Resources.ListenerDialog_Title}" Height="160" Width="250">
+    <Grid Margin="4">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+        <Label Grid.Row="0" Grid.Column="0" Content="{x:Static properties:Resources.ListenerDialog_addressLabel_Content}" Target="{Binding ElementName=addressTextBox}" VerticalContentAlignment="Center" />
+        <TextBox x:Name="addressTextBox" Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center" VerticalAlignment="Center" />
+        <Label Grid.Row="1" Grid.Column="0" Content="{x:Static properties:Resources.ListenerDialog_portLabel_Content}" Target="{Binding ElementName=portTextBox}" VerticalContentAlignment="Center" />
+        <TextBox x:Name="portTextBox" Grid.Row="1" Grid.Column="1" VerticalContentAlignment="Center" VerticalAlignment="Center" />
+        <Label Grid.Row="2" Grid.Column="0" Content="{x:Static properties:Resources.ListenerDialog_backlogLabel_Content}" Target="{Binding ElementName=backlogTextBox}" VerticalContentAlignment="Center" />
+        <TextBox x:Name="backlogTextBox" Grid.Row="2" Grid.Column="1" VerticalContentAlignment="Center" VerticalAlignment="Center" />
+        <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0" >
+            <Button x:Name="okButton" IsDefault="True" Width="80" Margin="4,0" Content="{x:Static properties:Resources.Common_OK}" Padding="4" />
+            <Button x:Name="cancelButton" IsCancel="True" Width="80" Margin="4,0,0,0" Content="{x:Static properties:Resources.Common_Cancel}" Padding="4" />
+        </StackPanel>
+    </Grid>
+</Window>

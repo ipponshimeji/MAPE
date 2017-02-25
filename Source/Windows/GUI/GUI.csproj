@@ -66,6 +66,9 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ListenerDialog.xaml.cs">
+      <DependentUpon>ListenerDialog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="NativeMethods.cs" />
     <Compile Include="GUISettings.cs" />
     <Compile Include="LogAdapter.cs" />
@@ -81,6 +84,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="CredentialDialog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="ListenerDialog.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

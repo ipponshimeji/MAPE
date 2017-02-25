@@ -89,15 +89,6 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
-        ///   OK に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string AboutWindow_okButton_Content {
-            get {
-                return ResourceManager.GetString("AboutWindow_okButton_Content", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   About MAPE に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string AboutWindow_Title {
@@ -112,6 +103,24 @@ namespace MAPE.Windows.GUI.Properties {
         public static string App_Title {
             get {
                 return ResourceManager.GetString("App_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Cancel に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Common_Cancel {
+            get {
+                return ResourceManager.GetString("Common_Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   OK に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Common_OK {
+            get {
+                return ResourceManager.GetString("Common_OK", resourceCulture);
             }
         }
         
@@ -139,24 +148,6 @@ namespace MAPE.Windows.GUI.Properties {
         public static string CredentialDialog_Group_Persistency {
             get {
                 return ResourceManager.GetString("CredentialDialog_Group_Persistency", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Cancel に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string CredentialDialog_Label_Cancel {
-            get {
-                return ResourceManager.GetString("CredentialDialog_Label_Cancel", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   OK に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string CredentialDialog_Label_OK {
-            get {
-                return ResourceManager.GetString("CredentialDialog_Label_OK", resourceCulture);
             }
         }
         
@@ -202,6 +193,42 @@ namespace MAPE.Windows.GUI.Properties {
         public static string CredentialDialog_Persistency_Session {
             get {
                 return ResourceManager.GetString("CredentialDialog_Persistency_Session", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Address に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ListenerDialog_addressLabel_Content {
+            get {
+                return ResourceManager.GetString("ListenerDialog_addressLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Backlog に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ListenerDialog_backlogLabel_Content {
+            get {
+                return ResourceManager.GetString("ListenerDialog_backlogLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Port に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ListenerDialog_portLabel_Content {
+            get {
+                return ResourceManager.GetString("ListenerDialog_portLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Listener に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ListenerDialog_Title {
+            get {
+                return ResourceManager.GetString("ListenerDialog_Title", resourceCulture);
             }
         }
         
@@ -406,11 +433,263 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
-        ///   Not implemented now. に類似しているローカライズされた文字列を検索します。
+        ///   _Add に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        public static string SettingsWindow_Notice {
+        public static string SettingsWindow_addButton_Content {
             get {
-                return ResourceManager.GetString("SettingsWindow_Notice", resourceCulture);
+                return ResourceManager.GetString("SettingsWindow_addButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Address に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_addressColumn_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_addressColumn_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Assumption Mode に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_assumptionModeColumn_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_assumptionModeColumn_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Authentication Proxy に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_authenticationProxyGroup_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_authenticationProxyGroup_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Detect Automatically に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_autoDetectProxyCheckBox_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_autoDetectProxyCheckBox_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Backlog に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_backlogColumn_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_backlogColumn_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Bypass proxy server for local addresses に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_bypassProxyCheckBox_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_bypassProxyCheckBox_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Credentials に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_credentialsTab_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_credentialsTab_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Down に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_downButton_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_downButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Edit に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_editButton_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_editButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Enable System Settings Switcher に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_enableSystemSettingSwitherCheckBox_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_enableSystemSettingSwitherCheckBox_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   End Point に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_endPointColumn_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_endPointColumn_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Do _not use proxy server for addresses beginning with: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_exclusionLabel_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_exclusionLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Host Name: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_hostNameLabel_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_hostNameLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Listeners に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_listenersTab_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_listenersTab_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Misc に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_miscGroup_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_miscGroup_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Persistence に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_persistenceColumn_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_persistenceColumn_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Port に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_portColumn_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_portColumn_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Port: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_portLabel_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_portLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Proxy に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_proxyTab_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_proxyTab_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Remove に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_removeButton_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_removeButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Rese_t to Default に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_resetButton_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_resetButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Authentication Retry Count: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_retryLabel_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_retryLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Save As Default に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_saveAsDefaultButton_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_saveAsDefaultButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Settings during proxying に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_switchedSettingsGroup_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_switchedSettingsGroup_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   System Settings Switcher に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_systemSettingsSwitherGroup_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_systemSettingsSwitherGroup_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Settings に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_Title {
+            get {
+                return ResourceManager.GetString("SettingsWindow_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Up に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_upButton_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_upButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   User Name に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_userNameColumn_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_userNameColumn_Header", resourceCulture);
             }
         }
     }

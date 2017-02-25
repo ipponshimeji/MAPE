@@ -117,6 +117,12 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
   <data name="App_Title" xml:space="preserve">
     <value>認証プロキシ爆発しろ！</value>
   </data>
@@ -186,12 +192,6 @@
   <data name="CredentialDialog_Group_Persistency" xml:space="preserve">
     <value>認証情報の保存方法(_S)</value>
   </data>
-  <data name="CredentialDialog_Label_Cancel" xml:space="preserve">
-    <value>キャンセル</value>
-  </data>
-  <data name="CredentialDialog_Label_OK" xml:space="preserve">
-    <value>OK</value>
-  </data>
   <data name="CredentialDialog_Label_Password" xml:space="preserve">
     <value>パスワード(_P):</value>
   </data>
@@ -210,8 +210,104 @@
   <data name="CredentialDialog_EnableAssumptionModeCheckBox_Content" xml:space="preserve">
     <value>「Basic認証決めつけモード」を利用する(_A)</value>
   </data>
-  <data name="SettingsWindow_Notice" xml:space="preserve">
-    <value>近日実装予定</value>
+  <data name="SettingsWindow_Title" xml:space="preserve">
+    <value>設定</value>
+  </data>
+  <data name="SettingsWindow_saveAsDefaultButton_Content" xml:space="preserve">
+    <value>既定値として保存(_S)</value>
+  </data>
+  <data name="SettingsWindow_proxyTab_Header" xml:space="preserve">
+    <value>プロキシ</value>
+  </data>
+  <data name="SettingsWindow_listenersTab_Header" xml:space="preserve">
+    <value>リスナー</value>
+  </data>
+  <data name="SettingsWindow_credentialsTab_Header" xml:space="preserve">
+    <value>認証情報</value>
+  </data>
+  <data name="SettingsWindow_authenticationProxyGroup_Header" xml:space="preserve">
+    <value>認証プロキシ</value>
+  </data>
+  <data name="SettingsWindow_autoDetectProxyCheckBox_Content" xml:space="preserve">
+    <value>自動検出する(_D)</value>
+  </data>
+  <data name="SettingsWindow_hostNameLabel_Content" xml:space="preserve">
+    <value>ホスト名(_H):</value>
+  </data>
+  <data name="SettingsWindow_portLabel_Content" xml:space="preserve">
+    <value>ポート(_P):</value>
+  </data>
+  <data name="SettingsWindow_systemSettingsSwitherGroup_Header" xml:space="preserve">
+    <value>システム設定書換え</value>
+  </data>
+  <data name="SettingsWindow_enableSystemSettingSwitherCheckBox_Content" xml:space="preserve">
+    <value>システム設定書換えを有効にする(_E)</value>
+  </data>
+  <data name="SettingsWindow_switchedSettingsGroup_Header" xml:space="preserve">
+    <value>中継時の設定</value>
+  </data>
+  <data name="SettingsWindow_bypassProxyCheckBox_Content" xml:space="preserve">
+    <value>ローカルアドレスにはプロキシサーバーを使用しない(_B)</value>
+  </data>
+  <data name="SettingsWindow_exclusionLabel_Content" xml:space="preserve">
+    <value>次で始まるアドレスにはプロキシを使用しない(_N):</value>
+  </data>
+  <data name="SettingsWindow_miscGroup_Header" xml:space="preserve">
+    <value>その他</value>
+  </data>
+  <data name="SettingsWindow_retryLabel_Content" xml:space="preserve">
+    <value>認証リトライ回数(_A):</value>
+  </data>
+  <data name="SettingsWindow_addButton_Content" xml:space="preserve">
+    <value>追加(_A)</value>
+  </data>
+  <data name="SettingsWindow_removeButton_Content" xml:space="preserve">
+    <value>削除(_R)</value>
+  </data>
+  <data name="SettingsWindow_editButton_Content" xml:space="preserve">
+    <value>編集(_E)</value>
+  </data>
+  <data name="SettingsWindow_upButton_Content" xml:space="preserve">
+    <value>上へ(_U)</value>
+  </data>
+  <data name="SettingsWindow_downButton_Content" xml:space="preserve">
+    <value>下へ(_D)</value>
+  </data>
+  <data name="SettingsWindow_resetButton_Content" xml:space="preserve">
+    <value>既定値へ戻す(_T)</value>
+  </data>
+  <data name="SettingsWindow_addressColumn_Header" xml:space="preserve">
+    <value>アドレス</value>
+  </data>
+  <data name="SettingsWindow_portColumn_Header" xml:space="preserve">
+    <value>ポート</value>
+  </data>
+  <data name="SettingsWindow_backlogColumn_Header" xml:space="preserve">
+    <value>バックログ</value>
+  </data>
+  <data name="SettingsWindow_endPointColumn_Header" xml:space="preserve">
+    <value>エンドポイント</value>
+  </data>
+  <data name="SettingsWindow_persistenceColumn_Header" xml:space="preserve">
+    <value>持続性</value>
+  </data>
+  <data name="SettingsWindow_assumptionModeColumn_Header" xml:space="preserve">
+    <value>決めつけモード</value>
+  </data>
+  <data name="SettingsWindow_userNameColumn_Header" xml:space="preserve">
+    <value>ユーザー名</value>
+  </data>
+  <data name="ListenerDialog_Title" xml:space="preserve">
+    <value>リスナー</value>
+  </data>
+  <data name="ListenerDialog_addressLabel_Content" xml:space="preserve">
+    <value>アドレス(_A)</value>
+  </data>
+  <data name="ListenerDialog_portLabel_Content" xml:space="preserve">
+    <value>ポート(_P)</value>
+  </data>
+  <data name="ListenerDialog_backlogLabel_Content" xml:space="preserve">
+    <value>バックログ(_B)</value>
   </data>
   <data name="AboutWindow_Title" xml:space="preserve">
     <value>認証プロキシ爆発しろ！について</value>
@@ -221,8 +317,5 @@
   </data>
   <data name="AboutWindow_ComponentsGroupBox_Header" xml:space="preserve">
     <value>このソフトウェアは以下のコンポーネントを利用しています</value>
-  </data>
-  <data name="AboutWindow_okButton_Content" xml:space="preserve">
-    <value>OK</value>
   </data>
 </root>

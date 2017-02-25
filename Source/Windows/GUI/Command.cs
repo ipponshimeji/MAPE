@@ -32,6 +32,25 @@ namespace MAPE.Windows.GUI {
 
 		#region methods
 
+		public void SetSettings(Settings newSettings, bool save) {
+			this.Settings = newSettings;
+			if (save) {
+				string settingsFilePath = this.SettingsFilePath;
+				if (string.IsNullOrEmpty(settingsFilePath) == false) {
+					Action saveTask = () => {
+						try {
+							SaveSettingsToFile(newSettings, settingsFilePath);
+						} catch (Exception exception) {
+							LogError($"Fail to save settings: {exception.Message}");
+						}
+					};
+
+					// launch save task
+					Task.Run(saveTask);
+				}
+			}
+		}
+
 		public void SaveMainWindowSettings(Settings mainWindowSettings) {
 			string settingsFilePath = this.SettingsFilePath;
 			if (string.IsNullOrEmpty(settingsFilePath) == false) {

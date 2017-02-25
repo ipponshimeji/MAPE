@@ -172,12 +172,14 @@ namespace MAPE.Windows.GUI {
 				Debug.Assert((this.UIState & UIStateFlags.SettingsEnabled) != 0);
 
 				// open the settings window as dialog
-				window = new SettingsWindow();
+				window = new SettingsWindow(this.Command.Settings, this.Command.HasSettingsFile);
 				window.Owner = this;
 				this.settingsWindow = window;
 				try {
 					UpdateUIState();
-					window.ShowDialog();
+					if (window.ShowDialog() ?? false) {
+						this.Command.SetSettings(window.Settings, window.SaveAsDefault);
+					}
 				} finally {
 					this.settingsWindow = null;
 					UpdateUIState();
