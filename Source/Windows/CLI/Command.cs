@@ -33,7 +33,7 @@ namespace MAPE.Windows.CLI {
 
 		#region overrides/overridables - execution
 
-		protected override void ShowUsage(Settings settings) {
+		protected override void ShowUsage(SettingsData settings) {
 			Console.WriteLine(Resources.Command_Usage);
 		}
 

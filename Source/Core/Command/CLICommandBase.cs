@@ -119,7 +119,7 @@ namespace MAPE.Command {
 
 		#region overrides/overridables - argument processing
 
-		protected override bool HandleOption(string name, string value, Settings settings) {
+		protected override bool HandleOption(string name, string value, SettingsData settings) {
 			// handle option
 			bool handled = true;
 			if (AreSameOptionNames(name, OptionNames.Save)) {
@@ -149,7 +149,7 @@ namespace MAPE.Command {
 			}
 		}
 
-		public override void Execute(string commandKind, Settings settings) {
+		public override void Execute(string commandKind, SettingsData settings) {
 			// argument checks
 			Debug.Assert(commandKind != null);
 
@@ -171,7 +171,7 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected override void RunProxy(Settings settings) {
+		protected override void RunProxy(SettingsData settings) {
 			// argument checks
 			Debug.Assert(settings.IsNull == false);
 
@@ -240,7 +240,7 @@ namespace MAPE.Command {
 			return AskCredentialInfo(endPoint, realm, canSave: this.HasSettingsFile);
 		}
 
-		protected virtual void SaveSettings(Settings settings) {
+		protected virtual void SaveSettings(SettingsData settings) {
 			// argument checks
 			Debug.Assert(settings.IsNull == false);
 

@@ -7,9 +7,9 @@ namespace MAPE.Server {
     public interface IServerComponentFactory {
 		IHttpComponentFactory HttpComponentFactory { get; }
 
-		Proxy CreateProxy(Settings settings);
+		Proxy CreateProxy(SettingsData settings);
 
-		Listener CreateListener(Proxy owner, Settings settings);
+		Listener CreateListener(Proxy owner, SettingsData settings);
 
 		ConnectionCollection CreateConnectionCollection(Proxy owner);
 

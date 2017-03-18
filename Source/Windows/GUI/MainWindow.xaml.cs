@@ -82,7 +82,7 @@ namespace MAPE.Windows.GUI {
 
 		private readonly App app;
 
-		private readonly Settings settings;
+		private readonly SettingsData settings;
 
 		internal UIStateFlags UIState { get; private set; }
 
@@ -130,7 +130,7 @@ namespace MAPE.Windows.GUI {
 
 		#region creation and disposal
 
-		public MainWindow(App app, Settings settings) {
+		public MainWindow(App app, SettingsData settings) {
 			// argument checks
 			if (app == null) {
 				throw new ArgumentNullException(nameof(app));
@@ -231,9 +231,9 @@ namespace MAPE.Windows.GUI {
 			base.OnInitialized(e);
 
 			// initialize this class level
-			Settings settings = this.Command.GUISettings;
+			SettingsData settings = this.Command.GUISettings;
 			this.logLevelMenuItemGroup = InitializeLogLevelUI(Logger.LogLevel);
-			this.chaseLastLogMenuItem.IsChecked = settings.GetBooleanValue(GUISettings.SettingNames.ChaseLastLog, defaultValue: true);
+			this.chaseLastLogMenuItem.IsChecked = settings.GetBooleanValue(OldGUISettings.SettingNames.ChaseLastLog, defaultValue: true);
 
 			this.app.UIStateChanged += app_UIStateChanged;
 			OnUIStateChanged(GetUIState());
@@ -351,7 +351,7 @@ namespace MAPE.Windows.GUI {
 		}
 
 		private void RestoreLayout() {
-			Settings settings = this.settings;
+			SettingsData settings = this.settings;
 
 			// placement of this window
 			RestoreWindowPlacement(settings);
@@ -363,7 +363,7 @@ namespace MAPE.Windows.GUI {
 		}
 
 		private void SaveLayout() {
-			Settings settings = this.settings;
+			SettingsData settings = this.settings;
 			string prevSettingsText = settings.ToString();
 
 			// column widths of logListView
@@ -380,8 +380,8 @@ namespace MAPE.Windows.GUI {
 			return;
 		}
 
-		private void RestoreWindowPlacement(Settings settings) {
-			NativeMethods.WINDOWPLACEMENT? nwp = settings.GetWINDOWPLACEMENTValue(GUISettings.SettingNames.Placement);
+		private void RestoreWindowPlacement(SettingsData settings) {
+			NativeMethods.WINDOWPLACEMENT? nwp = settings.GetWINDOWPLACEMENTValue(OldGUISettings.SettingNames.Placement);
 			if (nwp.HasValue) {
 				// restore the placement of this window
 				NativeMethods.WINDOWPLACEMENT wp = nwp.Value;
@@ -395,21 +395,21 @@ namespace MAPE.Windows.GUI {
 			return;
 		}
 
-		private void SaveWindowPlacement(Settings settings) {
+		private void SaveWindowPlacement(SettingsData settings) {
 			// get placement information of this window from Win32.
 			NativeMethods.WINDOWPLACEMENT wp = new NativeMethods.WINDOWPLACEMENT();
 			wp.Length = Marshal.SizeOf(typeof(NativeMethods.WINDOWPLACEMENT));
 			IntPtr hwnd = new WindowInteropHelper(this).Handle;
 			if (NativeMethods.GetWindowPlacement(hwnd, out wp)) {
 				// save the placement of this window
-				settings.SetWINDOWPLACEMENTValue(GUISettings.SettingNames.Placement, wp, omitDefault: false);
+				settings.SetWINDOWPLACEMENTValue(OldGUISettings.SettingNames.Placement, wp, omitDefault: false);
 			}
 
 			return;
 		}
 
-		private void RestoreLogListViewColumnWidths(Settings settings) {
-			IEnumerable<double> widths = settings.GetDoubleArrayValue(GUISettings.SettingNames.LogListViewColumnWidths, defaultValue: null, createIfNotExist: false);
+		private void RestoreLogListViewColumnWidths(SettingsData settings) {
+			IEnumerable<double> widths = settings.GetDoubleArrayValue(OldGUISettings.SettingNames.LogListViewColumnWidths, defaultValue: null, createIfNotExist: false);
 			if (widths != null) {
 				GridView view = this.logListView.View as GridView;
 				if (view != null) {
@@ -428,11 +428,11 @@ namespace MAPE.Windows.GUI {
 			return;
 		}
 
-		private void SaveLogListViewColumnWidths(Settings settings) {
+		private void SaveLogListViewColumnWidths(SettingsData settings) {
 			GridView view = this.logListView.View as GridView;
 			if (view != null) {
 				double[] widths = (from column in view.Columns select column.Width).ToArray();
-				settings.SetDoubleArrayValue(GUISettings.SettingNames.LogListViewColumnWidths, widths);
+				settings.SetDoubleArrayValue(OldGUISettings.SettingNames.LogListViewColumnWidths, widths);
 			}
 
 			return;
@@ -468,17 +468,17 @@ namespace MAPE.Windows.GUI {
 
 		private string GetProxyInfo() {
 			StringBuilder buf = new StringBuilder("listening at ");
-			Settings rootSettings = this.Command.Settings;
-			Settings proxySettings = rootSettings.GetProxySettings(createIfNotExist: false);
+			SettingsData rootSettings = this.Command.Settings;
+			SettingsData proxySettings = rootSettings.GetProxySettings(createIfNotExist: false);
 
 			// MainListener
-			Settings listenerSettings = proxySettings.GetObjectValue(Proxy.SettingNames.MainListener);
+			SettingsData listenerSettings = proxySettings.GetObjectValue(Proxy.SettingNames.MainListener);
 			buf.Append(GetListenerEndpoint(listenerSettings));
 
 			// AdditionalListeners
-			IEnumerable<Settings> additionalListeners = proxySettings.GetObjectArrayValue(Proxy.SettingNames.AdditionalListeners, null);
+			IEnumerable<SettingsData> additionalListeners = proxySettings.GetObjectArrayValue(Proxy.SettingNames.AdditionalListeners, null);
 			if (additionalListeners != null) {
-				foreach (Settings settings in additionalListeners) {
+				foreach (SettingsData settings in additionalListeners) {
 					buf.Append(", ");
 					buf.Append(GetListenerEndpoint(settings));
 				}
@@ -487,7 +487,7 @@ namespace MAPE.Windows.GUI {
 			return buf.ToString();
 		}
 
-		private string GetListenerEndpoint(Settings listenerSettings) {
+		private string GetListenerEndpoint(SettingsData listenerSettings) {
 			string address;
 			int port;
 			if (listenerSettings.IsNull) {

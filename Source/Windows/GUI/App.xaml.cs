@@ -148,7 +148,7 @@ namespace MAPE.Windows.GUI {
 			if (window != null) {
 				window.Activate();
 			} else {
-				Settings mainWindowSettings = this.Command.GUISettings.GetObjectValue(GUISettings.SettingNames.MainWindow, Settings.EmptySettingsGenerator, createIfNotExist: true);
+				SettingsData mainWindowSettings = this.Command.GUISettings.GetObjectValue(OldGUISettings.SettingNames.MainWindow, SettingsData.EmptySettingsGenerator, createIfNotExist: true);
 				window = new MainWindow(this, mainWindowSettings);
 				window.UIStateChanged += mainWindow_UIStateChanged;
 				window.Closed += mainWindow_Closed;

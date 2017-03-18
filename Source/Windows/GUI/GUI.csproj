@@ -66,6 +66,7 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ComponentFactoryForWindowsGUI.cs" />
     <Compile Include="ListenerDialog.xaml.cs">
       <DependentUpon>ListenerDialog.xaml</DependentUpon>
     </Compile>
@@ -79,6 +80,9 @@
     <Compile Include="AboutWindow.xaml.cs">
       <DependentUpon>AboutWindow.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Settings\MainWindowSettings.cs" />
+    <Compile Include="Settings\GUISettings.cs" />
+    <Compile Include="Settings\CommandForWindowsGUISettings.cs" />
     <Page Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

@@ -5,6 +5,7 @@ using MAPE.ComponentBase;
 using MAPE.Http;
 using MAPE.Server;
 using MAPE.Command;
+using MAPE.Command.Settings;
 
 
 namespace MAPE {
@@ -264,7 +265,11 @@ namespace MAPE {
 			memoryBlockCache.ReleaseMemoryBlock(instance);
 		}
 
-		public virtual SystemSettingsSwitcher CreateSystemSettingsSwitcher(CommandBase owner, Settings settings, Proxy proxy) {
+		public virtual CommandSettings CreateCommandSettings(IObjectData data) {
+			return new CommandSettings(data);
+		}
+
+		public virtual SystemSettingsSwitcher CreateSystemSettingsSwitcher(CommandBase owner, SettingsData settings, Proxy proxy) {
 			return new SystemSettingsSwitcher(owner, settings, proxy);
 		}
 
@@ -279,11 +284,11 @@ namespace MAPE {
 			}
 		}
 
-		public virtual Proxy CreateProxy(Settings settings) {
+		public virtual Proxy CreateProxy(SettingsData settings) {
 			return new Proxy(this, settings);
 		}
 
-		public virtual Listener CreateListener(Proxy owner, Settings settings) {
+		public virtual Listener CreateListener(Proxy owner, SettingsData settings) {
 			return new Listener(owner, settings);
 		}
 

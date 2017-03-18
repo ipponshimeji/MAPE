@@ -22,7 +22,7 @@ namespace MAPE.Windows.GUI {
 	public partial class SettingsWindow: Window {
 		#region data
 
-		public Settings Settings {
+		public SettingsData Settings {
 			get; private set;
 		}
 
@@ -35,7 +35,7 @@ namespace MAPE.Windows.GUI {
 
 		#region creation and disposal
 
-		internal SettingsWindow(Settings settings, bool enableSaveAsDefault) {
+		internal SettingsWindow(SettingsData settings, bool enableSaveAsDefault) {
 			// initialize members
 			this.Settings = settings;
 			this.SaveAsDefault = false;
@@ -57,14 +57,14 @@ namespace MAPE.Windows.GUI {
 			base.OnInitialized(e);
 
 			// Root
-			Settings rootSettings = this.Settings;
+			SettingsData rootSettings = this.Settings;
 
 			// SystemSettingsSwitcher
-			Settings systemSettingsSwitcherSettings = rootSettings.GetSystemSettingSwitcherSettings();
-			Settings.Value value = systemSettingsSwitcherSettings.GetValue(SystemSettingsSwitcher.SettingNames.ActualProxy);
+			SettingsData systemSettingsSwitcherSettings = rootSettings.GetSystemSettingSwitcherSettings();
+			SettingsData.Value value = systemSettingsSwitcherSettings.GetValue(SystemSettingsSwitcher.SettingNames.ActualProxy);
 			if (value.IsNull == false) {
 				this.autoDetectProxyCheckBox.IsChecked = false;
-				Settings actualProxySettings = value.GetObjectValue();
+				SettingsData actualProxySettings = value.GetObjectValue();
 				this.hostNameTextBox.Text = actualProxySettings.GetStringValue(SystemSettingsSwitcher.SettingNames.Host, string.Empty);
 				this.portTextBox.Text = "";
 			} else {

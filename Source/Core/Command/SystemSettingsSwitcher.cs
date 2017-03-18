@@ -10,8 +10,8 @@ namespace MAPE.Command {
 	public static class SystemSettingsSwitcherSettingsExtensions {
 		#region methods
 
-		public static WebProxy GetWebProxyValue(this Settings settings, string settingName, WebProxy defaultValue) {
-			Settings.Value value = settings.GetValue(settingName);
+		public static WebProxy GetWebProxyValue(this SettingsData settings, string settingName, WebProxy defaultValue) {
+			SettingsData.Value value = settings.GetValue(settingName);
 			if (value.IsNull == false) {
 				return value.GetObjectValue().CreateWebProxy();
 			} else {
@@ -19,9 +19,9 @@ namespace MAPE.Command {
 			}
 		}
 
-		public static WebProxy CreateWebProxy(this Settings settings) {
-			Settings.Value host = settings.GetValue(SettingNames.Host);
-			Settings.Value port = settings.GetValue(SettingNames.Port);
+		public static WebProxy CreateWebProxy(this SettingsData settings) {
+			SettingsData.Value host = settings.GetValue(SettingNames.Host);
+			SettingsData.Value port = settings.GetValue(SettingNames.Port);
 			if (host.IsNull || port.IsNull) {
 				throw new FormatException($"Both '{SettingNames.Host}' and '{SettingNames.Port}' settings are indispensable.");
 			}
@@ -71,7 +71,7 @@ namespace MAPE.Command {
 		/// <param name="owner"></param>
 		/// <param name="settings"></param>
 		/// <param name="proxy">null means initialization for backup.</param>
-		public SystemSettingsSwitcher(CommandBase owner, Settings settings, Proxy proxy) {
+		public SystemSettingsSwitcher(CommandBase owner, SettingsData settings, Proxy proxy) {
 			// argument checks
 			if (owner == null) {
 				throw new ArgumentNullException(nameof(owner));
@@ -164,7 +164,7 @@ namespace MAPE.Command {
 
 		protected SystemSettingsSwitcher GetCurrentSettings() {
 			// create a new SystemSettingsSwitcher instance
-			SystemSettingsSwitcher switcher = this.Owner.ComponentFactory.CreateSystemSettingsSwitcher(this.Owner, Settings.NullSettings, null);
+			SystemSettingsSwitcher switcher = this.Owner.ComponentFactory.CreateSystemSettingsSwitcher(this.Owner, SettingsData.NullSettings, null);
 
 			// load the current system settings into the instance
 			switcher.LoadCurrentSettings();

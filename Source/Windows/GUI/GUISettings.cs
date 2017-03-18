@@ -5,7 +5,7 @@ using MAPE.Utils;
 
 
 namespace MAPE.Windows.GUI {
-	internal static class GUISettings {
+	internal static class OldGUISettings {
 		#region types
 
 		public static class SettingNames {
@@ -36,12 +36,12 @@ namespace MAPE.Windows.GUI {
 
 		#region methods
 
-		public static NativeMethods.POINT GetPOINTValue(this Settings settings, string settingName, NativeMethods.POINT defaultValue) {
-			Settings.Value value = settings.GetValue(settingName);
+		public static NativeMethods.POINT GetPOINTValue(this SettingsData settings, string settingName, NativeMethods.POINT defaultValue) {
+			SettingsData.Value value = settings.GetValue(settingName);
 			if (value.IsNull) {
 				return defaultValue;
 			} else {
-				Settings subSettings = value.GetObjectValue();
+				SettingsData subSettings = value.GetObjectValue();
 				int x = subSettings.GetInt32Value(SettingNames.X, defaultValue.X);
 				int y = subSettings.GetInt32Value(SettingNames.Y, defaultValue.Y);
 
@@ -49,22 +49,22 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
-		public static void SetPOINTValue(this Settings settings, string settingName, NativeMethods.POINT value, bool omitDefault, NativeMethods.POINT defaultValue = default(NativeMethods.POINT)) {
+		public static void SetPOINTValue(this SettingsData settings, string settingName, NativeMethods.POINT value, bool omitDefault, NativeMethods.POINT defaultValue = default(NativeMethods.POINT)) {
 			if (omitDefault && value == defaultValue) {
 				settings.RemoveValue(settingName);
 			} else {
-				Settings subSettings = settings.GetObjectValue(settingName, Settings.EmptySettingsGenerator, createIfNotExist: true);
+				SettingsData subSettings = settings.GetObjectValue(settingName, SettingsData.EmptySettingsGenerator, createIfNotExist: true);
 				subSettings.SetInt32Value(SettingNames.X, value.X);
 				subSettings.SetInt32Value(SettingNames.Y, value.Y);
 			}
 		}
 
-		public static NativeMethods.RECT GetRECTValue(this Settings settings, string settingName, NativeMethods.RECT defaultValue) {
-			Settings.Value value = settings.GetValue(settingName);
+		public static NativeMethods.RECT GetRECTValue(this SettingsData settings, string settingName, NativeMethods.RECT defaultValue) {
+			SettingsData.Value value = settings.GetValue(settingName);
 			if (value.IsNull) {
 				return defaultValue;
 			} else {
-				Settings subSettings = value.GetObjectValue();
+				SettingsData subSettings = value.GetObjectValue();
 				int left = subSettings.GetInt32Value(SettingNames.Left, defaultValue.Left);
 				int top = subSettings.GetInt32Value(SettingNames.Top, defaultValue.Top);
 				int right = subSettings.GetInt32Value(SettingNames.Right, defaultValue.Right);
@@ -74,11 +74,11 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
-		public static void SetRECTValue(this Settings settings, string settingName, NativeMethods.RECT value, bool omitDefault, NativeMethods.RECT defaultValue = default(NativeMethods.RECT)) {
+		public static void SetRECTValue(this SettingsData settings, string settingName, NativeMethods.RECT value, bool omitDefault, NativeMethods.RECT defaultValue = default(NativeMethods.RECT)) {
 			if (omitDefault && value == defaultValue) {
 				settings.RemoveValue(settingName);
 			} else {
-				Settings subSettings = settings.GetObjectValue(settingName, Settings.EmptySettingsGenerator, createIfNotExist: true);
+				SettingsData subSettings = settings.GetObjectValue(settingName, SettingsData.EmptySettingsGenerator, createIfNotExist: true);
 				subSettings.SetInt32Value(SettingNames.Left, value.Left);
 				subSettings.SetInt32Value(SettingNames.Top, value.Top);
 				subSettings.SetInt32Value(SettingNames.Right, value.Right);
@@ -87,12 +87,12 @@ namespace MAPE.Windows.GUI {
 		}
 
 
-		public static NativeMethods.WINDOWPLACEMENT? GetWINDOWPLACEMENTValue(this Settings settings, string settingName) {
-			Settings.Value value = settings.GetValue(settingName);
+		public static NativeMethods.WINDOWPLACEMENT? GetWINDOWPLACEMENTValue(this SettingsData settings, string settingName) {
+			SettingsData.Value value = settings.GetValue(settingName);
 			if (value.IsNull) {
 				return null;
 			} else {
-				Settings subSettings = value.GetObjectValue();
+				SettingsData subSettings = value.GetObjectValue();
 				NativeMethods.WINDOWPLACEMENT wp = new NativeMethods.WINDOWPLACEMENT();
 				wp.Flags = subSettings.GetInt32Value(SettingNames.Flags, wp.Flags);
 				wp.ShowCmd = subSettings.GetInt32Value(SettingNames.ShowCmd, wp.ShowCmd);
@@ -104,12 +104,12 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
-		public static void SetWINDOWPLACEMENTValue(this Settings settings, string settingName, NativeMethods.WINDOWPLACEMENT? value, bool omitDefault) {
+		public static void SetWINDOWPLACEMENTValue(this SettingsData settings, string settingName, NativeMethods.WINDOWPLACEMENT? value, bool omitDefault) {
 			if (omitDefault && value == null) {
 				settings.RemoveValue(settingName);
 			} else {
 				NativeMethods.WINDOWPLACEMENT actualValue = value.HasValue ? value.Value : new NativeMethods.WINDOWPLACEMENT();
-				Settings subSettings = settings.GetObjectValue(settingName, Settings.EmptySettingsGenerator, createIfNotExist: true);
+				SettingsData subSettings = settings.GetObjectValue(settingName, SettingsData.EmptySettingsGenerator, createIfNotExist: true);
 				subSettings.SetInt32Value(SettingNames.Flags, actualValue.Flags);
 				subSettings.SetInt32Value(SettingNames.ShowCmd, actualValue.ShowCmd);
 				subSettings.SetPOINTValue(SettingNames.MinPosition, actualValue.MinPosition, omitDefault: false);

@@ -20,7 +20,7 @@ namespace MAPE.Windows.GUI {
 
 		#region creation and disposal
 
-		public Command(): base(new ComponentFactoryForWindows()) {
+		public Command(): base(new ComponentFactoryForWindowsGUI()) {
 			// initialize members
 			this.ComponentName = "MAPE GUI";
 
@@ -32,7 +32,7 @@ namespace MAPE.Windows.GUI {
 
 		#region methods
 
-		public void SetSettings(Settings newSettings, bool save) {
+		public void SetSettings(SettingsData newSettings, bool save) {
 			this.Settings = newSettings;
 			if (save) {
 				string settingsFilePath = this.SettingsFilePath;
@@ -51,14 +51,14 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
-		public void SaveMainWindowSettings(Settings mainWindowSettings) {
+		public void SaveMainWindowSettings(SettingsData mainWindowSettings) {
 			string settingsFilePath = this.SettingsFilePath;
 			if (string.IsNullOrEmpty(settingsFilePath) == false) {
 				Action saveTask = () => {
 					try {
-						Settings settings = LoadSettingsFromFile(false, settingsFilePath);
-						Settings guiSettings = settings.GetObjectValue(SettingNames.GUI, Settings.EmptySettingsGenerator, createIfNotExist: true);
-						guiSettings.SetObjectValue(MAPE.Windows.GUI.GUISettings.SettingNames.MainWindow, mainWindowSettings, omitIfNull: true);
+						SettingsData settings = LoadSettingsFromFile(false, settingsFilePath);
+						SettingsData guiSettings = settings.GetObjectValue(SettingNames.GUI, SettingsData.EmptySettingsGenerator, createIfNotExist: true);
+						guiSettings.SetObjectValue(MAPE.Windows.GUI.OldGUISettings.SettingNames.MainWindow, mainWindowSettings, omitIfNull: true);
 
 						SaveSettingsToFile(settings, settingsFilePath);
 					} catch (Exception exception) {
@@ -78,12 +78,12 @@ namespace MAPE.Windows.GUI {
 
 		#region overrides/overridables - execution
 
-		protected override void ShowUsage(Settings settings) {
+		protected override void ShowUsage(SettingsData settings) {
 			// show the Usage page in the browser
 			Process.Start(GetUsagePagePath());
 		}
 
-		protected override void RunProxy(Settings settings) {
+		protected override void RunProxy(SettingsData settings) {
 			// state checks
 			if (this.app != null) {
 				throw new InvalidOperationException();

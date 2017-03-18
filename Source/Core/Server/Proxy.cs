@@ -17,16 +17,16 @@ namespace MAPE.Server {
 	public static class ProxySettingsExtensions {
 		#region methods
 
-		public static List<Listener> GetListeners(this Settings settings, Proxy proxy) {
+		public static List<Listener> GetListeners(this SettingsData settings, Proxy proxy) {
 			List<Listener> listeners = new List<Listener>();
 
 			// MainListener
-			Settings mainListenerSettings = settings.GetObjectValue(Proxy.SettingNames.MainListener);
+			SettingsData mainListenerSettings = settings.GetObjectValue(Proxy.SettingNames.MainListener);
 			Listener listener = proxy.ComponentFactory.CreateListener(proxy, mainListenerSettings);
 			listeners.Add(listener);
 
 			// AdditionalListeners
-			IEnumerable<Settings> additionalListenerSettings = settings.GetObjectArrayValue(Proxy.SettingNames.AdditionalListeners, defaultValue: null);
+			IEnumerable<SettingsData> additionalListenerSettings = settings.GetObjectArrayValue(Proxy.SettingNames.AdditionalListeners, defaultValue: null);
 			if (additionalListenerSettings != null) {
 				Listener[] additionalListeners = (
 					from listenerSettings in additionalListenerSettings
@@ -38,7 +38,7 @@ namespace MAPE.Server {
 			return listeners;
 		}
 
-		public static void SetListeners(this Settings settings, List<Listener> value, bool omitDefault) {
+		public static void SetListeners(this SettingsData settings, List<Listener> value, bool omitDefault) {
 			// argument checks
 			if (value == null) {
 				throw new ArgumentNullException(nameof(value));
@@ -56,7 +56,7 @@ namespace MAPE.Server {
 			}
 
 			// AdditionalListeners 
-			Settings[] additionalListeners = value.GetRange(1, value.Count - 1).Select(l => l.GetSettings(omitDefault)).ToArray();
+			SettingsData[] additionalListeners = value.GetRange(1, value.Count - 1).Select(l => l.GetSettings(omitDefault)).ToArray();
 			if (omitDefault && additionalListeners.Length <= 0) {
 				settings.RemoveValue(Proxy.SettingNames.AdditionalListeners);
 			} else {
@@ -219,7 +219,7 @@ namespace MAPE.Server {
 
 		#region creation and disposal
 
-		public Proxy(IServerComponentFactory componentFactory, Settings settings) {
+		public Proxy(IServerComponentFactory componentFactory, SettingsData settings) {
 			// argument checks
 			if (componentFactory == null) {
 				componentFactory = new ComponentFactory();
@@ -552,7 +552,7 @@ namespace MAPE.Server {
 
 		#region overrides
 
-		public override void AddSettings(Settings settings, bool omitDefault) {
+		public override void AddSettings(SettingsData settings, bool omitDefault) {
 			// argument checks
 			Debug.Assert(settings.IsNull == false);
 

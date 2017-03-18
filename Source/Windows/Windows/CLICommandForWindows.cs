@@ -31,7 +31,7 @@ namespace MAPE.Windows {
 
 		#region overrides/overridables - argument processing
 
-		protected override bool HandleOption(string name, string value, Settings settings) {
+		protected override bool HandleOption(string name, string value, SettingsData settings) {
 			// handle option
 			bool handled = true;
 			if (AreSameOptionNames(name, OptionNames.ProxyOverride)) {
@@ -48,7 +48,7 @@ namespace MAPE.Windows {
 
 		#region overrides/overridables - execution
 
-		protected override void RunProxy(Settings settings) {
+		protected override void RunProxy(SettingsData settings) {
 			// prepare Windows system event handlers
 			SessionEndingEventHandler onSessionEnding = (o, e) => {
 				AwakeControllerThread(ControllerThreadEventKind.Quit);

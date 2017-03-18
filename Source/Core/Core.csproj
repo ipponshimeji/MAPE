@@ -62,9 +62,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Command\Settings\CredentialSettings.cs" />
+    <Compile Include="Command\Settings\CommandSettings.cs" />
     <Compile Include="Command\CredentialInfo.cs" />
     <Compile Include="Command\GUICommandBase.cs" />
     <Compile Include="Command\CLICommandBase.cs" />
+    <Compile Include="Command\Settings\ActualProxySettings.cs" />
+    <Compile Include="Command\Settings\SystemSettingsSwitcherSettings.cs" />
     <Compile Include="Command\SystemSettingsSwitcher.cs" />
     <Compile Include="ComponentBase\ComponentLoggerExtensions.cs" />
     <Compile Include="ComponentBase\IComponentLogger.cs" />
@@ -89,11 +93,21 @@
     <Compile Include="Server\IServerComponentFactory.cs" />
     <Compile Include="Server\ReconnectableTcpClient.cs" />
     <Compile Include="Server\IProxyRunner.cs" />
+    <Compile Include="Server\Settings\ProxySettings.cs" />
+    <Compile Include="Server\Settings\ListenerSettings.cs" />
     <Compile Include="Utils\ColorConsoleLogMonitor.cs" />
     <Compile Include="Utils\ConsoleLogMonitor.cs" />
+    <Compile Include="Utils\IObjectDataValue.cs" />
+    <Compile Include="Utils\ISavableToObjectData.cs" />
+    <Compile Include="Utils\IObjectDataValueFactory.cs" />
+    <Compile Include="Utils\ObjectDataValueType.cs" />
+    <Compile Include="Utils\ObjectDataExtension.cs" />
+    <Compile Include="Utils\JsonObjectData.cs" />
+    <Compile Include="Utils\IObjectData.cs" />
     <Compile Include="Utils\Log.cs" />
     <Compile Include="Utils\ILogMonitor.cs" />
     <Compile Include="Utils\Settings.cs" />
+    <Compile Include="Utils\SettingsData.cs" />
     <Compile Include="Utils\Util.cs" />
     <Compile Include="Command\CredentialPersistence.cs" />
     <Compile Include="Utils\Logger.cs" />

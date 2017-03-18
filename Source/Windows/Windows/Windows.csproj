@@ -63,6 +63,8 @@
     </Compile>
     <Compile Include="ComponentFactoryForWindows.cs" />
     <Compile Include="CLICommandForWindows.cs" />
+    <Compile Include="Settings\CommandForWindowsSettings.cs" />
+    <Compile Include="Settings\SystemSettingsSwitcherForWindowsSettings.cs" />
     <Compile Include="SystemSettingsSwitcherForWindows.cs" />
   </ItemGroup>
   <ItemGroup>

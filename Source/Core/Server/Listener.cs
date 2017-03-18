@@ -13,8 +13,8 @@ namespace MAPE.Server {
 	public static class ListenerSettingsExtensions {
 		#region methods
 
-		public static IPAddress GetIPAddressValue(this Settings settings, string settingName, IPAddress defaultValue) {
-			Settings.Value value = settings.GetValue(settingName);
+		public static IPAddress GetIPAddressValue(this SettingsData settings, string settingName, IPAddress defaultValue) {
+			SettingsData.Value value = settings.GetValue(settingName);
 			if (value.IsNull == false) {
 				return IPAddress.Parse(value.GetStringValue());
 			} else {
@@ -22,7 +22,7 @@ namespace MAPE.Server {
 			}
 		}
 
-		public static void SetIPAddressValue(this Settings settings, string settingName, IPAddress value, bool omitDefault, IPAddress defaultValue) {
+		public static void SetIPAddressValue(this SettingsData settings, string settingName, IPAddress value, bool omitDefault, IPAddress defaultValue) {
 			if (omitDefault && value == defaultValue) {
 				settings.RemoveValue(settingName);
 			} else {
@@ -152,7 +152,7 @@ namespace MAPE.Server {
 
 		#region creation and disposal
 
-		public Listener(Proxy owner, Settings settings) {
+		public Listener(Proxy owner, SettingsData settings) {
 			// argument checks
 			if (owner == null) {
 				throw new ArgumentNullException(nameof(owner));
@@ -286,7 +286,7 @@ namespace MAPE.Server {
 
 		#region overrides
 
-		public override void AddSettings(Settings settings, bool omitDefault) {
+		public override void AddSettings(SettingsData settings, bool omitDefault) {
 			// argument checks
 			Debug.Assert(settings.IsNull == false);
 

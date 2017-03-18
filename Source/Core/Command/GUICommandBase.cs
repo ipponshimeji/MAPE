@@ -36,7 +36,7 @@ namespace MAPE.Command {
 
 		#region data
 
-		private Settings settings;
+		private SettingsData settings;
 
 		private RunningProxyState runningProxyState = null;
 
@@ -62,7 +62,7 @@ namespace MAPE.Command {
 			}
 		}
 
-		public Settings Settings {
+		public SettingsData Settings {
 			get {
 				return this.settings;
 			}
@@ -74,9 +74,9 @@ namespace MAPE.Command {
 			}
 		}
 
-		public Settings GUISettings {
+		public SettingsData GUISettings {
 			get {
-				return this.settings.GetObjectValue(SettingNames.GUI, Settings.EmptySettingsGenerator, createIfNotExist: true);
+				return this.settings.GetObjectValue(SettingNames.GUI, SettingsData.EmptySettingsGenerator, createIfNotExist: true);
 			}
 		}
 
@@ -166,7 +166,7 @@ namespace MAPE.Command {
 
 		#region overrides/overridables - argument processing
 
-		protected override bool HandleOption(string name, string value, Settings settings) {
+		protected override bool HandleOption(string name, string value, SettingsData settings) {
 			// handle option
 			bool handled = true;
 			if (AreSameOptionNames(name, OptionNames.Start)) {
@@ -183,7 +183,7 @@ namespace MAPE.Command {
 
 		#region overrides/overridables - execution
 
-		public override void Execute(string commandKind, Settings settings) {
+		public override void Execute(string commandKind, SettingsData settings) {
 			// save the settings
 			this.settings = settings;
 

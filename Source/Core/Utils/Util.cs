@@ -1,12 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Reflection;
 using System.Threading.Tasks;
 
 
 namespace MAPE.Utils {
 	public static class Util {
+		#region constants
+
+		public const int MaxBackupHistory = 99;
+
+		#endregion
+
+
 		#region methods - disposing
 
 		public static void DisposeWithoutFail(IDisposable target, string errorLogTemplate = null) {
@@ -75,6 +83,49 @@ namespace MAPE.Utils {
 
 		public static string NormalizeNullToEmpty(string value) {
 			return value ?? string.Empty;
+		}
+
+		public static void BackupAndSave(string filePath, Action<string> saveTo, int backupHistory) {
+			// argument checks
+			if (filePath == null) {
+				throw new ArgumentNullException(nameof(filePath));
+			}
+			if (saveTo == null) {
+				throw new ArgumentNullException(nameof(saveTo));
+			}
+			if (backupHistory < 0 || MaxBackupHistory < backupHistory) {
+				throw new ArgumentOutOfRangeException(nameof(backupHistory));
+			}
+
+			// create folder if it does not exist
+			string folderPath = Path.GetDirectoryName(filePath);
+			if (Directory.Exists(folderPath) == false) {
+				Directory.CreateDirectory(folderPath);
+			}
+
+			// save to the temp file
+			string tempFilePath = string.Concat(filePath, ".tmp");
+			File.Delete(tempFilePath);
+			saveTo(tempFilePath);
+
+			// rotate backup files
+			Func<int, string> getBackupFilePath = (history) => {
+				return $"{filePath}.{history.ToString("D2")}.bak";
+			};
+
+			string backupToFilePath = getBackupFilePath(backupHistory + 1);
+			File.Delete(backupToFilePath);
+			for (int i = backupHistory; 0 <= i; --i) {
+				string backupFromFilePath = (i == 0)? filePath: getBackupFilePath(i);
+				if (File.Exists(backupFromFilePath)) {
+					File.Move(backupFromFilePath, backupToFilePath);
+				}
+				backupToFilePath = backupFromFilePath;
+			}
+			Debug.Assert(backupToFilePath == filePath);
+			File.Move(tempFilePath, backupToFilePath);
+
+			return;
 		}
 
 		#endregion

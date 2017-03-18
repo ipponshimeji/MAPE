@@ -82,7 +82,7 @@ namespace MAPE.Windows {
 
 		#region creation and disposal
 
-		public SystemSettingsSwitcherForWindows(CommandBase owner, Settings settings, Proxy proxy) : base(owner, settings, proxy) {
+		public SystemSettingsSwitcherForWindows(CommandBase owner, SettingsData settings, Proxy proxy) : base(owner, settings, proxy) {
 			// argument checks
 			// settings can contain null
 

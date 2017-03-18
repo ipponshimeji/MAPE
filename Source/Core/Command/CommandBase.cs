@@ -27,32 +27,32 @@ namespace MAPE.Command {
 
 		#region methods
 
-		public static CredentialPersistence GetCredentialPersistenceValue(this Settings settings, string settingName, CredentialPersistence defaultValue, bool createIfNotExist = false) {
+		public static CredentialPersistence GetCredentialPersistenceValue(this SettingsData settings, string settingName, CredentialPersistence defaultValue, bool createIfNotExist = false) {
 			return (CredentialPersistence)settings.GetEnumValue(settingName, typeof(CredentialPersistence), defaultValue, createIfNotExist);
 		}
 
-		public static void SetCredentialPersistenceValue(this Settings settings, string settingName, CredentialPersistence value, bool omitDefault, CredentialPersistence defaultValue) {
+		public static void SetCredentialPersistenceValue(this SettingsData settings, string settingName, CredentialPersistence value, bool omitDefault, CredentialPersistence defaultValue) {
 			settings.SetEnumValue(settingName, value, omitDefault, defaultValue);
 		}
 
-		public static TraceLevel GetTraceLevelValue(this Settings settings, string settingName, TraceLevel defaultValue, bool createIfNotExist = false) {
+		public static TraceLevel GetTraceLevelValue(this SettingsData settings, string settingName, TraceLevel defaultValue, bool createIfNotExist = false) {
 			return (TraceLevel)settings.GetEnumValue(settingName, typeof(TraceLevel), defaultValue, createIfNotExist);
 		}
 
-		public static void SetTraceLevelValue(this Settings settings, string settingName, TraceLevel value, bool omitDefault, TraceLevel defaultValue) {
+		public static void SetTraceLevelValue(this SettingsData settings, string settingName, TraceLevel value, bool omitDefault, TraceLevel defaultValue) {
 			settings.SetEnumValue(settingName, value, omitDefault, defaultValue);
 		}
 
-		public static CultureInfo GetCultureInfoValue(this Settings settings, string settingName, CultureInfo defaultValue, bool createIfNotExist = false) {
+		public static CultureInfo GetCultureInfoValue(this SettingsData settings, string settingName, CultureInfo defaultValue, bool createIfNotExist = false) {
 			string value = settings.GetStringValue(settingName, null);
 			return (value == null) ? null : new CultureInfo(value);
 		}
 
-		public static IEnumerable<CredentialInfo> GetCredentialsValue(this Settings settings, string settingName) {
+		public static IEnumerable<CredentialInfo> GetCredentialsValue(this SettingsData settings, string settingName) {
 			CredentialInfo[] credentials = null;
 
 			// the value is an array of CredentialInfo object
-			IEnumerable<Settings> credentialsSettings = settings.GetObjectArrayValue(settingName, defaultValue: null);
+			IEnumerable<SettingsData> credentialsSettings = settings.GetObjectArrayValue(settingName, defaultValue: null);
 			if (credentialsSettings != null) {
 				credentials = (
 					from subSettings in credentialsSettings
@@ -63,7 +63,7 @@ namespace MAPE.Command {
 			return credentials;
 		}
 
-		public static CredentialInfo CreateCredentialInfo(this Settings settings) {
+		public static CredentialInfo CreateCredentialInfo(this SettingsData settings) {
 			string endPoint = settings.GetStringValue(SettingNames.EndPoint, defaultValue: string.Empty);
 			string userName = settings.GetStringValue(SettingNames.UserName, defaultValue: string.Empty);
 			string protectedPassword = settings.GetStringValue(SettingNames.ProtectedPassword, defaultValue: null);
@@ -74,14 +74,14 @@ namespace MAPE.Command {
 			return new CredentialInfo(endPoint, userName, password, persistence, enableAssumptionMode);
 		}
 
-		public static void SetCredentialsValue(this Settings settings, string settingName, IEnumerable<CredentialInfo> value, bool omitDefault) {
+		public static void SetCredentialsValue(this SettingsData settings, string settingName, IEnumerable<CredentialInfo> value, bool omitDefault) {
 			// argument checks
 			// value can be null
 
 			// set the array of CredentialInfo settings
-			Settings[] settingsArray;
+			SettingsData[] settingsArray;
 			if (value == null) {
-				settingsArray = Settings.EmptySettingsArray;
+				settingsArray = SettingsData.EmptySettingsArray;
 			} else {
 				settingsArray = (
 					from credential in value
@@ -98,14 +98,14 @@ namespace MAPE.Command {
 			return;
 		}
 
-		public static Settings GetCredentialInfoSettings(CredentialInfo value, bool omitDefault) {
+		public static SettingsData GetCredentialInfoSettings(CredentialInfo value, bool omitDefault) {
 			// argument checks
 			if (value == null) {
-				return Settings.NullSettings;
+				return SettingsData.NullSettings;
 			}
 
 			// create settings of the CredentialInfo
-			Settings settings = Settings.CreateEmptySettings();
+			SettingsData settings = SettingsData.CreateEmptySettings();
 
 			string endPoint = value.EndPoint ?? string.Empty;
 			string userName = value.UserName ?? string.Empty;
@@ -122,12 +122,12 @@ namespace MAPE.Command {
 		}
 
 
-		public static Settings GetProxySettings(this Settings settings, bool createIfNotExist = true) {
-			return settings.GetObjectValue(CommandBase.SettingNames.Proxy, Settings.EmptySettingsGenerator, createIfNotExist);
+		public static SettingsData GetProxySettings(this SettingsData settings, bool createIfNotExist = true) {
+			return settings.GetObjectValue(CommandBase.SettingNames.Proxy, SettingsData.EmptySettingsGenerator, createIfNotExist);
 		}
 
-		public static Settings GetSystemSettingSwitcherSettings(this Settings settings, bool createIfNotExist = true) {
-			return settings.GetObjectValue(CommandBase.SettingNames.SystemSettingsSwitcher, Settings.EmptySettingsGenerator, createIfNotExist);
+		public static SettingsData GetSystemSettingSwitcherSettings(this SettingsData settings, bool createIfNotExist = true) {
+			return settings.GetObjectValue(CommandBase.SettingNames.SystemSettingsSwitcher, SettingsData.EmptySettingsGenerator, createIfNotExist);
 		}
 
 		#endregion
@@ -267,7 +267,7 @@ namespace MAPE.Command {
 
 			#region methods
 
-			public void Start(Settings systemSettingsSwitcherSettings, Settings proxySettings, IProxyRunner proxyRunner) {
+			public void Start(SettingsData systemSettingsSwitcherSettings, SettingsData proxySettings, IProxyRunner proxyRunner) {
 				// argument checks
 				// systemSettingsSwitcherSettings can contain null
 				// proxySettings can contain null
@@ -421,17 +421,17 @@ namespace MAPE.Command {
 			return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		}
 
-		protected Settings LoadSettingsFromFile(bool createIfNotExist, string settingsFilePath = null) {
+		protected SettingsData LoadSettingsFromFile(bool createIfNotExist, string settingsFilePath = null) {
 			// argument checks
 			if (settingsFilePath == null) {
 				settingsFilePath = EnsureSettingsFilePathSet();
 			}
 
 			// load settings from the file
-			return Settings.Load(settingsFilePath, createIfNotExist);
+			return SettingsData.Load(settingsFilePath, createIfNotExist);
 		}
 
-		protected void SaveSettingsToFile(Settings settings, string settingsFilePath = null) {
+		protected void SaveSettingsToFile(SettingsData settings, string settingsFilePath = null) {
 			// argument checks
 			if (settings.IsNull) {
 				// null setting is not valid
@@ -445,7 +445,7 @@ namespace MAPE.Command {
 			settings.Save(settingsFilePath);
 		}
 
-		protected RunningProxyState StartProxy(Settings settings, IProxyRunner proxyRunner) {
+		protected RunningProxyState StartProxy(SettingsData settings, IProxyRunner proxyRunner) {
 			// argument checks
 			if (proxyRunner == null) {
 				throw new ArgumentNullException(nameof(proxyRunner));
@@ -457,8 +457,8 @@ namespace MAPE.Command {
 			}
 
 			// get setting valuses to be used
-			Settings systemSettingSwitcherSettings = settings.GetObjectValue(SettingNames.SystemSettingsSwitcher);
-			Settings proxySettings = settings.GetObjectValue(SettingNames.Proxy);
+			SettingsData systemSettingSwitcherSettings = settings.GetObjectValue(SettingNames.SystemSettingsSwitcher);
+			SettingsData proxySettings = settings.GetObjectValue(SettingNames.Proxy);
 
 			// create a RunningProxyState and start the proxy
 			RunningProxyState state = new RunningProxyState(this);
@@ -512,7 +512,7 @@ namespace MAPE.Command {
 							CredentialInfo[] credentialArray = credentials.Values.ToArray();
 							Action saveTask = () => {
 								try {
-									Settings settings = LoadSettingsFromFile(false, settingsFilePath);
+									SettingsData settings = LoadSettingsFromFile(false, settingsFilePath);
 
 									settings.SetCredentialsValue(SettingNames.Credentials, credentialArray, omitDefault: true);
 									SaveSettingsToFile(settings, settingsFilePath);
@@ -561,7 +561,7 @@ namespace MAPE.Command {
 
 		#region overridables - argument processing
 
-		protected virtual Settings ProcessArguments(string[] args) {
+		protected virtual SettingsData ProcessArguments(string[] args) {
 			// argument checks
 			Debug.Assert(args != null);
 
@@ -633,13 +633,13 @@ namespace MAPE.Command {
 			}
 		}
 
-		protected virtual Settings CreateExecutingSettings(IDictionary<string, string> options, IList<string> normalArguments) {
+		protected virtual SettingsData CreateExecutingSettings(IDictionary<string, string> options, IList<string> normalArguments) {
 			// argument checks
 			Debug.Assert(options != null);
 			Debug.Assert(normalArguments != null);
 
 			// create base settings
-			Settings settings = GetBaseSettings(options);
+			SettingsData settings = GetBaseSettings(options);
 
 			// load the base settings
 			LoadBaseSettings(settings);
@@ -661,7 +661,7 @@ namespace MAPE.Command {
 			return settings;
 		}
 
-		protected virtual void LoadBaseSettings(Settings settings) {
+		protected virtual void LoadBaseSettings(SettingsData settings) {
 			// argument checks
 			// settings can contain null
 
@@ -678,7 +678,7 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected virtual bool HandleOption(string name, string value, Settings settings) {
+		protected virtual bool HandleOption(string name, string value, SettingsData settings) {
 			// argument checks
 			Debug.Assert(name != null);
 			Debug.Assert(settings.IsNull == false);
@@ -694,7 +694,7 @@ namespace MAPE.Command {
 			} else if (AreSameOptionNames(name, OptionNames.Culture)) {
 				settings.SetStringValue(SettingNames.Culture, value);
 			} else if (AreSameOptionNames(name, OptionNames.Credential)) {
-				CredentialInfo credential = Settings.Parse(value).CreateCredentialInfo();
+				CredentialInfo credential = SettingsData.Parse(value).CreateCredentialInfo();
 				SetCredential(credential, saveIfNecessary: false);
 			} else if (AreSameOptionNames(name, OptionNames.MainListener)) {
 				settings.GetProxySettings(createIfNotExist: true).SetJsonValue(Proxy.SettingNames.MainListener, value);
@@ -713,7 +713,7 @@ namespace MAPE.Command {
 			return handled;
 		}
 
-		protected virtual bool HandleArgument(string arg, Settings settings) {
+		protected virtual bool HandleArgument(string arg, SettingsData settings) {
 			return false;
 		}
 
@@ -730,7 +730,7 @@ namespace MAPE.Command {
 
 			try {
 				// process arguments
-				Settings settings = Settings.NullSettings;
+				SettingsData settings = SettingsData.NullSettings;
 				try {
 					settings = ProcessArguments(args);
 					Debug.Assert(settings.IsNull == false);
@@ -762,7 +762,7 @@ namespace MAPE.Command {
 			return;
 		}
 
-		public virtual void Execute(string commandKind, Settings settings) {
+		public virtual void Execute(string commandKind, SettingsData settings) {
 			// argument checks
 			Debug.Assert(commandKind != null);
 
@@ -781,9 +781,9 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected abstract void ShowUsage(Settings settings);
+		protected abstract void ShowUsage(SettingsData settings);
 
-		protected abstract void RunProxy(Settings settings);
+		protected abstract void RunProxy(SettingsData settings);
 
 		protected virtual CredentialInfo UpdateCredential(string endPoint, string realm, CredentialInfo oldCredential) {
 			return null;	// no credential by default
@@ -855,12 +855,12 @@ namespace MAPE.Command {
 			return settingsFilePath;
 		}
 
-		private Settings GetBaseSettings(IDictionary<string, string> options) {
+		private SettingsData GetBaseSettings(IDictionary<string, string> options) {
 			// argument checks
 			Debug.Assert(options != null);
 
 			// create base settings
-			Settings settings = Settings.NullSettings;
+			SettingsData settings = SettingsData.NullSettings;
 			bool noSetting = options.ContainsKey(OptionNames.NoSettings);
 			if (noSetting == false) {
 				// load the settings
@@ -880,13 +880,17 @@ namespace MAPE.Command {
 				try {
 					settings = LoadSettingsFromFile(true, settingsFilePath);
 					this.SettingsFilePath = settingsFilePath;
+
+					JsonObjectData data = JsonObjectData.Load(settingsFilePath, false);
+					Settings.CommandSettings s = this.ComponentFactory.CreateCommandSettings(data);
+					s = null;
 				} catch (Exception exception) {
 					string message = string.Format(Resources.CommandBase_Message_FailToLoadSettingsFile, settingsFilePath, exception.Message);
 					ShowErrorMessage(message);
 				}
 			}
 			if (settings.IsNull) {
-				settings = Settings.CreateEmptySettings();
+				settings = SettingsData.CreateEmptySettings();
 			}
 
 			return settings;

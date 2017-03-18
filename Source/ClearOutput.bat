@@ -8,6 +8,8 @@ set RMDIR=rmdir /S /Q
 %RMDIR% "__Package"
 %RMDIR% "Core\bin"
 %RMDIR% "Core\obj"
+%RMDIR% "Core_test\bin"
+%RMDIR% "Core_test\obj"
 %RMDIR% "Windows\Windows\bin"
 %RMDIR% "Windows\Windows\obj"
 %RMDIR% "Windows\CLI\bin"

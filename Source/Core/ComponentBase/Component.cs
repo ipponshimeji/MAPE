@@ -103,8 +103,8 @@ namespace MAPE.ComponentBase {
 
 		#region methods - settings
 
-		public Settings GetSettings(bool omitDefault) {
-			Settings settings = Settings.CreateEmptySettings();
+		public SettingsData GetSettings(bool omitDefault) {
+			SettingsData settings = SettingsData.CreateEmptySettings();
 
 			// add settings of each class level
 			lock (this) {
@@ -128,7 +128,7 @@ namespace MAPE.ComponentBase {
 
 		#region overridables
 
-		public virtual void AddSettings(Settings settings, bool omitDefault) {
+		public virtual void AddSettings(SettingsData settings, bool omitDefault) {
 			// not supported by default
 			throw new NotSupportedException();
 		}
