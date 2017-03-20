@@ -269,6 +269,18 @@ namespace MAPE.Utils {
 
 		#region extensions - general object
 
+		public static T ExtractObjectValue<T>(this IObjectDataValue value, Func<IObjectData, T> createObject) {
+			// argument checks
+			if (value == null) {
+				throw new ArgumentNullException(nameof(value));
+			}
+			if (createObject == null) {
+				throw new ArgumentNullException(nameof(createObject));
+			}
+
+			return createObject(value.ExtractObjectValue());
+		}
+
 		public static T GetObjectValue<T>(this IObjectData data, string name, T defaultValue, Func<IObjectData, T> createObject) {
 			// argument checks
 			if (createObject == null) {
@@ -356,6 +368,15 @@ namespace MAPE.Utils {
 
 			IEnumerable<IObjectDataValue> itemValues = value.ExtractArrayValue();
 			return (itemValues == null) ? null : itemValues.Select(extractItem).ToArray();
+		}
+
+		public static T[] ExtractObjectArrayValue<T>(this IObjectDataValue value, Func<IObjectData, T> createItem) {
+			// argument checks
+			Debug.Assert(value != null);
+			Debug.Assert(createItem != null);
+
+			IEnumerable<IObjectDataValue> itemValues = value.ExtractArrayValue();
+			return (itemValues == null) ? null : itemValues.Select(v => createItem(v.ExtractObjectValue())).ToArray();
 		}
 
 		public static T[] GetArrayValue<T>(this IObjectData data, string name, IEnumerable<T> defaultValue, Func<IObjectDataValue, T> extractItem) {

@@ -7,6 +7,8 @@ using System.Windows;
 using Microsoft.Win32;
 using MAPE.Utils;
 using MAPE.Command;
+using MAPE.Command.Settings;
+using MAPE.Windows.GUI.Settings;
 
 
 namespace MAPE.Windows.GUI {
@@ -14,6 +16,26 @@ namespace MAPE.Windows.GUI {
 		#region data
 
 		private App app = null;
+
+		#endregion
+
+
+		#region properties
+
+		public new CommandForWindowsGUISettings Settings {
+			get {
+				return (CommandForWindowsGUISettings)base.Settings;
+			}
+			set {
+				base.Settings = value;
+			}
+		}
+
+		public GUIForWindowsGUISettings GUISettings {
+			get {
+				return this.Settings.GUI;
+			}
+		}
 
 		#endregion
 
@@ -32,7 +54,7 @@ namespace MAPE.Windows.GUI {
 
 		#region methods
 
-		public void SetSettings(SettingsData newSettings, bool save) {
+		public void SetSettings(CommandForWindowsGUISettings newSettings, bool save) {
 			this.Settings = newSettings;
 			if (save) {
 				string settingsFilePath = this.SettingsFilePath;
@@ -51,16 +73,13 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
-		public void SaveMainWindowSettings(SettingsData mainWindowSettings) {
+		public void SaveMainWindowSettings(MainWindowSettings mainWindowSettings) {
 			string settingsFilePath = this.SettingsFilePath;
 			if (string.IsNullOrEmpty(settingsFilePath) == false) {
+				MainWindowSettings mainWindowSettingsClone = MAPE.Utils.Settings.Clone(mainWindowSettings);
 				Action saveTask = () => {
 					try {
-						SettingsData settings = LoadSettingsFromFile(false, settingsFilePath);
-						SettingsData guiSettings = settings.GetObjectValue(SettingNames.GUI, SettingsData.EmptySettingsGenerator, createIfNotExist: true);
-						guiSettings.SetObjectValue(MAPE.Windows.GUI.OldGUISettings.SettingNames.MainWindow, mainWindowSettings, omitIfNull: true);
-
-						SaveSettingsToFile(settings, settingsFilePath);
+						UpdateSettingsFile(s => { ((GUIForWindowsGUISettings)s.GUI).MainWindow = mainWindowSettingsClone; });
 					} catch (Exception exception) {
 						LogError($"Fail to save MainWindow settings: {exception.Message}");
 					}
@@ -78,12 +97,12 @@ namespace MAPE.Windows.GUI {
 
 		#region overrides/overridables - execution
 
-		protected override void ShowUsage(SettingsData settings) {
+		protected override void ShowUsage(CommandSettings settings) {
 			// show the Usage page in the browser
 			Process.Start(GetUsagePagePath());
 		}
 
-		protected override void RunProxy(SettingsData settings) {
+		protected override void RunProxy(CommandSettings settings) {
 			// state checks
 			if (this.app != null) {
 				throw new InvalidOperationException();
@@ -115,7 +134,7 @@ namespace MAPE.Windows.GUI {
 			return;
 		}
 
-		protected override CredentialInfo UpdateCredential(string endPoint, string realm, CredentialInfo oldCredential) {
+		protected override CredentialSettings UpdateCredential(string endPoint, string realm, CredentialSettings oldCredential) {
 			// argument checks
 			Debug.Assert(endPoint != null);
 			Debug.Assert(realm != null);    // may be empty
@@ -125,7 +144,7 @@ namespace MAPE.Windows.GUI {
 			Debug.Assert(this.app != null);
 
 			// ask user's credential
-			Func<CredentialInfo> callback = () => {
+			Func<CredentialSettings> callback = () => {
 				// setup a credential dialog
 				CredentialDialog dialog = new CredentialDialog();
 				dialog.Title = realm;
@@ -136,7 +155,7 @@ namespace MAPE.Windows.GUI {
 				return (dialog.ShowDialog() ?? false) ? dialog.Credential : null;
 			};
 
-			return this.app.Dispatcher.Invoke<CredentialInfo>(callback);
+			return this.app.Dispatcher.Invoke<CredentialSettings>(callback);
 		}
 
 		#endregion

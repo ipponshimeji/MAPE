@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using MAPE.Utils;
 
 
@@ -78,13 +79,30 @@ namespace MAPE.Windows.GUI.Settings {
 			return;
 		}
 
-		public MainWindowSettings(): this(null) {
+		public MainWindowSettings(): this(NullObjectData) {
+		}
+
+		public MainWindowSettings(MainWindowSettings src): base(src) {
+			// argument checks
+			if (src == null) {
+				throw new ArgumentNullException(nameof(src));
+			}
+
+			// clone members
+			this.LogListViewColumnWidths = (src.LogListViewColumnWidths == null)? null: (double[])src.LogListViewColumnWidths.Clone();
+			this.Placement = src.Placement;
+
+			return;
 		}
 
 		#endregion
 
 
 		#region overrides/overridables
+
+		protected override MAPE.Utils.Settings Clone() {
+			return new MainWindowSettings(this);
+		}
 
 		protected override void SaveTo(IObjectData data, bool omitDefault) {
 			// argument checks

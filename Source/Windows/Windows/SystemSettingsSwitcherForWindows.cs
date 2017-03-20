@@ -5,19 +5,13 @@ using Microsoft.Win32;
 using MAPE.Utils;
 using MAPE.Server;
 using MAPE.Command;
+using MAPE.Command.Settings;
+using MAPE.Windows.Settings;
 
 
 namespace MAPE.Windows {
 	public class SystemSettingsSwitcherForWindows: SystemSettingsSwitcher {
 		#region types
-
-		public static new class SettingNames {
-			#region constants
-
-			public const string ProxyOverride = "ProxyOverride";
-
-			#endregion
-		}
 
 		public static class RegistryNames {
 			#region constants
@@ -82,9 +76,11 @@ namespace MAPE.Windows {
 
 		#region creation and disposal
 
-		public SystemSettingsSwitcherForWindows(CommandBase owner, SettingsData settings, Proxy proxy) : base(owner, settings, proxy) {
+		public SystemSettingsSwitcherForWindows(CommandBase owner, SystemSettingsSwitcherForWindowsSettings settings, Proxy proxy) : base(owner, settings, proxy) {
 			// argument checks
-			// settings can contain null
+			if (settings == null) {
+				throw new ArgumentNullException(nameof(settings));
+			}
 
 			// initialize members
 			if (proxy == null) {
@@ -98,7 +94,7 @@ namespace MAPE.Windows {
 				Debug.Assert(this.AutoConfigURL == null);
 				this.ProxyEnable = 1;
 				this.ProxyServer = $"http={proxyEndPoint};https={proxyEndPoint}";
-				this.ProxyOverride = settings.GetStringValue(SettingNames.ProxyOverride, null);
+				this.ProxyOverride = settings.ProxyOverride;
 				Debug.Assert(this.AutoDetect == false);
 				this.HttpProxyEnvironmentVariable = $"http://{proxyEndPoint}";
 				this.HttpsProxyEnvironmentVariable = $"http://{proxyEndPoint}";

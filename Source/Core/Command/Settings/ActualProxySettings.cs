@@ -99,28 +99,45 @@ namespace MAPE.Command.Settings {
 			return;
 		}
 
-		public ActualProxySettings(): this(null) {
+		public ActualProxySettings(): this(NullObjectData) {
 		}
 
+		public ActualProxySettings(ActualProxySettings src): base(src) {
+			// argument checks
+			if (src == null) {
+				throw new ArgumentNullException(nameof(src));
+			}
+
+			// clone members
+			this.host = src.host;
+			this.port = src.port;
+
+			return;
+		}
+	
 		#endregion
 
 
 		#region methods
 
 		public WebProxy CreateWebProxy() {
-			// state checks
-			EnsureHostIsValid();
-			Debug.Assert(string.IsNullOrEmpty(this.Host) == false);
-			Debug.Assert(IPEndPoint.MinPort <= this.Port && this.Port <= IPEndPoint.MaxPort);
+				// state checks
+				EnsureHostIsValid();
+				Debug.Assert(string.IsNullOrEmpty(this.Host) == false);
+				Debug.Assert(IPEndPoint.MinPort <= this.Port && this.Port <= IPEndPoint.MaxPort);
 
-			// create a WebProxy object
-			return new WebProxy(this.Host, this.Port);
-		}
+				// create a WebProxy object
+				return new WebProxy(this.Host, this.Port);
+			}
 
 		#endregion
 
 
 		#region overrides
+
+		protected override MAPE.Utils.Settings Clone() {
+			return new ActualProxySettings(this);
+		}
 
 		protected override void SaveTo(IObjectData data, bool omitDefault) {
 			// argument checks

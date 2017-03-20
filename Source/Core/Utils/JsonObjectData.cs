@@ -144,9 +144,22 @@ namespace MAPE.Utils {
 		private JsonObjectData(): this(new JObject()) {
 		}
 
+		public JsonObjectData(string jsonText) {
+			// argument checks
+			// jsonText can be null
+
+			// initialize members
+			JObject jsonObject = string.IsNullOrEmpty(jsonText) ? new JObject() : JObject.Parse(jsonText);
+			this.jsonObject = jsonObject;
+		}
+
 
 		public static JsonObjectData CreateEmpty() {
 			return new JsonObjectData();
+		}
+
+		public static IObjectDataValue CreateArray(string jsonText) {
+			return new Value(JArray.Parse(jsonText));
 		}
 
 		#endregion

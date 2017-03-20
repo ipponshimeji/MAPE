@@ -101,36 +101,10 @@ namespace MAPE.ComponentBase {
 		#endregion
 
 
-		#region methods - settings
-
-		public SettingsData GetSettings(bool omitDefault) {
-			SettingsData settings = SettingsData.CreateEmptySettings();
-
-			// add settings of each class level
-			lock (this) {
-				AddSettings(settings, omitDefault);
-			}
-
-			return settings;
-		}
-
-		#endregion
-
-
 		#region methods - misc
 
 		public ObjectDisposedException CreateObjectDisposedException() {
 			return new ObjectDisposedException(this.ComponentName);
-		}
-
-		#endregion
-
-
-		#region overridables
-
-		public virtual void AddSettings(SettingsData settings, bool omitDefault) {
-			// not supported by default
-			throw new NotSupportedException();
 		}
 
 		#endregion

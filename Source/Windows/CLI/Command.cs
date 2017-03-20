@@ -1,5 +1,6 @@
 ﻿using System;
 using MAPE.Utils;
+using MAPE.Command.Settings;
 using MAPE.Windows;
 using MAPE.Windows.CLI.Properties;
 
@@ -33,7 +34,7 @@ namespace MAPE.Windows.CLI {
 
 		#region overrides/overridables - execution
 
-		protected override void ShowUsage(SettingsData settings) {
+		protected override void ShowUsage(CommandSettings settings) {
 			Console.WriteLine(Resources.Command_Usage);
 		}
 

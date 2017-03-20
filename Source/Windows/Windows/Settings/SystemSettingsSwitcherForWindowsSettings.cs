@@ -74,13 +74,29 @@ namespace MAPE.Windows.Settings {
 			return;
 		}
 
-		public SystemSettingsSwitcherForWindowsSettings() : this(null) {
+		public SystemSettingsSwitcherForWindowsSettings() : this(NullObjectData) {
+		}
+
+		public SystemSettingsSwitcherForWindowsSettings(SystemSettingsSwitcherForWindowsSettings src) : base(src) {
+			// argument checks
+			if (src == null) {
+				throw new ArgumentNullException(nameof(src));
+			}
+
+			// clone members
+			this.ProxyOverride = src.ProxyOverride;
+
+			return;
 		}
 
 		#endregion
 
 
 		#region overridables
+
+		protected override MAPE.Utils.Settings Clone() {
+			return new SystemSettingsSwitcherForWindowsSettings(this);
+		}
 
 		protected override void SaveTo(IObjectData data, bool omitDefault) {
 			// argument checks

@@ -4,85 +4,17 @@ using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using MAPE.Utils;
 using MAPE.ComponentBase;
 using MAPE.Command;
-using SettingNames = MAPE.Server.Proxy.SettingNames;
+using MAPE.Command.Settings;
+using MAPE.Server.Settings;
 
 
 namespace MAPE.Server {
-	public static class ProxySettingsExtensions {
-		#region methods
-
-		public static List<Listener> GetListeners(this SettingsData settings, Proxy proxy) {
-			List<Listener> listeners = new List<Listener>();
-
-			// MainListener
-			SettingsData mainListenerSettings = settings.GetObjectValue(Proxy.SettingNames.MainListener);
-			Listener listener = proxy.ComponentFactory.CreateListener(proxy, mainListenerSettings);
-			listeners.Add(listener);
-
-			// AdditionalListeners
-			IEnumerable<SettingsData> additionalListenerSettings = settings.GetObjectArrayValue(Proxy.SettingNames.AdditionalListeners, defaultValue: null);
-			if (additionalListenerSettings != null) {
-				Listener[] additionalListeners = (
-					from listenerSettings in additionalListenerSettings
-					select proxy.ComponentFactory.CreateListener(proxy, listenerSettings)
-				).ToArray();
-				listeners.AddRange(additionalListeners);
-			}
-
-			return listeners;
-		}
-
-		public static void SetListeners(this SettingsData settings, List<Listener> value, bool omitDefault) {
-			// argument checks
-			if (value == null) {
-				throw new ArgumentNullException(nameof(value));
-			}
-			if (value.Count <= 0) {
-				throw new ArgumentException("It must contain at least one item.", nameof(value));
-			}
-
-			// MainListener
-			Listener mainListener = value[0];
-			if (omitDefault && mainListener.IsDefault) {
-				settings.RemoveValue(Proxy.SettingNames.MainListener);
-			} else {
-				settings.SetObjectValue(Proxy.SettingNames.MainListener, mainListener.GetSettings(omitDefault));
-			}
-
-			// AdditionalListeners 
-			SettingsData[] additionalListeners = value.GetRange(1, value.Count - 1).Select(l => l.GetSettings(omitDefault)).ToArray();
-			if (omitDefault && additionalListeners.Length <= 0) {
-				settings.RemoveValue(Proxy.SettingNames.AdditionalListeners);
-			} else {
-				settings.SetObjectArrayValue(Proxy.SettingNames.AdditionalListeners, additionalListeners);
-			}
-
-			return;
-		}
-
-		#endregion
-	}
-
 	public class Proxy: Component {
 		#region types
-
-		public static class SettingNames {
-			#region constants
-
-			public const string MainListener = "MainListener";
-
-			public const string AdditionalListeners = "AdditionalListeners";
-
-			public const string RetryCount = "RetryCount";
-
-			#endregion
-		}
 
 		public class BasicCredential {
 			#region data
@@ -105,9 +37,9 @@ namespace MAPE.Server {
 				}
 
 				// initialize members
-				this.Bytes = bytes;
-				this.EnableAssumptionMode = enableAssumptionMode;
 				this.Revision = revision;
+				this.EnableAssumptionMode = enableAssumptionMode;
+				this.Bytes = bytes;
 
 				return;
 			}
@@ -121,8 +53,6 @@ namespace MAPE.Server {
 		#region constants
 
 		public const string ObjectBaseName = "Proxy";
-
-		public const int DefaultRetryCount = 2;     // original try + 2 retries = 3 tries
 
 		#endregion
 
@@ -219,10 +149,13 @@ namespace MAPE.Server {
 
 		#region creation and disposal
 
-		public Proxy(IServerComponentFactory componentFactory, SettingsData settings) {
+		public Proxy(IServerComponentFactory componentFactory, ProxySettings settings) {
 			// argument checks
 			if (componentFactory == null) {
-				componentFactory = new ComponentFactory();
+				throw new ArgumentNullException(nameof(componentFactory));
+			}
+			if (settings == null) {
+				throw new ArgumentNullException(nameof(settings));
 			}
 
 			// initialize members
@@ -230,13 +163,16 @@ namespace MAPE.Server {
 			this.componentFactory = componentFactory;
 
 			// listeners
-			this.listeners = settings.GetListeners(this);
+			// ToDo: can be Listener[]?
+			this.listeners = new List<Listener>(settings.GetListeners().Select(
+				s => this.componentFactory.CreateListener(this, s)
+			));
 
 			// actualProxy
 			this.actualProxy = null;
 
 			// retryCount
-			this.retryCount = settings.GetInt32Value(SettingNames.RetryCount, defaultValue: DefaultRetryCount);
+			this.retryCount = settings.RetryCount;
 			// ToDo: value checks
 
 			// misc.
@@ -521,7 +457,7 @@ namespace MAPE.Server {
 					}
 
 					// get the credential from the runner
-					CredentialInfo credential = this.Runner.GetCredential(endPoint, realm, needUpdate: (basicCredential != null));
+					CredentialSettings credential = this.Runner.GetCredential(endPoint, realm, needUpdate: (basicCredential != null));
 					if (credential == null) {
 						// maybe user cancel entering a credential
 						basicCredential = null;
@@ -545,28 +481,6 @@ namespace MAPE.Server {
 			}
 
 			return basicCredential;
-		}
-
-		#endregion
-
-
-		#region overrides
-
-		public override void AddSettings(SettingsData settings, bool omitDefault) {
-			// argument checks
-			Debug.Assert(settings.IsNull == false);
-
-			// state checks
-			Debug.Assert(this.IsDisposed == false);
-			Debug.Assert(this.listeners != null);
-
-			// MainListener, AdditionalListeners
-			settings.SetListeners(this.listeners, omitDefault);
-
-			//	RetryCount
-			settings.SetInt32Value(SettingNames.RetryCount, this.retryCount, omitDefault, defaultValue: DefaultRetryCount);
-
-			return;
 		}
 
 		#endregion

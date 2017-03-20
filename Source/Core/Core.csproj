@@ -63,8 +63,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Command\Settings\CredentialSettings.cs" />
+    <Compile Include="Command\Settings\GUISettings.cs" />
     <Compile Include="Command\Settings\CommandSettings.cs" />
-    <Compile Include="Command\CredentialInfo.cs" />
     <Compile Include="Command\GUICommandBase.cs" />
     <Compile Include="Command\CLICommandBase.cs" />
     <Compile Include="Command\Settings\ActualProxySettings.cs" />
@@ -107,7 +107,6 @@
     <Compile Include="Utils\Log.cs" />
     <Compile Include="Utils\ILogMonitor.cs" />
     <Compile Include="Utils\Settings.cs" />
-    <Compile Include="Utils\SettingsData.cs" />
     <Compile Include="Utils\Util.cs" />
     <Compile Include="Command\CredentialPersistence.cs" />
     <Compile Include="Utils\Logger.cs" />

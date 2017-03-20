@@ -6,15 +6,16 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using MAPE.Command;
+using MAPE.Command.Settings;
 
 
 namespace MAPE.Windows.GUI {
 	public partial class CredentialDialog: Window {
 		#region data
 
-		public string endPoint = null;
+		private string endPoint = null;
 
-		public CredentialInfo credential = null;
+		private CredentialSettings credential = null;
 
 		#endregion
 
@@ -35,7 +36,7 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
-		public CredentialInfo Credential {
+		public CredentialSettings Credential {
 			get {
 				return this.credential;
 			}
@@ -123,7 +124,7 @@ namespace MAPE.Windows.GUI {
 			bool enableAssumptionMode = this.enableAssumptionModeCheckBox.IsChecked ?? false;
 
 			// commit the result
-			this.Credential = new CredentialInfo(endPoint, userName, password, persistence, enableAssumptionMode);
+			this.Credential = new CredentialSettings(endPoint, userName, password, persistence, enableAssumptionMode);
 			this.DialogResult = true;
 
 			return;

@@ -5,68 +5,20 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading.Tasks;
-using MAPE.Utils;
 using MAPE.ComponentBase;
+using MAPE.Server.Settings;
 
 
 namespace MAPE.Server {
-	public static class ListenerSettingsExtensions {
-		#region methods
-
-		public static IPAddress GetIPAddressValue(this SettingsData settings, string settingName, IPAddress defaultValue) {
-			SettingsData.Value value = settings.GetValue(settingName);
-			if (value.IsNull == false) {
-				return IPAddress.Parse(value.GetStringValue());
-			} else {
-				return defaultValue;
-			}
-		}
-
-		public static void SetIPAddressValue(this SettingsData settings, string settingName, IPAddress value, bool omitDefault, IPAddress defaultValue) {
-			if (omitDefault && value == defaultValue) {
-				settings.RemoveValue(settingName);
-			} else {
-				string stringValue = (value == null) ? null : value.ToString();
-				settings.SetStringValue(settingName, stringValue, omitDefault: false);
-			}
-		}
-
-		#endregion
-	}
-
 	public class Listener: TaskingComponent {
-		#region types
-
-		public static class SettingNames {
-			#region constants
-
-			public const string Address = "Address";
-
-			public const string Port = "Port";
-
-			public const string Backlog = "Backlog";
-
-			#endregion
-		}
-
-		#endregion
-
-
 		#region constants
 
 		public const string ObjectBaseName = "Listener";
-
-		public const int DefaultPort = 8888;
-
-		public const int DefaultBacklog = 8;
 
 		#endregion
 
 
 		#region data
-
-		public static readonly IPAddress DefaultAddress = IPAddress.Loopback;
-
 
 		private readonly Proxy owner;
 
@@ -140,22 +92,18 @@ namespace MAPE.Server {
 			}
 		}
 
-		public bool IsDefault {
-			get {
-				IPEndPoint endPoint = this.EndPoint;
-				return this.backlog == DefaultBacklog && endPoint.Port == DefaultPort && endPoint.Address == DefaultAddress;
-			}
-		}
-
 		#endregion
 
 
 		#region creation and disposal
 
-		public Listener(Proxy owner, SettingsData settings) {
+		public Listener(Proxy owner, ListenerSettings settings) {
 			// argument checks
 			if (owner == null) {
 				throw new ArgumentNullException(nameof(owner));
+			}
+			if (settings == null) {
+				throw new ArgumentNullException(nameof(settings));
 			}
 
 			// initialize members
@@ -163,11 +111,11 @@ namespace MAPE.Server {
 			this.owner = owner;
 
 			// backlog
-			this.backlog = settings.GetInt32Value(SettingNames.Backlog, DefaultBacklog);
+			this.backlog = settings.Backlog;
 
 			// tcpListener			
-			IPAddress address = settings.GetIPAddressValue(SettingNames.Address, DefaultAddress);
-			int port = settings.GetInt32Value(SettingNames.Port, DefaultPort);
+			IPAddress address = settings.Address;
+			int port = settings.Port;
 			SetEndPoint(new IPEndPoint(address, port));
 
 			return;
@@ -279,28 +227,6 @@ namespace MAPE.Server {
 			}
 
 			return stopConfirmed;
-		}
-
-		#endregion
-
-
-		#region overrides
-
-		public override void AddSettings(SettingsData settings, bool omitDefault) {
-			// argument checks
-			Debug.Assert(settings.IsNull == false);
-
-			// Address
-			IPEndPoint endPoint = this.EndPoint;
-			settings.SetIPAddressValue(SettingNames.Address, endPoint.Address, omitDefault, DefaultAddress);
-
-			// Port
-			settings.SetInt32Value(SettingNames.Port, endPoint.Port, omitDefault, DefaultPort);
-
-			// Backlog
-			settings.SetInt32Value(SettingNames.Backlog, this.backlog, omitDefault, DefaultBacklog);
-
-			return;
 		}
 
 		#endregion

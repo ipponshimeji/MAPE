@@ -79,6 +79,30 @@ namespace MAPE.Windows.GUI {
 			public POINT MinPosition;
 			public POINT MaxPosition;
 			public RECT NormalPosition;
+
+
+			public static bool operator ==(WINDOWPLACEMENT x, WINDOWPLACEMENT y) {
+				// Length is ignored
+				return (
+					x.Flags == y.Flags &&
+					x.ShowCmd == y.ShowCmd &&
+					x.MinPosition == y.MinPosition &&
+					x.MaxPosition == y.MaxPosition &&
+					x.NormalPosition == y.NormalPosition
+				);
+			}
+
+			public static bool operator !=(WINDOWPLACEMENT x, WINDOWPLACEMENT y) {
+				return !(x == y);
+			}
+
+			public override bool Equals(object obj) {
+				return (obj is WINDOWPLACEMENT) ? (this == (WINDOWPLACEMENT)obj) : false;
+			}
+
+			public override int GetHashCode() {
+				return this.Flags ^ this.ShowCmd ^ this.MinPosition.GetHashCode() ^ this.MaxPosition.GetHashCode() ^ this.NormalPosition.GetHashCode();
+			}
 		}
 
 		#endregion

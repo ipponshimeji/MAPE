@@ -1,12 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Net;
-using System.Text;
-using System.Threading;
 using MAPE.Utils;
-using MAPE.Server;
+using MAPE.Command.Settings;
 
 
 namespace MAPE.Command {
@@ -21,22 +17,12 @@ namespace MAPE.Command {
 			#endregion
 		}
 
-		public static new class SettingNames {
-			#region constants
-
-			public const string Start = "Start";
-
-			public const string GUI = "GUI";
-
-			#endregion
-		}
-
 		#endregion
 
 
 		#region data
 
-		private SettingsData settings;
+		private CommandSettings settings;
 
 		private RunningProxyState runningProxyState = null;
 
@@ -62,7 +48,7 @@ namespace MAPE.Command {
 			}
 		}
 
-		public SettingsData Settings {
+		public CommandSettings Settings {
 			get {
 				return this.settings;
 			}
@@ -71,12 +57,6 @@ namespace MAPE.Command {
 					throw new InvalidOperationException("The settings cannot be changed when the proxy is running.");
 				}
 				this.settings = value;
-			}
-		}
-
-		public SettingsData GUISettings {
-			get {
-				return this.settings.GetObjectValue(SettingNames.GUI, SettingsData.EmptySettingsGenerator, createIfNotExist: true);
 			}
 		}
 
@@ -166,11 +146,11 @@ namespace MAPE.Command {
 
 		#region overrides/overridables - argument processing
 
-		protected override bool HandleOption(string name, string value, SettingsData settings) {
+		protected override bool HandleOption(string name, string value, CommandSettings settings) {
 			// handle option
 			bool handled = true;
 			if (AreSameOptionNames(name, OptionNames.Start)) {
-				settings.SetJsonValue(SettingNames.Start, value);
+				settings.GUI.Start = bool.Parse(value);
 			} else {
 				handled = base.HandleOption(name, value, settings);
 			}
@@ -183,7 +163,7 @@ namespace MAPE.Command {
 
 		#region overrides/overridables - execution
 
-		public override void Execute(string commandKind, SettingsData settings) {
+		public override void Execute(string commandKind, CommandSettings settings) {
 			// save the settings
 			this.settings = settings;
 

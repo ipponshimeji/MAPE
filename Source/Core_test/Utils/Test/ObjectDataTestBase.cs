@@ -508,6 +508,9 @@ namespace MAPE.Utils.Test {
 					return;
 				}
 
+				// assert their counts
+				Assert.Equal(expected.Count(), actualValue.Count());
+
 				// assert each value in the array
 				foreach (var assertionCase in expected.Zip(actualValue, (e, a) => new Tuple<object, IObjectDataValue>(e, a))) {
 					AssertEqual(assertionCase.Item1, assertionCase.Item2);
@@ -825,9 +828,10 @@ namespace MAPE.Utils.Test {
 
 				// names
 				IEnumerable<string> expectedNames = samples.Select(s => s.Name);
-				Assert.Equal(expectedNames, data.GetNames());
+				Assert.Equal(expectedNames, data.GetNames());	// ToDo: need collection comparison?
 
 				// values
+				Assert.Equal(samples.Count(), actualValues.Length);
 				IEnumerable<Tuple<ValueSample, IObjectDataValue>> assertionCases = samples.Zip(actualValues, (s, v) => new Tuple<ValueSample, IObjectDataValue>(s, v));
 				foreach (var assertionCase in assertionCases) {
 					assertionCase.Item1.AssertEquals(assertionCase.Item2);

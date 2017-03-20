@@ -3,55 +3,11 @@ using System.Diagnostics;
 using System.Net;
 using MAPE.Utils;
 using MAPE.Server;
-using SettingNames = MAPE.Command.SystemSettingsSwitcher.SettingNames;
+using MAPE.Command.Settings;
 
 
 namespace MAPE.Command {
-	public static class SystemSettingsSwitcherSettingsExtensions {
-		#region methods
-
-		public static WebProxy GetWebProxyValue(this SettingsData settings, string settingName, WebProxy defaultValue) {
-			SettingsData.Value value = settings.GetValue(settingName);
-			if (value.IsNull == false) {
-				return value.GetObjectValue().CreateWebProxy();
-			} else {
-				return defaultValue;
-			}
-		}
-
-		public static WebProxy CreateWebProxy(this SettingsData settings) {
-			SettingsData.Value host = settings.GetValue(SettingNames.Host);
-			SettingsData.Value port = settings.GetValue(SettingNames.Port);
-			if (host.IsNull || port.IsNull) {
-				throw new FormatException($"Both '{SettingNames.Host}' and '{SettingNames.Port}' settings are indispensable.");
-			}
-
-			return new WebProxy(host.GetStringValue(), port.GetInt32Value());
-		}
-
-		#endregion
-	}
-
 	public class SystemSettingsSwitcher {
-		#region types
-
-		public static class SettingNames {
-			#region constants
-
-			public const string EnableSystemSettingsSwitch = "EnableSystemSettingsSwitch";
-
-			public const string ActualProxy = "ActualProxy";
-
-			public const string Host = "Host";
-
-			public const string Port = "Port";
-
-			#endregion
-		}
-
-		#endregion
-
-
 		#region data
 
 		public readonly CommandBase Owner;
@@ -71,16 +27,15 @@ namespace MAPE.Command {
 		/// <param name="owner"></param>
 		/// <param name="settings"></param>
 		/// <param name="proxy">null means initialization for backup.</param>
-		public SystemSettingsSwitcher(CommandBase owner, SettingsData settings, Proxy proxy) {
+		public SystemSettingsSwitcher(CommandBase owner, SystemSettingsSwitcherSettings settings, Proxy proxy) {
 			// argument checks
 			if (owner == null) {
 				throw new ArgumentNullException(nameof(owner));
 			}
-			if (settings.IsNull == false && proxy == null) {
+			if (settings == null && proxy == null) {
 				// proxy is indispensable if settings has contents
 				throw new ArgumentNullException(nameof(proxy));
 			}
-			// settings can contain null
 
 			// initialize members
 			this.Owner = owner;
@@ -89,14 +44,15 @@ namespace MAPE.Command {
 			WebProxy actualProxy;
 			if (proxy == null) {
 				// simple initialization for backup
-				Debug.Assert(settings.IsNull);
+				Debug.Assert(settings == null);
 				enabled = true;
 				actualProxy = null;
 			} else {
 				// usual initialization
-				enabled = settings.GetBooleanValue(SettingNames.EnableSystemSettingsSwitch, defaultValue: true);
-				actualProxy = settings.GetWebProxyValue(SettingNames.ActualProxy, defaultValue: null);
-				if (actualProxy == null) {
+				enabled = settings.EnableSystemSettingsSwitch;
+				if (settings.ActualProxy != null) {
+					actualProxy = CreateWebProxy(settings.ActualProxy);
+				} else {
 					actualProxy = DetectSystemProxy();
 					if (actualProxy == null) {
 						throw new Exception(Properties.Resources.SystemSettingsSwitcher_NoActualProxy);
@@ -164,7 +120,7 @@ namespace MAPE.Command {
 
 		protected SystemSettingsSwitcher GetCurrentSettings() {
 			// create a new SystemSettingsSwitcher instance
-			SystemSettingsSwitcher switcher = this.Owner.ComponentFactory.CreateSystemSettingsSwitcher(this.Owner, SettingsData.NullSettings, null);
+			SystemSettingsSwitcher switcher = this.Owner.ComponentFactory.CreateSystemSettingsSwitcher(this.Owner, null, null);
 
 			// load the current system settings into the instance
 			switcher.LoadCurrentSettings();
@@ -179,6 +135,15 @@ namespace MAPE.Command {
 
 		protected virtual void LoadCurrentSettings() {
 			return;
+		}
+
+		protected virtual WebProxy CreateWebProxy(ActualProxySettings settings) {
+			// argument checks
+			Debug.Assert(settings != null);
+			Debug.Assert(string.IsNullOrEmpty(settings.Host) == false);
+
+			// create a WebProxy object
+			return new WebProxy(settings.Host, settings.Port);
 		}
 
 		protected virtual bool Switch(SystemSettingsSwitcher backup) {

@@ -113,7 +113,8 @@ namespace MAPE.Utils {
 				return $"{filePath}.{history.ToString("D2")}.bak";
 			};
 
-			string backupToFilePath = getBackupFilePath(backupHistory + 1);
+			string oldestBackupToFilePath = getBackupFilePath(backupHistory + 1);
+			string backupToFilePath = oldestBackupToFilePath;
 			File.Delete(backupToFilePath);
 			for (int i = backupHistory; 0 <= i; --i) {
 				string backupFromFilePath = (i == 0)? filePath: getBackupFilePath(i);
@@ -124,6 +125,7 @@ namespace MAPE.Utils {
 			}
 			Debug.Assert(backupToFilePath == filePath);
 			File.Move(tempFilePath, backupToFilePath);
+			File.Delete(oldestBackupToFilePath);
 
 			return;
 		}

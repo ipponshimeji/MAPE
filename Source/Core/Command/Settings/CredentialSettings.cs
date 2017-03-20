@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using MAPE.Utils;
@@ -45,15 +46,15 @@ namespace MAPE.Command.Settings {
 			#region methods
 
 			public static bool IsDefaultEndPoint(string value) {
-				return string.Compare(value, EndPoint, StringComparison.InvariantCultureIgnoreCase) == 0;
+				return AreSameEndPoints(value, EndPoint);
 			}
 
 			public static bool IsDefaultUserName(string value) {
-				return string.Compare(value, UserName, StringComparison.InvariantCultureIgnoreCase) == 0;
+				return AreSameUserNames(value, UserName);
 			}
 
 			public static bool IsDefaultPassword(string value) {
-				return string.Compare(value, Password, StringComparison.InvariantCultureIgnoreCase) == 0;
+				return AreSamePasswords(value, Password);
 			}
 
 			#endregion
@@ -145,13 +146,95 @@ namespace MAPE.Command.Settings {
 			return;
 		}
 
-		public CredentialSettings(): this(null) {
+		public CredentialSettings(): this(NullObjectData) {
+		}
+
+		public CredentialSettings(CredentialSettings src): base(src) {
+			// argument checks
+			if (src == null) {
+				throw new ArgumentNullException(nameof(src));
+			}
+
+			// clone members
+			this.EndPoint = src.EndPoint;
+			this.UserName = src.UserName;
+			this.Password = src.Password;
+			this.Persistence = src.Persistence;
+			this.EnableAssumptionMode = src.EnableAssumptionMode;
+
+			return;
+		}
+
+		public CredentialSettings(string endPoint, string userName, string password, CredentialPersistence persistence, bool enableAssumptionMode): base() {
+			// argument checks
+			// endPoint can be null (will be normalized to empty string)
+			// userName can be null (will be normalized to empty string)
+			// password can be null (will be normalized to empty string)
+
+			// initialize members
+			this.EndPoint = endPoint;
+			this.UserName = userName;
+			this.Password = password;
+			this.Persistence = persistence;
+			this.EnableAssumptionMode = enableAssumptionMode;
+
+			return;
+		}
+
+		#endregion
+
+
+		#region methods
+
+		public static bool AreSameEndPoints(string endPoint1, string endPoint2) {
+			// case-insensitive
+			return string.Compare(endPoint1, endPoint2, StringComparison.InvariantCultureIgnoreCase) == 0;
+		}
+
+		public static bool AreSameUserNames(string userName1, string userName2) {
+			// case-sensitive
+			return string.Compare(userName1, userName2, StringComparison.Ordinal) == 0;
+		}
+
+		public static bool AreSamePasswords(string password1, string password2) {
+			// case-sensitive
+			return string.Compare(password1, password2, StringComparison.Ordinal) == 0;
+		}
+
+		public NetworkCredential GetNetworkCredential() {
+			// Note that the endPoint is stored as 'Domain' property of the NetworkCredential object.
+			return new NetworkCredential(this.UserName, this.Password, this.EndPoint);
 		}
 
 		#endregion
 
 
 		#region overrides
+
+		public override bool Equals(object obj) {
+			// argument checks
+			CredentialSettings that = obj as CredentialSettings;
+			if (that == null) {
+				return false;
+			}
+
+			return (
+				this.EnableAssumptionMode == that.EnableAssumptionMode &&
+				this.Persistence == that.Persistence &&
+				AreSameEndPoints(this.EndPoint, that.EndPoint) &&
+				AreSameUserNames(this.UserName, that.UserName) &&
+				AreSamePasswords(this.Password, that.Password)
+			);
+		}
+
+		public override int GetHashCode() {
+			// counting in EndPoint, UserName and Password is sufficient 
+			return this.EndPoint.GetHashCode() ^ this.UserName.GetHashCode() ^ this.Password.GetHashCode();
+		}
+
+		protected override MAPE.Utils.Settings Clone() {
+			return new CredentialSettings(this);
+		}
 
 		protected override void SaveTo(IObjectData data, bool omitDefault) {
 			// argument checks

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,8 +18,11 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using MAPE.Utils;
 using MAPE.Server;
-using MAPE.Command;
+using MAPE.Server.Settings;
+using MAPE.Command.Settings;
+using MAPE.Windows.GUI.Settings;
 using System.ComponentModel;
+
 
 namespace MAPE.Windows.GUI {
 	public partial class MainWindow: Window {
@@ -82,7 +86,7 @@ namespace MAPE.Windows.GUI {
 
 		private readonly App app;
 
-		private readonly SettingsData settings;
+		private readonly MainWindowSettings settings;
 
 		internal UIStateFlags UIState { get; private set; }
 
@@ -130,10 +134,13 @@ namespace MAPE.Windows.GUI {
 
 		#region creation and disposal
 
-		public MainWindow(App app, SettingsData settings) {
+		public MainWindow(App app, MainWindowSettings settings) {
 			// argument checks
 			if (app == null) {
 				throw new ArgumentNullException(nameof(app));
+			}
+			if (settings == null) {
+				throw new ArgumentNullException(nameof(settings));
 			}
 
 			// initialize members
@@ -231,9 +238,9 @@ namespace MAPE.Windows.GUI {
 			base.OnInitialized(e);
 
 			// initialize this class level
-			SettingsData settings = this.Command.GUISettings;
+			GUIForWindowsGUISettings guiSettings = this.Command.GUISettings;
 			this.logLevelMenuItemGroup = InitializeLogLevelUI(Logger.LogLevel);
-			this.chaseLastLogMenuItem.IsChecked = settings.GetBooleanValue(OldGUISettings.SettingNames.ChaseLastLog, defaultValue: true);
+			this.chaseLastLogMenuItem.IsChecked = guiSettings.ChaseLastLog;
 
 			this.app.UIStateChanged += app_UIStateChanged;
 			OnUIStateChanged(GetUIState());
@@ -351,37 +358,46 @@ namespace MAPE.Windows.GUI {
 		}
 
 		private void RestoreLayout() {
-			SettingsData settings = this.settings;
+			MainWindowSettings settings = this.settings;
 
 			// placement of this window
-			RestoreWindowPlacement(settings);
+			RestoreWindowPlacement(settings.Placement);
 
 			// column widths of logListView
-			RestoreLogListViewColumnWidths(settings);
+			RestoreLogListViewColumnWidths(settings.LogListViewColumnWidths);
 
 			return;
 		}
 
 		private void SaveLayout() {
-			SettingsData settings = this.settings;
-			string prevSettingsText = settings.ToString();
+			MainWindowSettings settings = this.settings;
+			bool dirty = false;
 
 			// column widths of logListView
-			SaveLogListViewColumnWidths(settings);
+			double[] logListViewColumnWidths = GetLogListViewColumnWidths();
+			if (logListViewColumnWidths != null) {
+				if (settings.LogListViewColumnWidths == null || logListViewColumnWidths.SequenceEqual(settings.LogListViewColumnWidths) == false) {
+					settings.LogListViewColumnWidths = logListViewColumnWidths;
+					dirty = true;
+				}
+			}
 
 			// placement of this window
-			SaveWindowPlacement(settings);
+			NativeMethods.WINDOWPLACEMENT? wp = GetWindowPlacement();
+			if (wp != settings.Placement) {
+				settings.Placement = wp;
+				dirty = true;
+			}
 
 			// save if changed
-			if (settings.ToString() != prevSettingsText) {
+			if (dirty) {
 				this.Command.SaveMainWindowSettings(settings);
 			}
 
 			return;
 		}
 
-		private void RestoreWindowPlacement(SettingsData settings) {
-			NativeMethods.WINDOWPLACEMENT? nwp = settings.GetWINDOWPLACEMENTValue(OldGUISettings.SettingNames.Placement);
+		private void RestoreWindowPlacement(NativeMethods.WINDOWPLACEMENT? nwp) {
 			if (nwp.HasValue) {
 				// restore the placement of this window
 				NativeMethods.WINDOWPLACEMENT wp = nwp.Value;
@@ -395,21 +411,19 @@ namespace MAPE.Windows.GUI {
 			return;
 		}
 
-		private void SaveWindowPlacement(SettingsData settings) {
+		private NativeMethods.WINDOWPLACEMENT? GetWindowPlacement() {
 			// get placement information of this window from Win32.
 			NativeMethods.WINDOWPLACEMENT wp = new NativeMethods.WINDOWPLACEMENT();
 			wp.Length = Marshal.SizeOf(typeof(NativeMethods.WINDOWPLACEMENT));
 			IntPtr hwnd = new WindowInteropHelper(this).Handle;
 			if (NativeMethods.GetWindowPlacement(hwnd, out wp)) {
-				// save the placement of this window
-				settings.SetWINDOWPLACEMENTValue(OldGUISettings.SettingNames.Placement, wp, omitDefault: false);
+				return wp;
+			} else {
+				return null;
 			}
-
-			return;
 		}
 
-		private void RestoreLogListViewColumnWidths(SettingsData settings) {
-			IEnumerable<double> widths = settings.GetDoubleArrayValue(OldGUISettings.SettingNames.LogListViewColumnWidths, defaultValue: null, createIfNotExist: false);
+		private void RestoreLogListViewColumnWidths(IEnumerable<double> widths) {
 			if (widths != null) {
 				GridView view = this.logListView.View as GridView;
 				if (view != null) {
@@ -428,14 +442,13 @@ namespace MAPE.Windows.GUI {
 			return;
 		}
 
-		private void SaveLogListViewColumnWidths(SettingsData settings) {
+		private double[] GetLogListViewColumnWidths() {
 			GridView view = this.logListView.View as GridView;
 			if (view != null) {
-				double[] widths = (from column in view.Columns select column.Width).ToArray();
-				settings.SetDoubleArrayValue(OldGUISettings.SettingNames.LogListViewColumnWidths, widths);
+				return (from column in view.Columns select column.Width).ToArray();
+			} else {
+				return null;
 			}
-
-			return;
 		}
 
 		private Tuple<MenuItem, TraceLevel>[] InitializeLogLevelUI(TraceLevel level) {
@@ -468,34 +481,34 @@ namespace MAPE.Windows.GUI {
 
 		private string GetProxyInfo() {
 			StringBuilder buf = new StringBuilder("listening at ");
-			SettingsData rootSettings = this.Command.Settings;
-			SettingsData proxySettings = rootSettings.GetProxySettings(createIfNotExist: false);
+			CommandSettings commandSettings = this.Command.Settings;
+			ProxySettings proxySettings = commandSettings.Proxy;
+			Debug.Assert(proxySettings != null);
 
 			// MainListener
-			SettingsData listenerSettings = proxySettings.GetObjectValue(Proxy.SettingNames.MainListener);
-			buf.Append(GetListenerEndpoint(listenerSettings));
+			buf.Append(GetListenerEndpoint(proxySettings.MainListener));
 
 			// AdditionalListeners
-			IEnumerable<SettingsData> additionalListeners = proxySettings.GetObjectArrayValue(Proxy.SettingNames.AdditionalListeners, null);
+			IEnumerable<ListenerSettings> additionalListeners = proxySettings.AdditionalListeners;
 			if (additionalListeners != null) {
-				foreach (SettingsData settings in additionalListeners) {
+				foreach (ListenerSettings listener in additionalListeners) {
 					buf.Append(", ");
-					buf.Append(GetListenerEndpoint(settings));
+					buf.Append(GetListenerEndpoint(listener));
 				}
 			}
 
 			return buf.ToString();
 		}
 
-		private string GetListenerEndpoint(SettingsData listenerSettings) {
-			string address;
+		private string GetListenerEndpoint(ListenerSettings listenerSettings) {
+			IPAddress address;
 			int port;
-			if (listenerSettings.IsNull) {
-				address = Listener.DefaultAddress.ToString();
-				port = Listener.DefaultPort;
+			if (listenerSettings == null) {
+				address = ListenerSettings.Defaults.Address;
+				port = ListenerSettings.Defaults.Port;
 			} else {
-				address = listenerSettings.GetStringValue(Listener.SettingNames.Address, defaultValue: string.Empty);
-				port = listenerSettings.GetInt32Value(Listener.SettingNames.Port, defaultValue: 0);
+				address = listenerSettings.Address;
+				port = listenerSettings.Port;
 			}
 
 			return $"{address}:{port}";

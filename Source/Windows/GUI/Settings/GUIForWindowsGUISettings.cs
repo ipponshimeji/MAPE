@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Diagnostics;
 using MAPE.Utils;
+using MAPE.Command.Settings;
 
 
 namespace MAPE.Windows.GUI.Settings {
-	public class GUISettings: MAPE.Utils.Settings {
+	public class GUIForWindowsGUISettings: GUISettings {
 		#region types
 
-		public static class SettingNames {
+		public static new class SettingNames {
 			#region constants
 
 			public const string ChaseLastLog = "ChaseLastLog";
@@ -17,7 +18,7 @@ namespace MAPE.Windows.GUI.Settings {
 			#endregion
 		}
 
-		public static class Defaults {
+		public static new class Defaults {
 			#region constants
 
 			public const bool ChaseLastLog = true;
@@ -57,7 +58,7 @@ namespace MAPE.Windows.GUI.Settings {
 
 		#region creation and disposal
 
-		public GUISettings(IObjectData data): base(data) {
+		public GUIForWindowsGUISettings(IObjectData data): base(data) {
 			// prepare settings
 			bool chaseLastLog = Defaults.ChaseLastLog;
 			MainWindowSettings mainWindow = null;
@@ -82,13 +83,30 @@ namespace MAPE.Windows.GUI.Settings {
 			return;
 		}
 
-		public GUISettings(): this(null) {
+		public GUIForWindowsGUISettings(): this(NullObjectData) {
+		}
+
+		public GUIForWindowsGUISettings(GUIForWindowsGUISettings src): base(src) {
+			// argument checks
+			if (src == null) {
+				throw new ArgumentNullException(nameof(src));
+			}
+
+			// clone members
+			this.ChaseLastLog = src.ChaseLastLog;
+			this.MainWindow = Clone(src.MainWindow);
+
+			return;
 		}
 
 		#endregion
 
 
 		#region overrides/overridables
+
+		protected override MAPE.Utils.Settings Clone() {
+			return new GUIForWindowsGUISettings(this);
+		}
 
 		protected override void SaveTo(IObjectData data, bool omitDefault) {
 			// argument checks
@@ -97,7 +115,10 @@ namespace MAPE.Windows.GUI.Settings {
 			// state checks
 			Debug.Assert(this.MainWindow != null);
 
-			// save the settings
+			// save the base class level settings
+			base.SaveTo(data, omitDefault);
+
+			// save this class level settings
 			data.SetBooleanValue(SettingNames.ChaseLastLog, this.ChaseLastLog, omitDefault, this.ChaseLastLog == Defaults.ChaseLastLog);
 			data.SetObjectValue(SettingNames.MainWindow, this.MainWindow, true, omitDefault, false);    // overwrite existing settings, not omittable
 

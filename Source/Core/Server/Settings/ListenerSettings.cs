@@ -135,7 +135,21 @@ namespace MAPE.Server.Settings {
 			return;
 		}
 
-		public ListenerSettings(): this(null) {
+		public ListenerSettings(): this(NullObjectData) {
+		}
+
+		public ListenerSettings(ListenerSettings src) : base(src) {
+			// argument checks
+			if (src == null) {
+				throw new ArgumentNullException(nameof(src));
+			}
+
+			// clone members
+			this.Address = CloneIPAddress(src.Address);
+			this.Port = src.Port;
+			this.Backlog = src.Backlog;
+
+			return;
 		}
 
 		#endregion
@@ -160,6 +174,10 @@ namespace MAPE.Server.Settings {
 
 
 		#region overrides
+
+		protected override MAPE.Utils.Settings Clone() {
+			return new ListenerSettings(this);
+		}
 
 		protected override void SaveTo(IObjectData data, bool omitDefault) {
 			// argument checks
@@ -198,8 +216,17 @@ namespace MAPE.Server.Settings {
 
 			// set IPAddress value
 			string stringValue = value.ToString();
-			Debug.Assert(string.IsNullOrEmpty(stringValue));
+			Debug.Assert(string.IsNullOrEmpty(stringValue) == false);
 			return data.CreateValue(stringValue);
+		}
+
+		private static IPAddress CloneIPAddress(IPAddress src) {
+			// argument checks
+			if (src == null) {
+				return null;
+			}
+
+			return new IPAddress(src.GetAddressBytes(), src.ScopeId);
 		}
 
 		#endregion

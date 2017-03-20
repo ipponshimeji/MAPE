@@ -1,8 +1,9 @@
 ﻿using System;
 using Microsoft.Win32;
 using MAPE.Command;
-using MAPE.Server;
 using MAPE.Utils;
+using MAPE.Command.Settings;
+using MAPE.Windows.Settings;
 
 
 namespace MAPE.Windows {
@@ -31,11 +32,12 @@ namespace MAPE.Windows {
 
 		#region overrides/overridables - argument processing
 
-		protected override bool HandleOption(string name, string value, SettingsData settings) {
+		protected override bool HandleOption(string name, string value, CommandSettings settings) {
 			// handle option
 			bool handled = true;
 			if (AreSameOptionNames(name, OptionNames.ProxyOverride)) {
-				settings.GetSystemSettingSwitcherSettings(createIfNotExist: true).SetStringValue(SystemSettingsSwitcherForWindows.SettingNames.ProxyOverride, value);
+				SystemSettingsSwitcherForWindowsSettings actualSettings = (SystemSettingsSwitcherForWindowsSettings)settings.SystemSettingsSwitcher;
+				actualSettings.ProxyOverride = value;
 			} else {
 				handled = base.HandleOption(name, value, settings);
 			}
@@ -48,7 +50,7 @@ namespace MAPE.Windows {
 
 		#region overrides/overridables - execution
 
-		protected override void RunProxy(SettingsData settings) {
+		protected override void RunProxy(CommandSettings settings) {
 			// prepare Windows system event handlers
 			SessionEndingEventHandler onSessionEnding = (o, e) => {
 				AwakeControllerThread(ControllerThreadEventKind.Quit);

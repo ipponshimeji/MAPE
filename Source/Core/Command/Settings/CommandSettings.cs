@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using MAPE.Utils;
 using MAPE.Server.Settings;
@@ -19,11 +21,15 @@ namespace MAPE.Command.Settings {
 
 			public const string LogLevel = "LogLevel";
 
+			public const string NoLogo = "NoLogo";
+
 			public const string Credentials = "Credentials";
 
 			public const string Proxy = "Proxy";
 
 			public const string SystemSettingsSwitcher = "SystemSettingsSwitcher";
+
+			public const string GUI = "GUI";
 
 			#endregion
 		}
@@ -32,6 +38,8 @@ namespace MAPE.Command.Settings {
 			#region constants
 
 			public const TraceLevel LogLevel = TraceLevel.Error;
+
+			public const bool NoLogo = false;
 
 			#endregion
 
@@ -54,15 +62,19 @@ namespace MAPE.Command.Settings {
 
 		#region data
 
-		public TraceLevel LogLevel { get; set; } = Defaults.LogLevel;
+		public TraceLevel LogLevel { get; set; }
 
-		public CultureInfo Culture { get; set; } = null;
+		public CultureInfo Culture { get; set; }
 
-		private CredentialSettings[] credentials = null;
+		public bool NoLogo { get; set; }
 
-		private SystemSettingsSwitcherSettings systemSettingsSwitcher = null;
+		private IEnumerable<CredentialSettings> credentials;
 
-		private ProxySettings proxy = null;
+		private SystemSettingsSwitcherSettings systemSettingsSwitcher;
+
+		private ProxySettings proxy;
+
+		private GUISettings gui;
 
 		#endregion
 
@@ -74,8 +86,7 @@ namespace MAPE.Command.Settings {
 				return this.credentials;
 			}
 			set {
-				// set the copy of the value
-				this.credentials = (value == null)? null: value.ToArray();
+				this.credentials = value;
 			}
 		}
 
@@ -107,6 +118,20 @@ namespace MAPE.Command.Settings {
 			}
 		}
 
+		public GUISettings GUI {
+			get {
+				return this.gui;
+			}
+			set {
+				// argument checks
+				if (value == null) {
+					throw new ArgumentNullException(nameof(value));
+				}
+
+				this.gui = value;
+			}
+		}
+
 		#endregion
 
 
@@ -116,16 +141,20 @@ namespace MAPE.Command.Settings {
 			// prepare settings
 			TraceLevel logLevel = Defaults.LogLevel;
 			CultureInfo culture = null;
+			bool noLogo = Defaults.NoLogo;
 			CredentialSettings[] credentials = null;
 			SystemSettingsSwitcherSettings systemSettingsSwitcher = null;
+			GUISettings gui = null;
 			ProxySettings proxy = null;
 			if (data != null) {
 				// get settings from data
 				logLevel = (TraceLevel)data.GetEnumValue(SettingNames.LogLevel, logLevel, typeof(TraceLevel));
 				culture = data.GetValue(SettingNames.Culture, culture, ExtractCultureInfoValue);
-				credentials = data.GetObjectArrayValue(SettingNames.Credentials, credentials, this.CreateCredentialSettings);
+				noLogo = data.GetBooleanValue(SettingNames.NoLogo, noLogo);
+				credentials = data.GetObjectArrayValue(SettingNames.Credentials, credentials, CreateCredentialSettings);
 				systemSettingsSwitcher = data.GetObjectValue(SettingNames.SystemSettingsSwitcher, systemSettingsSwitcher, this.CreateSystemSettingsSwitcherSettings);
 				proxy = data.GetObjectValue(SettingNames.Proxy, proxy, this.CreateProxySettings);
+				gui = data.GetObjectValue(SettingNames.GUI, gui, this.CreateGUISettings);
 			}
 			if (systemSettingsSwitcher == null) {
 				// SystemSettingsSwitcher cannot be null
@@ -135,15 +164,21 @@ namespace MAPE.Command.Settings {
 				// Proxy cannot be null
 				proxy = CreateProxySettings(null);
 			}
+			if (gui == null) {
+				// GUI cannot be null
+				gui = CreateGUISettings(null);
+			}
 
 			// set settings
 			try {
 				// may throw ArgumentException for an invalid value
 				this.LogLevel = logLevel;
 				this.Culture = culture;
+				this.NoLogo = noLogo;
 				this.Credentials = credentials;
 				this.SystemSettingsSwitcher = systemSettingsSwitcher;
 				this.Proxy = proxy;
+				this.GUI = gui;
 			} catch (Exception exception) {
 				throw new FormatException(exception.Message);
 			}
@@ -151,13 +186,35 @@ namespace MAPE.Command.Settings {
 			return;
 		}
 
-		public CommandSettings(): this(null) {
+		public CommandSettings(): this(NullObjectData) {
+		}
+
+		public CommandSettings(CommandSettings src) : base(src) {
+			// argument checks
+			if (src == null) {
+				throw new ArgumentNullException(nameof(src));
+			}
+
+			// clone members
+			this.LogLevel = src.LogLevel;
+			this.Culture = src.Culture;
+			this.NoLogo = src.NoLogo;
+			this.Credentials = Clone(src.Credentials);
+			this.SystemSettingsSwitcher = Clone(src.SystemSettingsSwitcher);
+			this.Proxy = Clone(src.Proxy);
+			this.GUI = Clone(src.GUI);
+
+			return;
 		}
 
 		#endregion
 
 
 		#region overrides/overridables
+
+		protected override MAPE.Utils.Settings Clone() {
+			return new CommandSettings(this);
+		}
 
 		protected override void SaveTo(IObjectData data, bool omitDefault) {
 			// argument checks
@@ -166,9 +223,14 @@ namespace MAPE.Command.Settings {
 			// save settings
 			data.SetEnumValue(SettingNames.LogLevel, this.LogLevel, omitDefault, this.LogLevel == Defaults.LogLevel);
 			data.SetValue(SettingNames.Culture, this.Culture, CreateCultureInfoValue, omitDefault, Defaults.IsDefaultCulture(this.Culture));
+			data.SetBooleanValue(SettingNames.NoLogo, this.NoLogo, omitDefault, this.NoLogo == Defaults.NoLogo);
 			data.SetObjectArrayValue(SettingNames.Credentials, this.Credentials, omitDefault, Defaults.IsDefaultCredentials(this.Credentials));
-			data.SetObjectValue(SettingNames.SystemSettingsSwitcher, this.SystemSettingsSwitcher, true);	// overwrite existing settings, not omittable
-			data.SetObjectValue(SettingNames.Proxy, this.Proxy);											// not omittable
+			// SystemSettingsSwitcher: overwrite mode, not omittable (that is, isDefault should be false)
+			data.SetObjectValue(SettingNames.SystemSettingsSwitcher, this.SystemSettingsSwitcher, true, omitDefault, false);
+			// Proxy: replace mode, not omittable (that is, isDefault should be false)
+			data.SetObjectValue(SettingNames.Proxy, this.Proxy, false, omitDefault, false);
+			// GUI: overwrite mode, not omittable (that is, isDefault should be false)
+			data.SetObjectValue(SettingNames.GUI, this.GUI, true, omitDefault, false);
 
 			return;
 		}
@@ -192,6 +254,13 @@ namespace MAPE.Command.Settings {
 			// data can be null
 
 			return new ProxySettings(data);
+		}
+
+		protected virtual GUISettings CreateGUISettings(IObjectData data) {
+			// argument checks
+			// data can be null
+
+			return new GUISettings(data);
 		}
 
 		#endregion

@@ -155,7 +155,21 @@ namespace MAPE.Server.Settings {
 			return;
 		}
 
-		public ProxySettings(): this(null) {
+		public ProxySettings(): this(NullObjectData) {
+		}
+
+		public ProxySettings(ProxySettings src): base(src) {
+			// argument checks
+			if (src == null) {
+				throw new ArgumentNullException(nameof(src));
+			}
+
+			// clone members
+			this.MainListener = Clone(src.MainListener);
+			this.AdditionalListeners = Clone(src.AdditionalListeners);
+			this.RetryCount = src.RetryCount;
+
+			return;
 		}
 
 		#endregion
@@ -203,10 +217,24 @@ namespace MAPE.Server.Settings {
 			return null;    // no conflict
 		}
 
+		public List<ListenerSettings> GetListeners() {
+			List<ListenerSettings> listeners = new List<ListenerSettings>();
+			listeners.Add(this.MainListener);
+			if (this.AdditionalListeners != null) {
+				listeners.AddRange(this.AdditionalListeners);
+			}
+
+			return listeners;
+		}
+
 		#endregion
 
 
 		#region overrides
+
+		protected override MAPE.Utils.Settings Clone() {
+			return new ProxySettings(this);
+		}
 
 		protected override void SaveTo(IObjectData data, bool omitDefault) {
 			// argument checks

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using MAPE.Utils;
 using MAPE.Properties;
+using MAPE.Command.Settings;
 
 
 namespace MAPE.Command {
@@ -17,15 +18,7 @@ namespace MAPE.Command {
 
 			public const string Save = "Save";
 
-			public const string NoLogo = SettingNames.NoLogo;
-
-			#endregion
-		}
-
-		public static new class SettingNames {
-			#region constants
-
-			public const string NoLogo = "NoLogo";
+			public const string NoLogo = CommandSettings.SettingNames.NoLogo;
 
 			#endregion
 		}
@@ -119,13 +112,13 @@ namespace MAPE.Command {
 
 		#region overrides/overridables - argument processing
 
-		protected override bool HandleOption(string name, string value, SettingsData settings) {
+		protected override bool HandleOption(string name, string value, CommandSettings settings) {
 			// handle option
 			bool handled = true;
 			if (AreSameOptionNames(name, OptionNames.Save)) {
 				this.Kind = ExecutionKind.SaveSettings;
 			} else if (AreSameOptionNames(name, OptionNames.NoLogo)) {
-				settings.SetBooleanValue(SettingNames.NoLogo, true);
+				settings.NoLogo = bool.Parse(value);
 			} else {
 				handled = base.HandleOption(name, value, settings);
 			}
@@ -149,12 +142,12 @@ namespace MAPE.Command {
 			}
 		}
 
-		public override void Execute(string commandKind, SettingsData settings) {
+		public override void Execute(string commandKind, CommandSettings settings) {
 			// argument checks
 			Debug.Assert(commandKind != null);
 
 			// show logo
-			if (settings.GetBooleanValue(SettingNames.NoLogo, false) == false) {
+			if (settings.NoLogo == false) {
 				OutputLogo();
 			}
 
@@ -171,9 +164,9 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected override void RunProxy(SettingsData settings) {
+		protected override void RunProxy(CommandSettings settings) {
 			// argument checks
-			Debug.Assert(settings.IsNull == false);
+			Debug.Assert(settings != null);
 
 			using (ManualResetEvent controllerThreadEvent = new ManualResetEvent(false)) {
 				this.ControllerThreadEvent = controllerThreadEvent;
@@ -232,7 +225,7 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected override CredentialInfo UpdateCredential(string endPoint, string realm, CredentialInfo oldCredential) {
+		protected override CredentialSettings UpdateCredential(string endPoint, string realm, CredentialSettings oldCredential) {
 			// argument checks
 			Debug.Assert(endPoint != null);
 			Debug.Assert(realm != null);    // may be empty
@@ -240,9 +233,9 @@ namespace MAPE.Command {
 			return AskCredentialInfo(endPoint, realm, canSave: this.HasSettingsFile);
 		}
 
-		protected virtual void SaveSettings(SettingsData settings) {
+		protected virtual void SaveSettings(CommandSettings settings) {
 			// argument checks
-			Debug.Assert(settings.IsNull == false);
+			Debug.Assert(settings != null);
 
 			// state checks
 			if (this.HasSettingsFile == false) {
@@ -274,7 +267,7 @@ namespace MAPE.Command {
 
 		#region privates
 
-		private static CredentialInfo AskCredentialInfo(string endPoint, string realm, bool canSave) {
+		private static CredentialSettings AskCredentialInfo(string endPoint, string realm, bool canSave) {
 			// argument checks
 			Debug.Assert(realm != null);
 
@@ -288,7 +281,7 @@ namespace MAPE.Command {
 			CredentialPersistence persistence = AskCredentialPersistence(canSave);
 			bool enableAssumptionMode = AskEnableAssumptionMode();
 
-			return new CredentialInfo(endPoint, userName, password, persistence, enableAssumptionMode);
+			return new CredentialSettings(endPoint, userName, password, persistence, enableAssumptionMode);
 		}
 
 		private static CredentialPersistence AskCredentialPersistence(bool canSave) {

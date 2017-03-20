@@ -71,7 +71,6 @@
       <DependentUpon>ListenerDialog.xaml</DependentUpon>
     </Compile>
     <Compile Include="NativeMethods.cs" />
-    <Compile Include="GUISettings.cs" />
     <Compile Include="LogAdapter.cs" />
     <Compile Include="LogListViewItemStyleSelector.cs" />
     <Compile Include="SettingsWindow.xaml.cs">
@@ -81,7 +80,7 @@
       <DependentUpon>AboutWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Settings\MainWindowSettings.cs" />
-    <Compile Include="Settings\GUISettings.cs" />
+    <Compile Include="Settings\GUIForWindowsGUISettings.cs" />
     <Compile Include="Settings\CommandForWindowsGUISettings.cs" />
     <Page Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>

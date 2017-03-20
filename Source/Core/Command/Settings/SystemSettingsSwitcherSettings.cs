@@ -62,13 +62,30 @@ namespace MAPE.Command.Settings {
 			return;
 		}
 
-		public SystemSettingsSwitcherSettings(): this(null) {
+		public SystemSettingsSwitcherSettings(): this(NullObjectData) {
+		}
+
+		public SystemSettingsSwitcherSettings(SystemSettingsSwitcherSettings src) : base(src) {
+			// argument checks
+			if (src == null) {
+				throw new ArgumentNullException(nameof(src));
+			}
+
+			// clone members
+			this.EnableSystemSettingsSwitch = src.EnableSystemSettingsSwitch;
+			this.ActualProxy = Clone(src.ActualProxy);
+
+			return;
 		}
 
 		#endregion
 
 
 		#region overrides/overridables
+
+		protected override MAPE.Utils.Settings Clone() {
+			return new SystemSettingsSwitcherSettings(this);
+		}
 
 		protected override void SaveTo(IObjectData data, bool omitDefault) {
 			// argument checks
@@ -85,7 +102,7 @@ namespace MAPE.Command.Settings {
 			// argument checks
 			// data can be null
 
-			return new ActualProxySettings(data);
+			return (data == null)? null: new ActualProxySettings(data);
 		}
 
 		#endregion

@@ -13,6 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using MAPE.Utils;
 using MAPE.Command;
+using MAPE.Command.Settings;
+using MAPE.Windows.GUI.Settings;
 
 
 namespace MAPE.Windows.GUI {
@@ -22,7 +24,7 @@ namespace MAPE.Windows.GUI {
 	public partial class SettingsWindow: Window {
 		#region data
 
-		public SettingsData Settings {
+		public CommandForWindowsGUISettings Settings {
 			get; private set;
 		}
 
@@ -35,7 +37,12 @@ namespace MAPE.Windows.GUI {
 
 		#region creation and disposal
 
-		internal SettingsWindow(SettingsData settings, bool enableSaveAsDefault) {
+		internal SettingsWindow(CommandForWindowsGUISettings settings, bool enableSaveAsDefault) {
+			// argument checks
+			if (settings == null) {
+				throw new ArgumentNullException(nameof(settings));
+			}
+
 			// initialize members
 			this.Settings = settings;
 			this.SaveAsDefault = false;
@@ -57,20 +64,19 @@ namespace MAPE.Windows.GUI {
 			base.OnInitialized(e);
 
 			// Root
-			SettingsData rootSettings = this.Settings;
+			CommandSettings commandSettings = this.Settings;
 
 			// SystemSettingsSwitcher
-			SettingsData systemSettingsSwitcherSettings = rootSettings.GetSystemSettingSwitcherSettings();
-			SettingsData.Value value = systemSettingsSwitcherSettings.GetValue(SystemSettingsSwitcher.SettingNames.ActualProxy);
-			if (value.IsNull == false) {
-				this.autoDetectProxyCheckBox.IsChecked = false;
-				SettingsData actualProxySettings = value.GetObjectValue();
-				this.hostNameTextBox.Text = actualProxySettings.GetStringValue(SystemSettingsSwitcher.SettingNames.Host, string.Empty);
-				this.portTextBox.Text = "";
-			} else {
+			SystemSettingsSwitcherSettings systemSettingsSwitcherSettings = commandSettings.SystemSettingsSwitcher;
+			ActualProxySettings actualProxy = systemSettingsSwitcherSettings.ActualProxy;
+			if (actualProxy == null) {
 				this.autoDetectProxyCheckBox.IsChecked = true;
 				this.hostNameTextBox.Text = "";
 				this.portTextBox.Text = "";
+			} else {
+				this.autoDetectProxyCheckBox.IsChecked = false;
+				this.hostNameTextBox.Text = actualProxy.Host;
+				this.portTextBox.Text = actualProxy.Port.ToString();
 			}
 
 			// Proxy
