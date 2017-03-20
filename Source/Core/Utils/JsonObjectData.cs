@@ -158,8 +158,8 @@ namespace MAPE.Utils {
 			return new JsonObjectData();
 		}
 
-		public static IObjectDataValue CreateArray(string jsonText) {
-			return new Value(JArray.Parse(jsonText));
+		public static IEnumerable<IObjectDataValue> CreateArray(string jsonText) {
+			return JArray.Parse(jsonText).Select(t => new Value(t)).ToArray();
 		}
 
 		#endregion

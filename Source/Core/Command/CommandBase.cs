@@ -580,7 +580,7 @@ namespace MAPE.Command {
 			} else if (AreSameOptionNames(name, OptionNames.MainListener)) {
 				settings.Proxy.MainListener = new ListenerSettings(new JsonObjectData(value));
 			} else if (AreSameOptionNames(name, OptionNames.AdditionalListeners)) {
-				settings.Proxy.AdditionalListeners = JsonObjectData.CreateArray(value).ExtractObjectArrayValue(d => new ListenerSettings(d)).ToArray();
+				settings.Proxy.AdditionalListeners = JsonObjectData.CreateArray(value).Select(v => new ListenerSettings(v.ExtractObjectValue())).ToArray();
 			} else if (AreSameOptionNames(name, OptionNames.RetryCount)) {
 				settings.Proxy.RetryCount = int.Parse(value);
 			} else if (AreSameOptionNames(name, OptionNames.EnableSystemSettingsSwitch)) {
