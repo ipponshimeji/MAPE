@@ -17,9 +17,12 @@ namespace MAPE.Windows {
 
 		public override SystemSettingsSwitcher CreateSystemSettingsSwitcher(CommandBase owner, SystemSettingsSwitcherSettings settings, Proxy proxy) {
 			// argument checks
-			SystemSettingsSwitcherForWindowsSettings actualSettings = settings as SystemSettingsSwitcherForWindowsSettings;
-			if (actualSettings == null) {
-				throw new ArgumentNullException($"It must be {nameof(SystemSettingsSwitcherForWindowsSettings)} class.", nameof(settings));
+			SystemSettingsSwitcherForWindowsSettings actualSettings = null;
+			if (settings != null) {
+				actualSettings = settings as SystemSettingsSwitcherForWindowsSettings;
+				if (actualSettings == null) {
+					throw new ArgumentNullException($"It must be {nameof(SystemSettingsSwitcherForWindowsSettings)} class.", nameof(settings));
+				}
 			}
 
 			return new SystemSettingsSwitcherForWindows(owner, actualSettings, proxy);

@@ -256,7 +256,7 @@ namespace MAPE.Command {
 			return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 		}
 
-		protected static T CloneSettings<T>(T t) where T: MAPE.Utils.Settings {
+		public static T CloneSettings<T>(T t) where T: MAPE.Utils.Settings {
 			return MAPE.Utils.Settings.Clone(t);
 		}
 
@@ -270,17 +270,24 @@ namespace MAPE.Command {
 			return JsonObjectData.Load(settingsFilePath, createIfNotExist);
 		}
 
+		protected int GetBackupHistoryFor(string settingsFilePath) {
+			if (settingsFilePath == null || string.Compare(settingsFilePath, this.SettingsFilePath, StringComparison.InvariantCultureIgnoreCase) == 0) {
+				// updating the settings file
+				return this.BackupHistory;
+			} else {
+				// exporting settings
+				return 0;
+			}
+		}
+
 		protected void SaveSettingsToFile(CommandSettings settings, string settingsFilePath = null) {
 			// argument checks
 			if (settings == null) {
 				throw new ArgumentNullException(nameof(settings));
 			}
-			int backupHistory = 0;
+			int backupHistory = GetBackupHistoryFor(settingsFilePath);
 			if (settingsFilePath == null) {
 				settingsFilePath = EnsureSettingsFilePathSet();
-				backupHistory = this.BackupHistory;
-			} else if (string.Compare(settingsFilePath, this.SettingsFilePath, StringComparison.InvariantCultureIgnoreCase) == 0) {
-				backupHistory = this.BackupHistory;
 			}
 
 			// get object data to be saved
@@ -296,12 +303,9 @@ namespace MAPE.Command {
 			if (updateSettings == null) {
 				throw new ArgumentNullException(nameof(updateSettings));
 			}
-			int backupHistory = 0;
+			int backupHistory = GetBackupHistoryFor(settingsFilePath);
 			if (settingsFilePath == null) {
 				settingsFilePath = EnsureSettingsFilePathSet();
-				backupHistory = this.BackupHistory;
-			} else if (string.Compare(settingsFilePath, this.SettingsFilePath, StringComparison.InvariantCultureIgnoreCase) == 0) {
-				backupHistory = this.BackupHistory;
 			}
 
 			// load settings

@@ -20,13 +20,13 @@
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <Label Grid.Row="0" Grid.Column="0" Content="{x:Static properties:Resources.ListenerDialog_addressLabel_Content}" Target="{Binding ElementName=addressTextBox}" VerticalContentAlignment="Center" />
-        <TextBox x:Name="addressTextBox" Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center" VerticalAlignment="Center" />
+        <TextBox x:Name="addressTextBox" Grid.Row="0" Grid.Column="1" VerticalContentAlignment="Center" VerticalAlignment="Center" Text="{Binding Address, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
         <Label Grid.Row="1" Grid.Column="0" Content="{x:Static properties:Resources.ListenerDialog_portLabel_Content}" Target="{Binding ElementName=portTextBox}" VerticalContentAlignment="Center" />
-        <TextBox x:Name="portTextBox" Grid.Row="1" Grid.Column="1" VerticalContentAlignment="Center" VerticalAlignment="Center" />
+        <TextBox x:Name="portTextBox" Grid.Row="1" Grid.Column="1" VerticalContentAlignment="Center" VerticalAlignment="Center" Text="{Binding Port, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
         <Label Grid.Row="2" Grid.Column="0" Content="{x:Static properties:Resources.ListenerDialog_backlogLabel_Content}" Target="{Binding ElementName=backlogTextBox}" VerticalContentAlignment="Center" />
-        <TextBox x:Name="backlogTextBox" Grid.Row="2" Grid.Column="1" VerticalContentAlignment="Center" VerticalAlignment="Center" />
+        <TextBox x:Name="backlogTextBox" Grid.Row="2" Grid.Column="1" VerticalContentAlignment="Center" VerticalAlignment="Center" Text="{Binding Backlog, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
         <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0" >
-            <Button x:Name="okButton" IsDefault="True" Width="80" Margin="4,0" Content="{x:Static properties:Resources.Common_OK}" Padding="4" />
+            <Button x:Name="okButton" IsDefault="True" Width="80" Margin="4,0" Content="{x:Static properties:Resources.Common_OK}" Padding="4" Click="okButton_Click" />
             <Button x:Name="cancelButton" IsCancel="True" Width="80" Margin="4,0,0,0" Content="{x:Static properties:Resources.Common_Cancel}" Padding="4" />
         </StackPanel>
     </Grid>

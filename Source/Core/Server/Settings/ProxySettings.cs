@@ -104,7 +104,7 @@ namespace MAPE.Server.Settings {
 					}
 				}
 
-				this.additionalListeners = null;
+				this.additionalListeners = value;
 			}
 		}
 
@@ -190,13 +190,8 @@ namespace MAPE.Server.Settings {
 				return null;
 			}
 
-			foreach (ListenerSettings listener in existingListeners) {
-				if (newListener.HasSameEndpointTo(listener)) {
-					return newListener.GetEndpoint();
-				}
-			}
-
-			return null;	// no conflict
+			ListenerSettings listenerSettings = ListenerSettings.FindListenerSettingsOfSameEndPointTo(newListener, existingListeners);
+			return listenerSettings?.GetEndPoint();
 		}
 
 		protected static IPEndPoint FindConflictingEndPoint(IEnumerable<ListenerSettings> listeners) {
@@ -208,7 +203,7 @@ namespace MAPE.Server.Settings {
 			List<ListenerSettings> buf = new List<ListenerSettings>();
 			foreach (ListenerSettings listener in listeners) {
 				IPEndPoint endPoint = FindConflictingEndPoint(listener, buf);
-				if (endPoint == null) {
+				if (endPoint != null) {
 					return endPoint;
 				}
 				buf.Add(listener);

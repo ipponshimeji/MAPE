@@ -32,7 +32,7 @@ namespace MAPE.Command {
 			if (owner == null) {
 				throw new ArgumentNullException(nameof(owner));
 			}
-			if (settings == null && proxy == null) {
+			if (settings != null && proxy == null) {
 				// proxy is indispensable if settings has contents
 				throw new ArgumentNullException(nameof(proxy));
 			}

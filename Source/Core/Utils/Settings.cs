@@ -43,11 +43,11 @@ namespace MAPE.Utils {
 		}
 
 		protected static ArgumentNullException CreateArgumentNullException(string argName, string settingName) {
-			throw new ArgumentNullException(argName, $"The '{settingName}' value must not be null.");
+			return new ArgumentNullException(argName, $"The '{settingName}' value must not be null.");
 		}
 
 		protected static ArgumentNullException CreateArgumentNullOrEmptyException(string argName, string settingName) {
-			throw new ArgumentNullException(argName, $"The '{settingName}' value must not be null or empty.");
+			return new ArgumentNullException(argName, $"The '{settingName}' value must not be null or empty.");
 		}
 
 		#endregion

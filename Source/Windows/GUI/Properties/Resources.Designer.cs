@@ -127,9 +127,9 @@ namespace MAPE.Windows.GUI.Properties {
         /// <summary>
         ///   The credential for {0} is required. に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        public static string CredentialDialog_Description {
+        public static string CredentialDialog_descriptionTextBlock_Text {
             get {
-                return ResourceManager.GetString("CredentialDialog_Description", resourceCulture);
+                return ResourceManager.GetString("CredentialDialog_descriptionTextBlock_Text", resourceCulture);
             }
         }
         
@@ -143,29 +143,20 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
-        ///   How _save the credential? に類似しているローカライズされた文字列を検索します。
+        ///   _End Point: に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        public static string CredentialDialog_Group_Persistency {
+        public static string CredentialDialog_endPointLabel_Content {
             get {
-                return ResourceManager.GetString("CredentialDialog_Group_Persistency", resourceCulture);
+                return ResourceManager.GetString("CredentialDialog_endPointLabel_Content", resourceCulture);
             }
         }
         
         /// <summary>
         ///   _Password: に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        public static string CredentialDialog_Label_Password {
+        public static string CredentialDialog_passwordLabel_Content {
             get {
-                return ResourceManager.GetString("CredentialDialog_Label_Password", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   _UserName: に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string CredentialDialog_Label_UserName {
-            get {
-                return ResourceManager.GetString("CredentialDialog_Label_UserName", resourceCulture);
+                return ResourceManager.GetString("CredentialDialog_passwordLabel_Content", resourceCulture);
             }
         }
         
@@ -193,6 +184,33 @@ namespace MAPE.Windows.GUI.Properties {
         public static string CredentialDialog_Persistency_Session {
             get {
                 return ResourceManager.GetString("CredentialDialog_Persistency_Session", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   How _save the credential? に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_persistencyGroup_Header {
+            get {
+                return ResourceManager.GetString("CredentialDialog_persistencyGroup_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Credential Information に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_Title {
+            get {
+                return ResourceManager.GetString("CredentialDialog_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _User Name: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string CredentialDialog_userNameLabel_Content {
+            get {
+                return ResourceManager.GetString("CredentialDialog_userNameLabel_Content", resourceCulture);
             }
         }
         
@@ -559,6 +577,15 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   The first listener is the MainListener. It is registered to the system as the proxy when the system settings is swithed. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_listenerListLabel_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_listenerListLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Listeners に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string SettingsWindow_listenersTab_Header {
@@ -568,11 +595,56 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   _Log Level: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_logLevelLabel_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_logLevelLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   There is a credential for the same proxy &apos;{0}&apos;. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_Message_ConflictingCredential {
+            get {
+                return ResourceManager.GetString("SettingsWindow_Message_ConflictingCredential", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   There is a listener which has the same end point &apos;{0}&apos;. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_Message_ConflictingListener {
+            get {
+                return ResourceManager.GetString("SettingsWindow_Message_ConflictingListener", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   There is an error input. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_Message_ErrorExists {
+            get {
+                return ResourceManager.GetString("SettingsWindow_Message_ErrorExists", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Misc に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string SettingsWindow_miscGroup_Header {
             get {
                 return ResourceManager.GetString("SettingsWindow_miscGroup_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Misc に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_miscTab_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_miscTab_Header", resourceCulture);
             }
         }
         
@@ -672,6 +744,15 @@ namespace MAPE.Windows.GUI.Properties {
         public static string SettingsWindow_Title {
             get {
                 return ResourceManager.GetString("SettingsWindow_Title", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Settings (Read Only: running proxy now) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_Title_ReadOnly {
+            get {
+                return ResourceManager.GetString("SettingsWindow_Title_ReadOnly", resourceCulture);
             }
         }
         

@@ -165,7 +165,7 @@ namespace MAPE.Utils {
 		#endregion
 
 
-		#region methods - load & save
+		#region methods
 
 		public static JsonObjectData Load(string filePath, bool createIfNotExist) {
 			// argument checks
@@ -310,6 +310,15 @@ namespace MAPE.Utils {
 
 		public IObjectData CreateObject() {
 			return CreateEmpty();
+		}
+
+		#endregion
+
+
+		#region overrides
+
+		public override string ToString() {
+			return this.jsonObject.ToString();
 		}
 
 		#endregion

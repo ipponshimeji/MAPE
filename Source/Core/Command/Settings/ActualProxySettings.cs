@@ -21,6 +21,8 @@ namespace MAPE.Command.Settings {
 		public static class Defaults {
 			#region constants
 
+			public const string Host = "proxy.example.org";
+
 			public const int Port = 80;     // default http port
 
 			#endregion
@@ -75,16 +77,12 @@ namespace MAPE.Command.Settings {
 
 		public ActualProxySettings(IObjectData data): base(data) {
 			// prepare settings
-			string host = null;
+			string host = Defaults.Host;
 			int port = Defaults.Port;
 			if (data != null) {
 				// get settings from data
 				host = data.GetStringValue(SettingNames.Host, host);
-				IObjectDataValue portValue = data.GetValue(SettingNames.Port);
-				if (portValue == null) {
-					throw CreateMissingIndispensableSettingException(SettingNames.Port);
-				}
-				port = portValue.ExtractInt32Value();
+				port = data.GetInt32Value(SettingNames.Port, port);
 			}
 
 			// set settings

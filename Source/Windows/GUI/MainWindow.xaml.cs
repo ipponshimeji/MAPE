@@ -155,6 +155,24 @@ namespace MAPE.Windows.GUI {
 
 			// initialize components
 			InitializeComponent();
+
+			GUIForWindowsGUISettings guiSettings = this.Command.GUISettings;
+			this.logLevelMenuItemGroup = new Tuple<MenuItem, TraceLevel>[] {
+				new Tuple<MenuItem, TraceLevel>(this.offMenuItem, TraceLevel.Off),
+				new Tuple<MenuItem, TraceLevel>(this.errorMenuItem, TraceLevel.Error),
+				new Tuple<MenuItem, TraceLevel>(this.warningMenuItem, TraceLevel.Warning),
+				new Tuple<MenuItem, TraceLevel>(this.infoMenuItem, TraceLevel.Info),
+				new Tuple<MenuItem, TraceLevel>(this.verboseMenuItem, TraceLevel.Verbose)
+			};
+			UpdateLogLevelUI(Logger.LogLevel);
+
+			this.chaseLastLogMenuItem.IsChecked = guiSettings.ChaseLastLog;
+
+			this.app.UIStateChanged += app_UIStateChanged;
+			OnUIStateChanged(GetUIState());
+			Logger.AddLogMonitor(this.logMonitor);
+
+			return;
 		}
 
 		#endregion
@@ -179,13 +197,15 @@ namespace MAPE.Windows.GUI {
 				Debug.Assert((this.UIState & UIStateFlags.SettingsEnabled) != 0);
 
 				// open the settings window as dialog
-				window = new SettingsWindow(this.Command.Settings, this.Command.HasSettingsFile);
+				Command command = this.Command;
+				window = new SettingsWindow(Command.CloneSettings(command.Settings), command.HasSettingsFile, command.IsProxyRunning);
 				window.Owner = this;
 				this.settingsWindow = window;
 				try {
 					UpdateUIState();
 					if (window.ShowDialog() ?? false) {
-						this.Command.SetSettings(window.Settings, window.SaveAsDefault);
+						command.SetSettings(window.CommandSettings, window.SaveAsDefault);
+						UpdateLogLevelUI(window.CommandSettings.LogLevel);
 					}
 				} finally {
 					this.settingsWindow = null;
@@ -232,20 +252,6 @@ namespace MAPE.Windows.GUI {
 
 
 		#region overrides
-
-		protected override void OnInitialized(EventArgs e) {
-			// initialize the base class level
-			base.OnInitialized(e);
-
-			// initialize this class level
-			GUIForWindowsGUISettings guiSettings = this.Command.GUISettings;
-			this.logLevelMenuItemGroup = InitializeLogLevelUI(Logger.LogLevel);
-			this.chaseLastLogMenuItem.IsChecked = guiSettings.ChaseLastLog;
-
-			this.app.UIStateChanged += app_UIStateChanged;
-			OnUIStateChanged(GetUIState());
-			Logger.AddLogMonitor(this.logMonitor);
-		}
 
 		protected override void OnSourceInitialized(EventArgs e) {
 			// perform the base class level tasks
@@ -451,32 +457,15 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
-		private Tuple<MenuItem, TraceLevel>[] InitializeLogLevelUI(TraceLevel level) {
-			// create
-			Tuple<MenuItem, TraceLevel>[] logLevelMenuItems = new Tuple<MenuItem, TraceLevel>[] {
-				new Tuple<MenuItem, TraceLevel>(this.offMenuItem, TraceLevel.Off),
-				new Tuple<MenuItem, TraceLevel>(this.errorMenuItem, TraceLevel.Error),
-				new Tuple<MenuItem, TraceLevel>(this.warningMenuItem, TraceLevel.Warning),
-				new Tuple<MenuItem, TraceLevel>(this.infoMenuItem, TraceLevel.Info),
-				new Tuple<MenuItem, TraceLevel>(this.verboseMenuItem, TraceLevel.Verbose)
-			};
-
+		private void UpdateLogLevelUI(TraceLevel level) {
 			// set menu item
-			MenuItem menuItem = null;
-			foreach (var pair in logLevelMenuItems) {
-				if (pair.Item2 == level) {
-					menuItem = pair.Item1;
-					break;
-				}
-			}
-			if (menuItem != null) {
-				menuItem.IsChecked = true;
+			foreach (var pair in this.logLevelMenuItemGroup) {
+				pair.Item1.IsChecked = (pair.Item2 == level);
 			}
 
-			// set label
 			this.levelValueLabel.Content = level.ToString();
 
-			return logLevelMenuItems;
+			return;
 		}
 
 		private string GetProxyInfo() {

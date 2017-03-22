@@ -187,6 +187,17 @@ namespace MAPE.Command {
 			this.ErrorMessages.Enqueue(message);
 		}
 
+		protected virtual void OnSettingsChanged(CommandSettings newSettings, CommandSettings oldSettings) {
+			// argument checks
+			Debug.Assert(newSettings != null);
+			Debug.Assert(oldSettings != null);
+
+			// LogLevel
+			Logger.LogLevel = newSettings.LogLevel;
+
+			// implement SettingsChanged event and fire it, when it becomes necessary 
+		}
+
 		protected virtual void OnProxyStateChanged() {
 			EventHandler proxyStateChanged = this.ProxyStateChanged;
 			if (proxyStateChanged != null) {

@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using MAPE.Utils;
 
@@ -35,7 +37,7 @@ namespace MAPE.Server.Settings {
 			#region methods
 
 			public static bool IsDefault(IPAddress address, int port, int backlog) {
-				return backlog == Backlog && port == Port && address == Address;
+				return backlog == Backlog && port == Port && Address.Equals(address);
 			}
 
 			#endregion
@@ -152,22 +154,79 @@ namespace MAPE.Server.Settings {
 			return;
 		}
 
+		public static ListenerSettings CreateDefaultListenerSettings(IEnumerable<ListenerSettings> existingList) {
+			// argument checks
+			// existingList can be null
+
+			// create an instance with default settings
+			ListenerSettings listenerSettings = new ListenerSettings();
+
+			// select a port not to conflict with existing end points
+			if (existingList != null) {
+				int candidate = listenerSettings.Port;
+				IPAddress address = listenerSettings.Address;
+				int[] sortedExistingPorts = (
+					from existingListenerSetting in existingList
+					where address.Equals(existingListenerSetting.Address)
+					select existingListenerSetting.Port
+				).OrderBy(p => p).ToArray();
+
+				// find the unused port
+				foreach (int existingPort in sortedExistingPorts) {
+					if (candidate < existingPort) {
+						// candidate is not used
+						break;
+					} else if (candidate == existingPort) {
+						// candidate is used
+						++candidate;
+					}
+				}
+
+				// set the unused port
+				// an ArgumentOutOfRangeException is thrown if no unused port is found in the valid range
+				listenerSettings.Port = candidate;
+			}
+
+			return listenerSettings;
+		}
+
 		#endregion
 
 
 		#region methods
 
-		public bool HasSameEndpointTo(ListenerSettings that) {
+		public IPEndPoint GetEndPoint() {
+			return new IPEndPoint(this.Address, this.Port);
+		}
+
+		public bool HasSameEndPointTo(IPEndPoint endPoint) {
+			// argument checks
+			if (endPoint == null) {
+				return false;
+			}
+
+			return this.Port == endPoint.Port && this.Address.Equals(endPoint.Address);
+		}
+
+		public bool HasSameEndPointTo(ListenerSettings that) {
 			// argument checks
 			if (that == null) {
 				return false;
 			}
 
-			return this.Port == that.Port && this.Address == that.Address;
+			return this.Port == that.Port && this.Address.Equals(that.Address);
 		}
 
-		public IPEndPoint GetEndpoint() {
-			return new IPEndPoint(this.Address, this.Port);
+		public static ListenerSettings FindListenerSettingsOfSameEndPointTo(ListenerSettings settings, IEnumerable<ListenerSettings> collection) {
+			// argument checks
+			if (settings == null) {
+				throw new ArgumentNullException(nameof(settings));
+			}
+			if (collection == null) {
+				return null;
+			}
+
+			return collection.Where(s => settings.HasSameEndPointTo(s)).FirstOrDefault();
 		}
 
 		#endregion
@@ -226,7 +285,7 @@ namespace MAPE.Server.Settings {
 				return null;
 			}
 
-			return new IPAddress(src.GetAddressBytes(), src.ScopeId);
+			return new IPAddress(src.GetAddressBytes());
 		}
 
 		#endregion

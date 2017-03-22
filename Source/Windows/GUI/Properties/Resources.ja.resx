@@ -186,17 +186,23 @@
   <data name="MainWindow_Message_Header" xml:space="preserve">
     <value>メッセージ</value>
   </data>
-  <data name="CredentialDialog_Description" xml:space="preserve">
+  <data name="CredentialDialog_Title" xml:space="preserve">
+    <value>認証情報</value>
+  </data>
+  <data name="CredentialDialog_descriptionTextBlock_Text" xml:space="preserve">
     <value>{0}に対する認証情報が必要です。</value>
   </data>
-  <data name="CredentialDialog_Group_Persistency" xml:space="preserve">
+  <data name="CredentialDialog_persistencyGroup_Header" xml:space="preserve">
     <value>認証情報の保存方法(_S)</value>
   </data>
-  <data name="CredentialDialog_Label_Password" xml:space="preserve">
-    <value>パスワード(_P):</value>
+  <data name="CredentialDialog_endPointLabel_Content" xml:space="preserve">
+    <value>エンドポイント(_E):</value>
   </data>
-  <data name="CredentialDialog_Label_UserName" xml:space="preserve">
+  <data name="CredentialDialog_userNameLabel_Content" xml:space="preserve">
     <value>ユーザ名(_U):</value>
+  </data>
+  <data name="CredentialDialog_passwordLabel_Content" xml:space="preserve">
+    <value>パスワード(_P):</value>
   </data>
   <data name="CredentialDialog_Persistency_Persistent" xml:space="preserve">
     <value>保存する</value>
@@ -213,6 +219,9 @@
   <data name="SettingsWindow_Title" xml:space="preserve">
     <value>設定</value>
   </data>
+  <data name="SettingsWindow_Title_ReadOnly" xml:space="preserve">
+    <value>設定（中継中のため表示のみ）</value>
+  </data>
   <data name="SettingsWindow_saveAsDefaultButton_Content" xml:space="preserve">
     <value>既定値として保存(_S)</value>
   </data>
@@ -224,6 +233,9 @@
   </data>
   <data name="SettingsWindow_credentialsTab_Header" xml:space="preserve">
     <value>認証情報</value>
+  </data>
+  <data name="SettingsWindow_miscTab_Header" xml:space="preserve">
+    <value>その他</value>
   </data>
   <data name="SettingsWindow_authenticationProxyGroup_Header" xml:space="preserve">
     <value>認証プロキシ</value>
@@ -276,6 +288,9 @@
   <data name="SettingsWindow_resetButton_Content" xml:space="preserve">
     <value>既定値へ戻す(_T)</value>
   </data>
+  <data name="SettingsWindow_listenerListLabel_Content" xml:space="preserve">
+    <value>先頭のリスナーがメインリスナーとなります。メインリスナーはシステム設定書換え時にプロキシとしてシステムに登録されます。</value>
+  </data>
   <data name="SettingsWindow_addressColumn_Header" xml:space="preserve">
     <value>アドレス</value>
   </data>
@@ -296,6 +311,18 @@
   </data>
   <data name="SettingsWindow_userNameColumn_Header" xml:space="preserve">
     <value>ユーザー名</value>
+  </data>
+  <data name="SettingsWindow_logLevelLabel_Content" xml:space="preserve">
+    <value>ログレベル(_L):</value>
+  </data>
+  <data name="SettingsWindow_Message_ErrorExists" xml:space="preserve">
+    <value>入力エラーがあります。</value>
+  </data>
+  <data name="SettingsWindow_Message_ConflictingListener" xml:space="preserve">
+    <value>同じエンドポイント'{0}'をもつリスナーが存在しています。</value>
+  </data>
+  <data name="SettingsWindow_Message_ConflictingCredential" xml:space="preserve">
+    <value>同じプロキシ'{0}'に対する認証情報が存在しています。</value>
   </data>
   <data name="ListenerDialog_Title" xml:space="preserve">
     <value>リスナー</value>

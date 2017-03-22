@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -199,6 +200,19 @@ namespace MAPE.Command.Settings {
 		public static bool AreSamePasswords(string password1, string password2) {
 			// case-sensitive
 			return string.Compare(password1, password2, StringComparison.Ordinal) == 0;
+		}
+
+		public bool HasSameEndPoint(string endPoint) {
+			return AreSameEndPoints(this.EndPoint, endPoint);
+		}
+
+		public bool HasSameEndPoint(CredentialSettings that) {
+			// argument checks
+			if (that == null) {
+				return false;
+			}
+
+			return AreSameEndPoints(this.EndPoint, that.EndPoint);
 		}
 
 		public NetworkCredential GetNetworkCredential() {

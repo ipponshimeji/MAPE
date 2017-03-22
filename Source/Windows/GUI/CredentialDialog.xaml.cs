@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using MAPE.Command;
@@ -13,72 +11,102 @@ namespace MAPE.Windows.GUI {
 	public partial class CredentialDialog: Window {
 		#region data
 
-		private string endPoint = null;
-
-		private CredentialSettings credential = null;
-
-		#endregion
-
-
-		#region properties
-
-		public string EndPoint {
-			get {
-				return this.endPoint;
-			}
-			set {
-				if (this.endPoint != value) {
-					this.endPoint = value;
-
-					// update descriptionTextBlock
-					this.descriptionTextBlock.Text = string.Format(Properties.Resources.CredentialDialog_Description, value ?? "(unidentified proxy)");
-				}
-			}
+		public CredentialSettings CredentialSettings {
+			get; private set;
 		}
 
-		public CredentialSettings Credential {
-			get {
-				return this.credential;
-			}
-			set {
-				this.credential = value;
-				if (value == null) {
-					this.userNameTextBox.Text = string.Empty;
-					this.sessionRadioButton.IsChecked = true;
-					this.enableAssumptionModeCheckBox.IsChecked = true;
-				} else {
-					// update userNameTextBox
-					this.userNameTextBox.Text = value.UserName ?? string.Empty;
-
-					// update persistence radio buttons
-					RadioButton radioButton = null;
-					switch (value.Persistence) {
-						case CredentialPersistence.Session:
-							radioButton = this.sessionRadioButton;
-							break;
-						case CredentialPersistence.Persistent:
-							radioButton = this.persistentRadioButton;
-							break;
-						default:
-							// CredentialPersistence.Process is default
-							radioButton = this.processRadioButton;
-							break;
-					}
-					radioButton.IsChecked = true;
-
-					// update enableAssumptionModeCheckBox
-					this.enableAssumptionModeCheckBox.IsChecked = value.EnableAssumptionMode;
-				}
-			}
-		}
+		public readonly Func<CredentialSettings, string> validator;
 
 		#endregion
 
 
 		#region creation and disposal
 
-		public CredentialDialog() {
+		public CredentialDialog(CredentialSettings credentialSettings, Func<CredentialSettings, string> validator = null, bool endPointEditable = false) {
+			// argument checks
+			if (credentialSettings == null) {
+				throw new ArgumentNullException(nameof(credentialSettings));
+			}
+			// validator can be null
+			if (endPointEditable && credentialSettings.Persistence == CredentialPersistence.Session) {
+				// session mode is useless when endPoint is editable
+				throw new ArgumentException($"Its 'Persistence' property cannot be 'Session' if '{nameof(endPointEditable)}' is true.", nameof(credentialSettings));
+			}
+
+			// initialize members
+			this.CredentialSettings = credentialSettings;
+			this.validator = validator;
+
+			// initialize components
 			InitializeComponent();
+			this.DataContext = credentialSettings;
+
+			// EndPoint
+			if (endPointEditable) {
+				// show TextBox to edit EndPoint
+				this.endPointLabel.Visibility = Visibility.Visible;
+				this.endPointTextBox.Visibility = Visibility.Visible;
+				this.endPointTextBox.IsEnabled = true;
+				this.descriptionTextBlock.Visibility = Visibility.Hidden;
+				this.sessionRadioButton.IsEnabled = false;	// useless in this mode 
+
+				// this.endPointTextBox.Text is bound to credentialSettings.EndPoint
+			} else {
+				// show EndPoint which asks your credential 
+				string endPoint = credentialSettings.EndPoint;
+				if (endPoint == null) {
+					endPoint = "(unidentified proxy)";
+				} else if (endPoint.Length == 0) {
+					endPoint = "(all proxies)";
+				}
+				this.descriptionTextBlock.Text = string.Format(Properties.Resources.CredentialDialog_descriptionTextBlock_Text, endPoint);
+
+				this.endPointLabel.Visibility = Visibility.Hidden;
+				this.endPointTextBox.Visibility = Visibility.Hidden;
+				this.endPointTextBox.IsEnabled = false;
+				this.descriptionTextBlock.Visibility = Visibility.Visible;
+			}
+
+			// UserName
+			// this.userNameTextBox.Text is bound to credentialSettings.UserName
+
+			// Password
+			this.passwordBox.Password = credentialSettings.Password;
+
+			// Persistence
+			// update persistence radio buttons
+			RadioButton radioButton = null;
+			switch (credentialSettings.Persistence) {
+				case CredentialPersistence.Session:
+					radioButton = this.sessionRadioButton;
+					break;
+				case CredentialPersistence.Persistent:
+					radioButton = this.persistentRadioButton;
+					break;
+				default:
+					// CredentialPersistence.Process is default
+					radioButton = this.processRadioButton;
+					break;
+			}
+			radioButton.IsChecked = true;
+
+			// EnableAssumptionMode
+			// this.enableAssumptionModeCheckBox.IsChecked is bound to credentialSettings.EnableAssumptionMode
+
+			// set initial focus
+			Control control;
+			if (endPointEditable) {
+				control = this.endPointTextBox;
+			} else {
+				if (string.IsNullOrEmpty(credentialSettings.UserName)) {
+					control = this.userNameTextBox;
+				} else {
+					control = this.passwordBox;
+				}
+			}
+			control.Focus();
+
+			return;
 		}
 
 		#endregion
@@ -86,20 +114,30 @@ namespace MAPE.Windows.GUI {
 
 		#region overrides
 
-		protected override void OnInitialized(EventArgs e) {
-			// initialize the base class level
-			base.OnInitialized(e);
+		protected override void OnClosing(CancelEventArgs e) {
+			// close this class level
+			if (this.DialogResult ?? false) {
+				// prepare output CredentialSettings
+				this.CredentialSettings.Password = this.passwordBox.Password;
+				// EndPoint, UserName, Persistence and EnableAssumptionMode are updated in real time 
+	
+				// validate
+				if (this.validator != null) {
+					string errorMessage = validator(this.CredentialSettings);
+					if (errorMessage != null) {
+						// it is not acceptable. Cancel closing.
+						MessageBox.Show(this, errorMessage, this.Title, MessageBoxButton.OK, MessageBoxImage.Error);
+						e.Cancel = true;
+						if (this.endPointLabel.Visibility == Visibility.Visible) {
+							this.endPointLabel.Focus();
+						}
+						return;
+					}
+				}				
+			}
 
-			// initialize this class level
-			this.Icon = App.Current.OnIcon;
-
-			// Do not give default value for password
-			this.passwordBox.Password = string.Empty;
-
-			// set initial focus on userNameTextBox
-			this.userNameTextBox.Focus();
-
-			return;
+			// close the base class level
+			base.OnClosing(e);
 		}
 
 		#endregion
@@ -108,26 +146,19 @@ namespace MAPE.Windows.GUI {
 		#region event handlers
 
 		private void okButton_Click(object sender, RoutedEventArgs e) {
-			// check result
-			string endPoint = this.EndPoint ?? string.Empty;
-			string userName = this.userNameTextBox.Text;
-			string password = this.passwordBox.Password;
-			CredentialPersistence persistence;
-			if (this.sessionRadioButton.IsChecked ?? false) {
-				persistence = CredentialPersistence.Session;
-			} else if (this.persistentRadioButton.IsChecked ?? false) {
-				persistence = CredentialPersistence.Persistent;
-			} else {
-				// CredentialPersistence.Process is default
-				persistence = CredentialPersistence.Process;
-			}
-			bool enableAssumptionMode = this.enableAssumptionModeCheckBox.IsChecked ?? false;
-
-			// commit the result
-			this.Credential = new CredentialSettings(endPoint, userName, password, persistence, enableAssumptionMode);
 			this.DialogResult = true;
+		}
 
-			return;
+		private void sessionRadioButton_Checked(object sender, RoutedEventArgs e) {
+			this.CredentialSettings.Persistence = CredentialPersistence.Session;
+		}
+
+		private void processRadioButton_Checked(object sender, RoutedEventArgs e) {
+			this.CredentialSettings.Persistence = CredentialPersistence.Process;
+		}
+
+		private void persistentRadioButton_Checked(object sender, RoutedEventArgs e) {
+			this.CredentialSettings.Persistence = CredentialPersistence.Persistent;
 		}
 
 		#endregion

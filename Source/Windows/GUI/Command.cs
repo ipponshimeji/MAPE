@@ -55,7 +55,12 @@ namespace MAPE.Windows.GUI {
 		#region methods
 
 		public void SetSettings(CommandForWindowsGUISettings newSettings, bool save) {
+			// change the current settings
+			CommandForWindowsGUISettings oldSettings = this.Settings;
 			this.Settings = newSettings;
+			OnSettingsChanged(newSettings, oldSettings);
+
+			// save the settings if necessary
 			if (save) {
 				string settingsFilePath = this.SettingsFilePath;
 				if (string.IsNullOrEmpty(settingsFilePath) == false) {
@@ -76,7 +81,7 @@ namespace MAPE.Windows.GUI {
 		public void SaveMainWindowSettings(MainWindowSettings mainWindowSettings) {
 			string settingsFilePath = this.SettingsFilePath;
 			if (string.IsNullOrEmpty(settingsFilePath) == false) {
-				MainWindowSettings mainWindowSettingsClone = MAPE.Utils.Settings.Clone(mainWindowSettings);
+				MainWindowSettings mainWindowSettingsClone = CloneSettings(mainWindowSettings);
 				Action saveTask = () => {
 					try {
 						UpdateSettingsFile(s => { ((GUIForWindowsGUISettings)s.GUI).MainWindow = mainWindowSettingsClone; });
@@ -142,17 +147,28 @@ namespace MAPE.Windows.GUI {
 
 			// state checks
 			Debug.Assert(this.app != null);
+			Window mainWindow = this.app.MainWindow;
+
+			// clone the CredentialSettings
+			CredentialSettings credentialSettings;
+			if (oldCredential != null) {
+				credentialSettings = CredentialSettings.Clone(oldCredential);
+			} else {
+				credentialSettings = new CredentialSettings();
+			}
+			credentialSettings.EndPoint = endPoint;
 
 			// ask user's credential
 			Func<CredentialSettings> callback = () => {
-				// setup a credential dialog
-				CredentialDialog dialog = new CredentialDialog();
+				// prepare CredentialDialog
+				CredentialDialog dialog = new CredentialDialog(credentialSettings);
 				dialog.Title = realm;
-				dialog.EndPoint = endPoint;
-				dialog.Credential = oldCredential;
+				if (mainWindow != null) {
+					dialog.Owner = mainWindow;
+				}
 
 				// show the credential dialog and get user input
-				return (dialog.ShowDialog() ?? false) ? dialog.Credential : null;
+				return (dialog.ShowDialog() ?? false) ? dialog.CredentialSettings : null;
 			};
 
 			return this.app.Dispatcher.Invoke<CredentialSettings>(callback);

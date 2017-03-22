@@ -78,8 +78,9 @@ namespace MAPE.Windows {
 
 		public SystemSettingsSwitcherForWindows(CommandBase owner, SystemSettingsSwitcherForWindowsSettings settings, Proxy proxy) : base(owner, settings, proxy) {
 			// argument checks
-			if (settings == null) {
-				throw new ArgumentNullException(nameof(settings));
+			if (settings != null && proxy == null) {
+				// proxy is indispensable if settings has contents
+				throw new ArgumentNullException(nameof(proxy));
 			}
 
 			// initialize members
