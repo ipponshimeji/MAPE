@@ -147,7 +147,6 @@ namespace MAPE.Windows.GUI {
 
 			// state checks
 			Debug.Assert(this.app != null);
-			Window mainWindow = this.app.MainWindow;
 
 			// clone the CredentialSettings
 			CredentialSettings credentialSettings;
@@ -155,11 +154,18 @@ namespace MAPE.Windows.GUI {
 				credentialSettings = CredentialSettings.Clone(oldCredential);
 			} else {
 				credentialSettings = new CredentialSettings();
+				// set default Persistence value to Session (i.e. volatile)
+				credentialSettings.Persistence = CredentialPersistence.Session;
 			}
 			credentialSettings.EndPoint = endPoint;
 
 			// ask user's credential
 			Func<CredentialSettings> callback = () => {
+				// get the MainWindow
+				// Note that the MainWindow can be accessed only from the GUI thread
+				// (that is, it must be gotten inside this callback)
+				Window mainWindow = this.app.MainWindow;
+
 				// prepare CredentialDialog
 				CredentialDialog dialog = new CredentialDialog(credentialSettings);
 				dialog.Title = realm;

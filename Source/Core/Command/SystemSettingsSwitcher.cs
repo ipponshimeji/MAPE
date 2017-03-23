@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net;
-using MAPE.Utils;
 using MAPE.Server;
 using MAPE.Command.Settings;
 
