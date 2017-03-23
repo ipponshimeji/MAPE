@@ -227,9 +227,9 @@ namespace MAPE {
 
 		#region constants
 
-		public const int MaxCachedConnectionInstanceCount = 8;
+		public const int MaxCachedConnectionInstanceCount = 50;
 
-		public const int MaxCachedMemoryBlockCount = 16;
+		public const int MaxCachedMemoryBlockCount = 64;
 
 		#endregion
 
