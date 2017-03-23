@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 [assembly: AssemblyTitle("mape")]
 [assembly: AssemblyDescription("MAPE - CLI command for Windows platform")]
-[assembly: AssemblyConfiguration("developing")]
+[assembly: AssemblyConfiguration("alpha")]
 [assembly: AssemblyCompany("Takamasa Uramoto")]
 [assembly: AssemblyProduct("MAPE")]
 [assembly: AssemblyCopyright("Copyright 2016-2017 Takamasa Uramoto")]
