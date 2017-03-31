@@ -681,15 +681,19 @@ namespace MAPE.Command {
 					this.Kind = ExecutionKind.ShowUsage;
 				}
 
-				// set culture
-				CultureInfo culture = settings.Culture;
-				if (culture != null) {
-					Thread.CurrentThread.CurrentCulture = culture;
-					Thread.CurrentThread.CurrentUICulture = culture;
-				}
+				// common settings
+				// Note that settings may be null in an error case.
+				if (settings != null) {
+					// set culture
+					CultureInfo culture = settings.Culture;
+					if (culture != null) {
+						Thread.CurrentThread.CurrentCulture = culture;
+						Thread.CurrentThread.CurrentUICulture = culture;
+					}
 
-				// set log level
-				Logger.LogLevel = settings.LogLevel;
+					// set log level
+					Logger.LogLevel = settings.LogLevel;
+				}
 
 				// execute command based on the settings
 				Execute(this.Kind, settings);

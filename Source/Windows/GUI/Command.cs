@@ -5,7 +5,6 @@ using System.Globalization;
 using System.Threading.Tasks;
 using System.Windows;
 using Microsoft.Win32;
-using MAPE.Utils;
 using MAPE.Command;
 using MAPE.Command.Settings;
 using MAPE.Windows.GUI.Settings;
@@ -122,13 +121,6 @@ namespace MAPE.Windows.GUI {
 				try {
 					// start application
 					app.Run();
-
-					// ToDo: move to appropriate timing
-					// report errors in early stages
-					//				while (0 < this.ErrorMessages.Count) {
-					//					string message = this.ErrorMessages.Dequeue();
-					//					ShowErrorMessage(message);
-					//				}
 				} finally {
 					this.app = null;
 				}
@@ -186,17 +178,15 @@ namespace MAPE.Windows.GUI {
 		#region overrides/overridables - misc
 
 		protected override void ShowErrorMessage(string message) {
+			Action showErrorMessage = () => {
+				MessageBox.Show(message, this.ComponentName, MessageBoxButton.OK, MessageBoxImage.Error);
+			};
+
 			App app = this.app;
 			if (app == null) {
-				// queue the error message to display it after GUI starts
-				base.ShowErrorMessage(message);
+				showErrorMessage();
 			} else {
-				// show error message
-				app.Dispatcher.Invoke(
-					() => {
-						MessageBox.Show(message, this.ComponentName, MessageBoxButton.OK, MessageBoxImage.Error);
-					}
-				);
+				app.Dispatcher.Invoke(showErrorMessage);
 			}
 
 			return;
