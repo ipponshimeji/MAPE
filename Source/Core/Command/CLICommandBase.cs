@@ -164,7 +164,7 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected override void RunProxy(CommandSettings settings) {
+		protected override void RunProxyImpl(CommandSettings settings) {
 			// argument checks
 			Debug.Assert(settings != null);
 

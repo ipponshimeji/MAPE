@@ -136,6 +136,9 @@
   <data name="CommandBase_Message_InvalidArgument" xml:space="preserve">
     <value>不正な引数'{0}'が指定されました。</value>
   </data>
+  <data name="CommandBase_Message_AnotherInstanceIsRunning" xml:space="preserve">
+    <value>既に別の「認証プロキシ爆発しろ！」が起動しています。</value>
+  </data>
   <data name="CLICommandBase_Message_NoSettingsFile" xml:space="preserve">
     <value>保存先の設定ファイルが指定されていないため、設定を保存できません。</value>
   </data>

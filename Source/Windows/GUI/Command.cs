@@ -107,7 +107,7 @@ namespace MAPE.Windows.GUI {
 			Process.Start(GetUsagePagePath());
 		}
 
-		protected override void RunProxy(CommandSettings settings) {
+		protected override void RunProxyImpl(CommandSettings settings) {
 			// state checks
 			if (this.app != null) {
 				throw new InvalidOperationException();
@@ -200,6 +200,12 @@ namespace MAPE.Windows.GUI {
 			}
 
 			return;
+		}
+
+		protected override void BringAppToForeground() {
+			this.app.Dispatcher.Invoke(
+				() => { this.app.OpenMainWindow(); }
+			);
 		}
 
 		#endregion

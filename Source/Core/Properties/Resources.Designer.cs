@@ -214,6 +214,15 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
+        ///   Another MAPE instance is already running. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CommandBase_Message_AnotherInstanceIsRunning {
+            get {
+                return ResourceManager.GetString("CommandBase_Message_AnotherInstanceIsRunning", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Failed to load the settings file &apos;{0}&apos;: {1} に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CommandBase_Message_FailToLoadSettingsFile {

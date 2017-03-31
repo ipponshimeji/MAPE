@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using Microsoft.Win32;
 using MAPE.Command;
 using MAPE.Utils;
@@ -50,7 +51,7 @@ namespace MAPE.Windows {
 
 		#region overrides/overridables - execution
 
-		protected override void RunProxy(CommandSettings settings) {
+		protected override void RunProxyImpl(CommandSettings settings) {
 			// prepare Windows system event handlers
 			SessionEndingEventHandler onSessionEnding = (o, e) => {
 				AwakeControllerThread(ControllerThreadEventKind.Quit);
@@ -70,7 +71,7 @@ namespace MAPE.Windows {
 			SystemEvents.SessionEnding += onSessionEnding;
 			SystemEvents.PowerModeChanged += onPowerModeChanged;
 			try {
-				base.RunProxy(settings);
+				base.RunProxyImpl(settings);
 			} finally {
 				SystemEvents.PowerModeChanged -= onPowerModeChanged;
 				SystemEvents.SessionEnding -= onSessionEnding;
@@ -78,6 +79,22 @@ namespace MAPE.Windows {
 
 			return;
 		}
+
+		protected override void BringAppToForeground() {
+			SetForegroundWindow(GetConsoleWindow());
+		}
+
+		#endregion
+
+
+		#region interops
+
+		[DllImport("kernel32.dll", ExactSpelling = true)]
+		private static extern IntPtr GetConsoleWindow();
+
+		[DllImport("user32.dll")]
+		[return: MarshalAs(UnmanagedType.Bool)]
+		private static extern bool SetForegroundWindow(IntPtr hWnd);
 
 		#endregion
 	}

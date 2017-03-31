@@ -320,6 +320,62 @@ namespace MAPE.Command {
 			Util.BackupAndSave(settingsFilePath, settingsData.Save, backupHistory);
 		}
 
+
+		protected void RunProxy(CommandSettings settings) {
+			// argument checks
+			Debug.Assert(settings != null);
+
+			// prevent from invoking multiple instances
+			// Open shared event object. If it already exists, that means another MAPE instance is running.
+			string name = GetForwardingEventName();
+			bool createdNew;
+			using (EventWaitHandle forwardingEvent = new EventWaitHandle(false, EventResetMode.ManualReset, name, out createdNew)) {
+				if (createdNew == false) {
+					// Another MAPE instance is running proxy.
+					// signal the event to notify another MAPE to move foreground
+					forwardingEvent.Set();
+					ShowErrorMessage(Resources.CommandBase_Message_AnotherInstanceIsRunning);
+					// quit
+				} else {
+					// this is the only MAPE instance to be running proxy
+					// prepare a thread to move this MAPE foreground if the event is signaled
+					object locker = new object();
+					bool quitting = false;
+					Action watch = () => {
+						do {
+							// wait for the event
+							forwardingEvent.WaitOne();
+							lock (locker) {
+								if (quitting) {
+									return;
+								}
+
+								// forwarded by another MAPE instance
+								BringAppToForeground();
+								forwardingEvent.Reset();
+							}
+						} while (true);
+					};
+					Task watchingTask = Task.Run(watch);
+
+					// run proxy
+					try {
+						RunProxyImpl(settings);
+					} finally {
+						lock (locker) {
+							quitting = true;
+							// The lock should be released after the event is set.
+							// Otherwise, 'watch' therad does not exit if it is running just before forwardingEvent.Reset().
+							forwardingEvent.Set();
+						}
+						watchingTask.Wait();
+					}
+				}
+			}
+
+			return;
+		}
+
 		protected RunningProxyState StartProxy(CommandSettings settings, IProxyRunner proxyRunner) {
 			// argument checks
 			if (settings == null) {
@@ -667,7 +723,7 @@ namespace MAPE.Command {
 
 		protected abstract void ShowUsage(CommandSettings settings);
 
-		protected abstract void RunProxy(CommandSettings settings);
+		protected abstract void RunProxyImpl(CommandSettings settings);
 
 		protected virtual CredentialSettings UpdateCredential(string endPoint, string realm, CredentialSettings oldCredential) {
 			return null;	// no credential by default
@@ -679,6 +735,9 @@ namespace MAPE.Command {
 		#region overridables - misc
 
 		protected abstract void ShowErrorMessage(string message);
+
+		protected virtual void BringAppToForeground() {
+		}
 
 		#endregion
 
@@ -774,6 +833,10 @@ namespace MAPE.Command {
 			}
 
 			return settingsData;
+		}
+
+		private static string GetForwardingEventName() {
+			return $"MAPE_{Environment.UserDomainName}_{Environment.UserName}";
 		}
 
 		#endregion

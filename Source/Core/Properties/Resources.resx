@@ -136,6 +136,9 @@ Please restore it manually.</value>
   <data name="CommandBase_Message_InvalidArgument" xml:space="preserve">
     <value>An invalid argument '{0}' is specified.</value>
   </data>
+  <data name="CommandBase_Message_AnotherInstanceIsRunning" xml:space="preserve">
+    <value>Another MAPE instance is already running.</value>
+  </data>
   <data name="CLICommandBase_Message_NoSettingsFile" xml:space="preserve">
     <value>The settings cannot be saved because the settings file to which they are saved is not specified.</value>
   </data>
