@@ -2,10 +2,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
-using MAPE.Utils;
 using MAPE.Server;
 using MAPE.Command;
-using MAPE.Command.Settings;
 using MAPE.Windows.Settings;
 
 
@@ -55,50 +53,23 @@ namespace MAPE.Windows {
 
 		#region data
 
-		public string AutoConfigURL { get; protected set; } = null;
-
-		public int? ProxyEnable { get; protected set; } = null;
-
-		// ex. http=proxy.example.org:8080;https=proxy.example.org:8080
-		public string ProxyServer { get; protected set; } = null;
-
-		// ex. *.example.org;*.example.jp;<local>
 		public string ProxyOverride { get; protected set; } = null;
-
-		public bool AutoDetect { get; protected set; } = false;
-
-		public string HttpProxyEnvironmentVariable { get; protected set; } = null;
-
-		public string HttpsProxyEnvironmentVariable { get; protected set; } = null;
 
 		#endregion
 
 
 		#region creation and disposal
 
-		public SystemSettingsSwitcherForWindows(CommandBase owner, SystemSettingsSwitcherForWindowsSettings settings, Proxy proxy) : base(owner, settings, proxy) {
+		public SystemSettingsSwitcherForWindows(CommandBase owner, SystemSettingsSwitcherForWindowsSettings settings): base(owner, settings) {
 			// argument checks
-			if (settings != null && proxy == null) {
-				// proxy is indispensable if settings has contents
-				throw new ArgumentNullException(nameof(proxy));
-			}
+			// settings can be null
 
-			// initialize members
-			if (proxy == null) {
-				// simple initialization for backup
-				// all members are already initialized
+			if (settings == null) {
+				// simple initialization (ex. to restore)
+				Debug.Assert(this.ProxyOverride == null);
 			} else {
 				// usual initialization
-				Debug.Assert(proxy != null);
-				string proxyEndPoint = proxy.MainListenerEndPoint.ToString();
-
-				Debug.Assert(this.AutoConfigURL == null);
-				this.ProxyEnable = 1;
-				this.ProxyServer = $"http={proxyEndPoint};https={proxyEndPoint}";
 				this.ProxyOverride = settings.ProxyOverride;
-				Debug.Assert(this.AutoDetect == false);
-				this.HttpProxyEnvironmentVariable = $"http://{proxyEndPoint}";
-				this.HttpsProxyEnvironmentVariable = $"http://{proxyEndPoint}";
 			}
 
 			return;
@@ -109,25 +80,35 @@ namespace MAPE.Windows {
 
 		#region overridables
 
-		protected override void LoadCurrentSettings() {
-			// load the base class level settings
-			base.LoadCurrentSettings();
+		protected override SystemSettings CreateSystemSettings() {
+			return new SystemSettingsForWindows();
+		}
 
-			// load this class level settings
+		protected override void SetCurrentSystemSettingsTo(SystemSettings settings) {
+			// argument checks
+			Debug.Assert(settings != null);
+			SystemSettingsForWindows actualSettings = settings as SystemSettingsForWindows;
+			if (actualSettings == null) {
+				throw CreateArgumentIsNotSystemSettingsForWindowsException(nameof(settings));
+			}
 
+			// set the base class level settings
+			base.SetCurrentSystemSettingsTo(settings);
+
+			// set this class level settings
 			// read Internet Options from the registry 
 			using (RegistryKey key = OpenInternetSettingsKey(writable: false)) {
 				// AutoConfigURL
-				this.AutoConfigURL = (string)key.GetValue(RegistryNames.AutoConfigURL, defaultValue: null);
+				actualSettings.AutoConfigURL = (string)key.GetValue(RegistryNames.AutoConfigURL, defaultValue: null);
 
 				// ProxyEnable
-				this.ProxyEnable = (int?)key.GetValue(RegistryNames.ProxyEnable, defaultValue: null);
+				actualSettings.ProxyEnable = (int?)key.GetValue(RegistryNames.ProxyEnable, defaultValue: null);
 
 				// ProxyServer
-				this.ProxyServer = (string)key.GetValue(RegistryNames.ProxyServer, defaultValue: null);
+				actualSettings.ProxyServer = (string)key.GetValue(RegistryNames.ProxyServer, defaultValue: null);
 
 				// ProxyOverride
-				this.ProxyOverride = (string)key.GetValue(RegistryNames.ProxyOverride, defaultValue: null);
+				actualSettings.ProxyOverride = (string)key.GetValue(RegistryNames.ProxyOverride, defaultValue: null);
 
 				// AutoDetect
 				using (RegistryKey connectionsKey = OpenConnectionsKey(key, writable: false)) {
@@ -136,29 +117,63 @@ namespace MAPE.Windows {
 					if (bytes != null && AutoDetectByteIndex < bytes.Length) {
 						autoDetect = (bytes[AutoDetectByteIndex] & AutoDetectFlag) != 0;
 					}
-					this.AutoDetect = autoDetect;
+					actualSettings.AutoDetect = autoDetect;
 				}
 			}
 
 			// read User Environment Variables from the registry
 			using (RegistryKey key = OpenEnvironmentKey(writable: false)) {
 				// HttpProxyEnvironmentVariable
-				this.HttpProxyEnvironmentVariable = (string)key.GetValue(EnvironmentNames.HttpProxy, defaultValue: null);
+				actualSettings.HttpProxyEnvironmentVariable = (string)key.GetValue(EnvironmentNames.HttpProxy, defaultValue: null);
 
 				// HttpsProxyEnvironmentVariable
-				this.HttpsProxyEnvironmentVariable = (string)key.GetValue(EnvironmentNames.HttpsProxy, defaultValue: null);
+				actualSettings.HttpsProxyEnvironmentVariable = (string)key.GetValue(EnvironmentNames.HttpsProxy, defaultValue: null);
 			}
 
 			return;
 		}
 
-		protected override bool Switch(SystemSettingsSwitcher backup) {
+		protected override void SetSwitchingSystemSettingsTo(SystemSettings settings, Proxy proxy) {
 			// argument checks
+			Debug.Assert(settings != null);
+			SystemSettingsForWindows actualSettings = settings as SystemSettingsForWindows;
+			if (actualSettings == null) {
+				throw CreateArgumentIsNotSystemSettingsForWindowsException(nameof(settings));
+			}
+			Debug.Assert(proxy != null);
+
+			// set the base class level settings
+			base.SetSwitchingSystemSettingsTo(settings, proxy);
+
+			// set this class level settings
+			string proxyEndPoint = proxy.MainListenerEndPoint.ToString();
+
+			Debug.Assert(actualSettings.AutoConfigURL == null);
+			actualSettings.ProxyEnable = 1;
+			actualSettings.ProxyServer = $"http={proxyEndPoint};https={proxyEndPoint}";
+			actualSettings.ProxyOverride = this.ProxyOverride;
+			Debug.Assert(actualSettings.AutoDetect == false);
+			actualSettings.HttpProxyEnvironmentVariable = $"http://{proxyEndPoint}";
+			actualSettings.HttpsProxyEnvironmentVariable = $"http://{proxyEndPoint}";
+
+			return;
+		}
+
+		protected override bool SwitchTo(SystemSettings settings, SystemSettings backup) {
+			// argument checks
+			Debug.Assert(settings != null);
+			SystemSettingsForWindows actualSettings = settings as SystemSettingsForWindows;
+			if (actualSettings == null) {
+				throw CreateArgumentIsNotSystemSettingsForWindowsException(nameof(settings));
+			}
 			// backup can be null
+			SystemSettingsForWindows actualBackup = backup as SystemSettingsForWindows;
+			if (backup != null && actualBackup == null) {
+				throw CreateArgumentIsNotSystemSettingsForWindowsException(nameof(backup));
+			}
 
 			// adjust settings
-			SystemSettingsSwitcherForWindows actualBackup = backup as SystemSettingsSwitcherForWindows;
-			string proxyOverride = this.ProxyOverride;
+			string proxyOverride = actualSettings.ProxyOverride;
 			if (actualBackup != null && string.IsNullOrEmpty(actualBackup.ProxyOverride) == false) {
 				// use the current ProxyOverride if it is defined explicitly
 				proxyOverride = actualBackup.ProxyOverride;
@@ -167,13 +182,13 @@ namespace MAPE.Windows {
 			// set Internet Options in the registry 
 			using (RegistryKey key = OpenInternetSettingsKey(writable: true)) {
 				// AutoConfigURL
-				SetValue(key, RegistryNames.AutoConfigURL, this.AutoConfigURL);
+				SetValue(key, RegistryNames.AutoConfigURL, actualSettings.AutoConfigURL);
 
 				// ProxyEnable
-				SetValue(key, RegistryNames.ProxyEnable, this.ProxyEnable);
+				SetValue(key, RegistryNames.ProxyEnable, actualSettings.ProxyEnable);
 
 				// ProxyServer
-				SetValue(key, RegistryNames.ProxyServer, this.ProxyServer);
+				SetValue(key, RegistryNames.ProxyServer, actualSettings.ProxyServer);
 
 				// ProxyOverride
 				SetValue(key, RegistryNames.ProxyOverride, proxyOverride);
@@ -183,7 +198,7 @@ namespace MAPE.Windows {
 					byte[] bytes = (byte[])connectionsKey.GetValue(RegistryNames.DefaultConnectionSettings, defaultValue: null);
 					if (bytes != null && AutoDetectByteIndex < bytes.Length) {
 						byte oldFlags = bytes[AutoDetectByteIndex];
-						byte newFlags = this.AutoDetect? (byte)(oldFlags | AutoDetectFlag): (byte)(oldFlags & ~AutoDetectFlag);
+						byte newFlags = actualSettings.AutoDetect ? (byte)(oldFlags | AutoDetectFlag) : (byte)(oldFlags & ~AutoDetectFlag);
 						if (oldFlags != newFlags) {
 							// set AutoDetect flag
 							bytes[AutoDetectByteIndex] = newFlags;
@@ -209,10 +224,10 @@ namespace MAPE.Windows {
 			// set User Environment Variables in the registry
 			using (RegistryKey key = OpenEnvironmentKey(writable: true)) {
 				// HttpProxyEnvironmentVariable
-				SetValue(key, EnvironmentNames.HttpProxy, this.HttpProxyEnvironmentVariable);
+				SetValue(key, EnvironmentNames.HttpProxy, actualSettings.HttpProxyEnvironmentVariable);
 
 				// HttpsProxyEnvironmentVariable
-				SetValue(key, EnvironmentNames.HttpsProxy, this.HttpsProxyEnvironmentVariable);
+				SetValue(key, EnvironmentNames.HttpsProxy, actualSettings.HttpsProxyEnvironmentVariable);
 			}
 
 			return true;
@@ -246,6 +261,10 @@ namespace MAPE.Windows {
 
 
 		#region private
+
+		private static ArgumentException CreateArgumentIsNotSystemSettingsForWindowsException(string argName) {
+			throw new ArgumentException($"It must be an instance of {nameof(SystemSettingsForWindows)} class.", argName);
+		}
 
 		private static RegistryKey OpenInternetSettingsKey(bool writable) {
 			return Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\Internet Settings", writable);

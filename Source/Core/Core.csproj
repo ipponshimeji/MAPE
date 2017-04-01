@@ -69,6 +69,7 @@
     <Compile Include="Command\CLICommandBase.cs" />
     <Compile Include="Command\Settings\ActualProxySettings.cs" />
     <Compile Include="Command\Settings\SystemSettingsSwitcherSettings.cs" />
+    <Compile Include="Command\SystemSettings.cs" />
     <Compile Include="Command\SystemSettingsSwitcher.cs" />
     <Compile Include="ComponentBase\ComponentLoggerExtensions.cs" />
     <Compile Include="ComponentBase\IComponentLogger.cs" />

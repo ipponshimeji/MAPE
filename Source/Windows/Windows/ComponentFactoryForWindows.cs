@@ -15,7 +15,7 @@ namespace MAPE.Windows {
 			return new Settings.CommandForWindowsSettings(data);
 		}
 
-		public override SystemSettingsSwitcher CreateSystemSettingsSwitcher(CommandBase owner, SystemSettingsSwitcherSettings settings, Proxy proxy) {
+		public override SystemSettingsSwitcher CreateSystemSettingsSwitcher(CommandBase owner, SystemSettingsSwitcherSettings settings) {
 			// argument checks
 			SystemSettingsSwitcherForWindowsSettings actualSettings = null;
 			if (settings != null) {
@@ -25,7 +25,7 @@ namespace MAPE.Windows {
 				}
 			}
 
-			return new SystemSettingsSwitcherForWindows(owner, actualSettings, proxy);
+			return new SystemSettingsSwitcherForWindows(owner, actualSettings);
 		}
 
 		#endregion

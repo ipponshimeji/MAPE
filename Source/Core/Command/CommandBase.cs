@@ -63,7 +63,9 @@ namespace MAPE.Command {
 
 			private Proxy proxy = null;
 
-			private SystemSettingsSwitcher backup = null;
+			private SystemSettingsSwitcher switcher = null;
+
+			private SystemSettings backup = null;
 
 			#endregion
 
@@ -113,23 +115,24 @@ namespace MAPE.Command {
 				if (this.proxy != null) {
 					throw new InvalidOperationException("The proxy is already started.");
 				}
+				Debug.Assert(this.switcher == null);
+				Debug.Assert(this.backup == null);
 
 				try {
 					ComponentFactory componentFactory = this.Owner.ComponentFactory;
 
-					// create a proxy
-					Proxy proxy = componentFactory.CreateProxy(proxySettings);
-
 					// create a system settings swither
-					SystemSettingsSwitcher systemSettingsSwitcher = componentFactory.CreateSystemSettingsSwitcher(this.Owner, systemSettingsSwitcherSettings, proxy);
+					SystemSettingsSwitcher switcher = componentFactory.CreateSystemSettingsSwitcher(this.Owner, systemSettingsSwitcherSettings);
+					this.switcher = switcher;
 
 					// start the proxy
-					proxy.ActualProxy = systemSettingsSwitcher.ActualProxy;
+					Proxy proxy = componentFactory.CreateProxy(proxySettings);
+					proxy.ActualProxy = switcher.ActualProxy;
 					proxy.Start(proxyRunner);
 					this.proxy = proxy;
 
 					// switch system settings
-					this.backup = systemSettingsSwitcher.Switch(makeBackup: true);
+					this.backup = switcher.Switch(proxy);
 				} catch {
 					Stop();
 					throw;
@@ -140,14 +143,16 @@ namespace MAPE.Command {
 
 			public bool Stop(int millisecondsTimeout = 0) {
 				// restore the system settings
-				SystemSettingsSwitcher backup = this.backup;
+				SystemSettingsSwitcher switcher = this.switcher;
+				this.switcher = null;
+				SystemSettings backup = this.backup;
 				this.backup = null;
 				if (backup != null) {
+					Debug.Assert(switcher != null);
 					try {
-						backup.Switch(makeBackup: false);
+						switcher.Restore(backup);
 					} catch (Exception exception) {
-						string message = string.Format(Resources.RunningProxyState_Message_FailToRestoreSystemSettings, exception.Message);
-						this.Owner.ShowErrorMessage(message);
+						this.Owner.ShowRestoreSystemSettingsErrorMessage(exception.Message);
 						// continue
 					}
 				}
@@ -165,6 +170,11 @@ namespace MAPE.Command {
 						Util.DisposeWithoutFail(proxy);
 					}
 				}
+
+				// checks
+				Debug.Assert(this.proxy == null);
+				Debug.Assert(this.switcher == null);
+				Debug.Assert(this.backup == null);
 
 				return stopConfirmed;
 			}
@@ -492,6 +502,16 @@ namespace MAPE.Command {
 
 			// statistics of the ComponentFactory
 			this.ComponentFactory.LogStatistics(recap: true);
+		}
+
+		#endregion
+
+
+		#region methods - for RunningProxyState and SystemSettingSwitcher class
+
+		public void ShowRestoreSystemSettingsErrorMessage(string message) {
+			message = string.Format(Resources.RunningProxyState_Message_FailToRestoreSystemSettings, message ?? "(unknown reason)");
+			ShowErrorMessage(message);
 		}
 
 		#endregion

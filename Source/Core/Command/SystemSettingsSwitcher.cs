@@ -25,25 +25,20 @@ namespace MAPE.Command {
 		/// </summary>
 		/// <param name="owner"></param>
 		/// <param name="settings"></param>
-		/// <param name="proxy">null means initialization for backup.</param>
-		public SystemSettingsSwitcher(CommandBase owner, SystemSettingsSwitcherSettings settings, Proxy proxy) {
+		public SystemSettingsSwitcher(CommandBase owner, SystemSettingsSwitcherSettings settings) {
 			// argument checks
 			if (owner == null) {
 				throw new ArgumentNullException(nameof(owner));
 			}
-			if (settings != null && proxy == null) {
-				// proxy is indispensable if settings has contents
-				throw new ArgumentNullException(nameof(proxy));
-			}
+			// settings can be null
 
 			// initialize members
 			this.Owner = owner;
 
 			bool enabled;
 			WebProxy actualProxy;
-			if (proxy == null) {
-				// simple initialization for backup
-				Debug.Assert(settings == null);
+			if (settings == null) {
+				// simple initialization (ex. to restore)
 				enabled = true;
 				actualProxy = null;
 			} else {
@@ -78,63 +73,72 @@ namespace MAPE.Command {
 
 		#region methods
 
-		public SystemSettingsSwitcher Switch(bool makeBackup) {
-			// get back if necessary
-			SystemSettingsSwitcher backup = null;
+		public SystemSettings Switch(Proxy proxy) {
+			// argument checks
+			if (proxy == null) {
+				throw new ArgumentNullException(nameof(proxy));
+			}
+
+			// state checks
 			if (this.Enabled == false) {
 				return null;
 			}
-			if (makeBackup) {
-				backup = GetCurrentSettings();
-			}
+
+			// preparations
+			SystemSettings switching = GetSwitchingSystemSettings(proxy);
+			SystemSettings backup = GetCurrentSystemSettings();
 
 			// switch the system setting
-			try {
-				if (Switch(backup) == false) {
-					// actually, not switched
-					// backup is no use
-					backup = null;
-				}
-			} catch {
-				if (backup != null) {
-					try {
-						backup.Switch(null);
-					} catch {
-						// continue
-					}
-				}
-				throw;
-			}
-
-			// notify the system setting change
-			try {
-				NotifySwitched();
-			} catch (Exception exception) {
-				this.Owner.LogVerbose($"Error on notifying system setting switch: {exception.Message}");
-				// not fatal, continue
+			if (SwitchToInternal(switching, backup) == false) {
+				// actually, not switched
+				// backup is no use
+				backup = null;
 			}
 
 			return backup;
 		}
 
-		protected SystemSettingsSwitcher GetCurrentSettings() {
-			// create a new SystemSettingsSwitcher instance
-			SystemSettingsSwitcher switcher = this.Owner.ComponentFactory.CreateSystemSettingsSwitcher(this.Owner, null, null);
+		public void Restore(SystemSettings backup) {
+			// argument checks
+			if (backup == null) {
+				throw new ArgumentNullException(nameof(backup));
+			}
 
-			// load the current system settings into the instance
-			switcher.LoadCurrentSettings();
+			// restore the system setting
+			SwitchToInternal(backup, null);
 
-			return switcher;			
+			return;
+		}
+
+		protected SystemSettings GetCurrentSystemSettings() {
+			// create a new SystemSettings instance
+			SystemSettings settings = CreateSystemSettings();
+
+			// set the current system settings into the instance
+			SetCurrentSystemSettingsTo(settings);
+
+			return settings;			
+		}
+
+		protected SystemSettings GetSwitchingSystemSettings(Proxy proxy) {
+			// argument checks
+			if (proxy == null) {
+				throw new ArgumentNullException(nameof(proxy));
+			}
+
+			// create a new SystemSettings instance
+			SystemSettings settings = CreateSystemSettings();
+
+			// set the switching system settings into the instance
+			SetSwitchingSystemSettingsTo(settings, proxy);
+
+			return settings;
 		}
 
 		#endregion
 
 
 		#region overridables
-
-		protected virtual void LoadCurrentSettings() {
-			return;
-		}
 
 		protected virtual WebProxy CreateWebProxy(ActualProxySettings settings) {
 			// argument checks
@@ -145,11 +149,23 @@ namespace MAPE.Command {
 			return new WebProxy(settings.Host, settings.Port);
 		}
 
-		protected virtual bool Switch(SystemSettingsSwitcher backup) {
+		protected virtual SystemSettings CreateSystemSettings() {
+			return new SystemSettings();
+		}
+
+		protected virtual void SetCurrentSystemSettingsTo(SystemSettings settings) {
+			return;
+		}
+
+		protected virtual void SetSwitchingSystemSettingsTo(SystemSettings settings, Proxy proxy) {
+			return;
+		}
+
+		protected virtual bool SwitchTo(SystemSettings settings, SystemSettings backup) {
 			// argument checks
 			// backup can be null
 
-			return false;	// not switched, by default
+			return false;   // not switched, by default
 		}
 
 		protected virtual void NotifySwitched() {
@@ -193,6 +209,37 @@ namespace MAPE.Command {
 			}
 
 			return systemProxy;	// may be null
+		}
+
+		private bool SwitchToInternal(SystemSettings settings, SystemSettings backup) {
+			bool switched = false;
+
+			// switch the system setting
+			try {
+				switched = SwitchTo(settings, backup);
+			} catch {
+				if (backup != null) {
+					try {
+						SwitchTo(backup, null);
+					} catch (Exception exception) {
+						this.Owner.ShowRestoreSystemSettingsErrorMessage(exception.Message);
+						// continue
+					}
+				}
+				throw;
+			}
+
+			// notify the system setting change
+			if (switched) {
+				try {
+					NotifySwitched();
+				} catch (Exception exception) {
+					this.Owner.LogVerbose($"Error on notifying system setting switch: {exception.Message}");
+					// not fatal, continue
+				}
+			}
+
+			return switched;
 		}
 
 		#endregion

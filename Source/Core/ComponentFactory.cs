@@ -270,8 +270,8 @@ namespace MAPE {
 			return new CommandSettings(data);
 		}
 
-		public virtual SystemSettingsSwitcher CreateSystemSettingsSwitcher(CommandBase owner, SystemSettingsSwitcherSettings settings, Proxy proxy) {
-			return new SystemSettingsSwitcher(owner, settings, proxy);
+		public virtual SystemSettingsSwitcher CreateSystemSettingsSwitcher(CommandBase owner, SystemSettingsSwitcherSettings settings) {
+			return new SystemSettingsSwitcher(owner, settings);
 		}
 
 		#endregion
