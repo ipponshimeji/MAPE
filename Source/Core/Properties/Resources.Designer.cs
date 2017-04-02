@@ -79,15 +79,6 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
-        ///   Y or N:  に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string CLICommandBase_AskCredential_EnableAssumptionMode_Prompt {
-            get {
-                return ResourceManager.GetString("CLICommandBase_AskCredential_EnableAssumptionMode_Prompt", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Password:  に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CLICommandBase_AskCredential_Password {
@@ -205,6 +196,24 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
+        ///   Enter Y or N (Y: Yes, N: No): に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_Prompt_YesNo {
+            get {
+                return ResourceManager.GetString("CLICommandBase_Prompt_YesNo", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Enter Y, N or C (Y: Yes, N: No, C: Cancel): に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CLICommandBase_Prompt_YesNoCancel {
+            get {
+                return ResourceManager.GetString("CLICommandBase_Prompt_YesNoCancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   The settings are saved to &apos;{0}&apos;. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CLICommandBase_SaveSettings_Completed {
@@ -268,8 +277,23 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
+        ///   The system proxy settings which were switched at previous proxing seem not to be restored. Do you want to resotre it?
+        ///The found backup is one at {0}. The settings set manually after the point will be overwritten. Be careful especially when the backup is old. 
+        ///  Yes: Restore the backup
+        ///  No: Do not restore the backup, but delete it
+        ///  Cancel: Do nothing
+        /// に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CommandBase_Message_SystemSettingsAreNotRestored {
+            get {
+                return ResourceManager.GetString("CommandBase_Message_SystemSettingsAreNotRestored", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Failed to restore the previous system settings: {0}
-        ///Please restore it manually. に類似しているローカライズされた文字列を検索します。
+        ///Please restore it manually.
+        ///Or, it may be restored from the backup &apos;{1}&apos; if it exists when you restart MAPE. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string RunningProxyState_Message_FailToRestoreSystemSettings {
             get {

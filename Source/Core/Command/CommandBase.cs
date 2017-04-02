@@ -99,7 +99,7 @@ namespace MAPE.Command {
 
 			#region methods
 
-			public void Start(SystemSettingsSwitcherSettings systemSettingsSwitcherSettings, ProxySettings proxySettings, IProxyRunner proxyRunner) {
+			public void Start(SystemSettingsSwitcherSettings systemSettingsSwitcherSettings, ProxySettings proxySettings, IProxyRunner proxyRunner, bool checkPreviousBackup) {
 				// argument checks
 				if (systemSettingsSwitcherSettings == null) {
 					throw new ArgumentNullException(nameof(systemSettingsSwitcherSettings));
@@ -121,6 +121,11 @@ namespace MAPE.Command {
 				try {
 					ComponentFactory componentFactory = this.Owner.ComponentFactory;
 
+					// check the state of previous backup
+					if (checkPreviousBackup) {
+						this.Owner.CheckPreviousBackup();
+					}
+
 					// create a system settings swither
 					SystemSettingsSwitcher switcher = componentFactory.CreateSystemSettingsSwitcher(this.Owner, systemSettingsSwitcherSettings);
 					this.switcher = switcher;
@@ -133,6 +138,9 @@ namespace MAPE.Command {
 
 					// switch system settings
 					this.backup = switcher.Switch(proxy);
+
+					// save backup settings
+					this.Owner.SaveSystemSettingsBackup(backup);
 				} catch {
 					Stop();
 					throw;
@@ -151,6 +159,7 @@ namespace MAPE.Command {
 					Debug.Assert(switcher != null);
 					try {
 						switcher.Restore(backup);
+						this.Owner.DeleteSystemSettingsBackup();
 					} catch (Exception exception) {
 						this.Owner.ShowRestoreSystemSettingsErrorMessage(exception.Message);
 						// continue
@@ -370,6 +379,13 @@ namespace MAPE.Command {
 
 					// run proxy
 					try {
+						// check previous backup
+						// This check must be done inside the scope in which
+						// no other MAPE instance is proxing.
+						// Otherwise there is a possibility that the backup is
+						// in use by another proxing MAPE instance. 
+						CheckPreviousBackup();
+
 						RunProxyImpl(settings);
 					} finally {
 						lock (locker) {
@@ -386,7 +402,37 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected RunningProxyState StartProxy(CommandSettings settings, IProxyRunner proxyRunner) {
+		protected void CheckPreviousBackup() {
+			string backupFilePath = GetSystemSettingsBackupPath();
+			if (File.Exists(backupFilePath)) {
+				// backup file exists
+				DateTime date = File.GetLastWriteTime(backupFilePath);
+				string message = string.Format(Resources.CommandBase_Message_SystemSettingsAreNotRestored, date);
+				bool? answer = Prompt(message, threeState: true);
+
+				// process depending on answer
+				//   true (Yes): restore the backup
+				//   false (No): do not restore the backup, but delete it
+				//   null (Cancel): do nothing
+				if (answer.HasValue) {
+					if (answer.Value) {
+						// restore the backup
+						JsonObjectData data = JsonObjectData.Load(backupFilePath, createIfNotExist: false);
+						if (data != null) {
+							SystemSettingsSwitcher switcher = this.ComponentFactory.CreateSystemSettingsSwitcher(this, null);
+							switcher.Restore(data);
+						}
+					}
+
+					// delete backup file
+					File.Delete(backupFilePath);
+				}
+			}
+
+			return;
+		}
+
+		protected RunningProxyState StartProxy(CommandSettings settings, IProxyRunner proxyRunner, bool checkPreviousBackup) {
 			// argument checks
 			if (settings == null) {
 				throw new ArgumentNullException(nameof(settings));
@@ -409,7 +455,7 @@ namespace MAPE.Command {
 			// create a RunningProxyState and start the proxy
 			RunningProxyState state = new RunningProxyState(this);
 			try {
-				state.Start(systemSettingSwitcherSettings, proxySettings, proxyRunner);
+				state.Start(systemSettingSwitcherSettings, proxySettings, proxyRunner, checkPreviousBackup);
 			} catch {
 				state.Dispose();
 				throw;
@@ -510,8 +556,31 @@ namespace MAPE.Command {
 		#region methods - for RunningProxyState and SystemSettingSwitcher class
 
 		public void ShowRestoreSystemSettingsErrorMessage(string message) {
-			message = string.Format(Resources.RunningProxyState_Message_FailToRestoreSystemSettings, message ?? "(unknown reason)");
+			message = string.Format(
+				Resources.RunningProxyState_Message_FailToRestoreSystemSettings,
+				message ?? "(unknown reason)",
+				GetSystemSettingsBackupPath()
+			);
 			ShowErrorMessage(message);
+		}
+
+		public void SaveSystemSettingsBackup(SystemSettings backup) {
+			// argument checks
+			if (backup == null) {
+				throw new ArgumentNullException(nameof(backup));
+			}
+
+			// save the backup settings to the file
+			string backupFilePath = GetSystemSettingsBackupPath();
+			JsonObjectData data = JsonObjectData.CreateEmpty();
+			backup.SaveToObjectData(data);
+			data.Save(backupFilePath);
+
+			return;
+		}
+
+		public void DeleteSystemSettingsBackup() {
+			File.Delete(GetSystemSettingsBackupPath());
 		}
 
 		#endregion
@@ -760,6 +829,19 @@ namespace MAPE.Command {
 
 		protected abstract void ShowErrorMessage(string message);
 
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <param name="message"></param>
+		/// <returns>
+		///   <list type="bullet">
+		///     <item>true: Yes</item>
+		///     <item>false: No</item>
+		///     <item>null: Cancel</item>
+		///   </list>
+		/// </returns>
+		protected abstract bool? Prompt(string message, bool threeState);
+
 		protected virtual void BringAppToForeground() {
 		}
 
@@ -836,11 +918,7 @@ namespace MAPE.Command {
 				string settingsFilePath;
 				if (options.TryGetValue(OptionNames.SettingsFile, out settingsFilePath) == false) {
 					// default location is %LOCALAPPDATA%\MAPE
-					string settingsFolderPath = Path.Combine(
-						Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-						"MAPE"
-					);
-					settingsFilePath = Path.Combine(settingsFolderPath, "Settings.json");
+					settingsFilePath = Path.Combine(GetMAPEAppDataFolder(), "Settings.json");
 				}
 
 				// load settings from the config file
@@ -857,6 +935,18 @@ namespace MAPE.Command {
 			}
 
 			return settingsData;
+		}
+
+		private static string GetMAPEAppDataFolder() {
+			// default folder is %LOCALAPPDATA%\MAPE
+			return Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+				"MAPE"
+			);
+		}
+
+		private static string GetSystemSettingsBackupPath() {
+			return Path.Combine(GetMAPEAppDataFolder(), "SystemSettingsBackup.json");
 		}
 
 		private static string GetForwardingEventName() {

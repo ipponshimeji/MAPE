@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
+using MAPE.Utils;
 using MAPE.Server;
 using MAPE.Command;
 using MAPE.Windows.Settings;
@@ -80,8 +81,8 @@ namespace MAPE.Windows {
 
 		#region overridables
 
-		protected override SystemSettings CreateSystemSettings() {
-			return new SystemSettingsForWindows();
+		protected override SystemSettings CreateSystemSettings(IObjectData data) {
+			return new SystemSettingsForWindows(data);
 		}
 
 		protected override void SetCurrentSystemSettingsTo(SystemSettings settings) {

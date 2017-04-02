@@ -192,6 +192,23 @@ namespace MAPE.Windows.GUI {
 			return;
 		}
 
+		protected override bool? Prompt(string message, bool threeState) {
+			MessageBoxButton button = threeState ? MessageBoxButton.YesNoCancel : MessageBoxButton.YesNo;
+			Func<bool?> prompt = () => {
+				switch (MessageBox.Show(message, this.ComponentName, button, MessageBoxImage.None)) {
+					case MessageBoxResult.Yes:
+						return true;
+					case MessageBoxResult.No:
+						return false;
+					case MessageBoxResult.Cancel:
+					default:
+						return null;
+				}
+			};
+
+			return (this.app == null)? prompt(): this.app.Dispatcher.Invoke<bool?>(prompt);
+		}
+
 		protected override void BringAppToForeground() {
 			this.app.Dispatcher.Invoke(
 				() => { this.app.OpenMainWindow(); }

@@ -184,7 +184,7 @@ namespace MAPE.Command {
 					do {
 						// run the proxy
 						bool completed = false;
-						using (RunningProxyState runningProxyState = StartProxy(settings, this)) {
+						using (RunningProxyState runningProxyState = StartProxy(settings, this, checkPreviousBackup: false)) {
 							// log & message
 							LogProxyStarted(eventKind == ControllerThreadEventKind.Resume);
 							Console.WriteLine(Resources.CLICommandBase_Message_StartListening);
@@ -262,6 +262,32 @@ namespace MAPE.Command {
 			Console.Error.WriteLine(message);
 		}
 
+		protected override bool? Prompt(string message, bool threeState) {
+			string promptMessage = threeState ? Resources.CLICommandBase_Prompt_YesNoCancel : Resources.CLICommandBase_Prompt_YesNo;
+
+			// read user preference from the console
+			Console.WriteLine(message);
+			do {
+				Console.Write(promptMessage);
+				string answer = Console.ReadLine().Trim();
+
+				switch (answer) {
+					case "Y":
+					case "y":
+						return true;
+					case "N":
+					case "n":
+						return false;
+					case "C":
+					case "c":
+						if (threeState) {
+							return null;
+						}
+						break;	// continue
+				}
+			} while (true);
+		}
+
 		#endregion
 
 
@@ -286,13 +312,13 @@ namespace MAPE.Command {
 
 		private static CredentialPersistence AskCredentialPersistence(bool canSave) {
 			// read user preference from the console
+			Console.WriteLine(Resources.CLICommandBase_AskCredential_Persistence_Description);
+			Console.WriteLine($"  1: {Resources.CLICommandBase_AskCredential_Persistence_Session}");
+			Console.WriteLine($"  2: {Resources.CLICommandBase_AskCredential_Persistence_Process}");
+			if (canSave) {
+				Console.WriteLine($"  3: {Resources.CLICommandBase_AskCredential_Persistence_Persistent}");
+			}
 			do {
-				Console.WriteLine(Resources.CLICommandBase_AskCredential_Persistence_Description);
-				Console.WriteLine($"  1: {Resources.CLICommandBase_AskCredential_Persistence_Session}");
-				Console.WriteLine($"  2: {Resources.CLICommandBase_AskCredential_Persistence_Process}");
-				if (canSave) {
-					Console.WriteLine($"  3: {Resources.CLICommandBase_AskCredential_Persistence_Persistent}");
-				}
 				Console.Write(Resources.CLICommandBase_AskCredential_Persistence_Prompt);
 				string answer = Console.ReadLine();
 
@@ -314,10 +340,11 @@ namespace MAPE.Command {
 		}
 
 		private static bool AskEnableAssumptionMode() {
+			// ToDo: use Prompt()?
 			// read user preference from the console
+			Console.WriteLine(Resources.CLICommandBase_AskCredential_EnableAssumptionMode_Description);
 			do {
-				Console.WriteLine(Resources.CLICommandBase_AskCredential_EnableAssumptionMode_Description);
-				Console.Write(Resources.CLICommandBase_AskCredential_EnableAssumptionMode_Prompt);
+				Console.Write(Resources.CLICommandBase_Prompt_YesNo);
 				string answer = Console.ReadLine().Trim();
 
 				switch (answer) {

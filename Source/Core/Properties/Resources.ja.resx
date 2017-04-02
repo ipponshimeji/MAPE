@@ -119,7 +119,8 @@
   </resheader>
   <data name="RunningProxyState_Message_FailToRestoreSystemSettings" xml:space="preserve">
     <value>以前のシステム設定の復元に失敗しました: {0}
-手動で設定を復元してください。</value>
+手動で設定を復元してください。
+または、バックアップ'{1}'が存在するならば、「認証プロキシ爆発しろ！」を起動し直すと設定を復元できる可能性があります。</value>
   </data>
   <data name="CommandBase_Message_FailToSaveCredentials" xml:space="preserve">
     <value>認証情報の保存に失敗しました: {0}</value>
@@ -138,6 +139,14 @@
   </data>
   <data name="CommandBase_Message_AnotherInstanceIsRunning" xml:space="preserve">
     <value>既に別の「認証プロキシ爆発しろ！」が起動しています。</value>
+  </data>
+  <data name="CommandBase_Message_SystemSettingsAreNotRestored" xml:space="preserve">
+    <value>前回切替えたシステム設定が復元されていない可能性があります。復元を試みますか？
+バックアップは{0}時点のものです。これより後に手動で設定した設定は上書きされます。特に、バックアップが古い場合はご注意ください。
+  はい: 復元を行う
+  いいえ: 復元を行わず、設定のバックアップを消去する
+  キャンセル: 何もしない
+</value>
   </data>
   <data name="CLICommandBase_Message_NoSettingsFile" xml:space="preserve">
     <value>保存先の設定ファイルが指定されていないため、設定を保存できません。</value>
@@ -187,8 +196,11 @@
   <data name="CLICommandBase_AskCredential_EnableAssumptionMode_Description" xml:space="preserve">
     <value>「Basic認証決めつけモード」を利用しますか？既定値は「利用する」です。</value>
   </data>
-  <data name="CLICommandBase_AskCredential_EnableAssumptionMode_Prompt" xml:space="preserve">
-    <value>Y または N: </value>
+  <data name="CLICommandBase_Prompt_YesNo" xml:space="preserve">
+    <value>Y, Nのいずれかの文字を入力してください（Y: はい, N: いいえ）:</value>
+  </data>
+  <data name="CLICommandBase_Prompt_YesNoCancel" xml:space="preserve">
+    <value>Y, N, Cのいずれかの文字を入力してください（Y: はい, N: いいえ, C: キャンセル）:</value>
   </data>
   <data name="SystemSettingsSwitcher_NoActualProxy" xml:space="preserve">
     <value>実際のプロキシを自動的に検出することができませんでした。コマンドラインや設定ファイルで明に指定して起動してください。</value>

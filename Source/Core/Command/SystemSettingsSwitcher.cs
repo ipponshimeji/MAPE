@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Net;
+using MAPE.Utils;
 using MAPE.Server;
 using MAPE.Command.Settings;
 
@@ -110,9 +111,19 @@ namespace MAPE.Command {
 			return;
 		}
 
+		public void Restore(IObjectData data) {
+			// argument checks
+			if (data == null) {
+				throw new ArgumentNullException(nameof(data));
+			}
+
+			// create a new SystemSettings instance
+			Restore(CreateSystemSettings(data));
+		}
+
 		protected SystemSettings GetCurrentSystemSettings() {
 			// create a new SystemSettings instance
-			SystemSettings settings = CreateSystemSettings();
+			SystemSettings settings = CreateSystemSettings(null);
 
 			// set the current system settings into the instance
 			SetCurrentSystemSettingsTo(settings);
@@ -127,7 +138,7 @@ namespace MAPE.Command {
 			}
 
 			// create a new SystemSettings instance
-			SystemSettings settings = CreateSystemSettings();
+			SystemSettings settings = CreateSystemSettings(null);
 
 			// set the switching system settings into the instance
 			SetSwitchingSystemSettingsTo(settings, proxy);
@@ -149,8 +160,8 @@ namespace MAPE.Command {
 			return new WebProxy(settings.Host, settings.Port);
 		}
 
-		protected virtual SystemSettings CreateSystemSettings() {
-			return new SystemSettings();
+		protected virtual SystemSettings CreateSystemSettings(IObjectData data) {
+			return new SystemSettings(data);
 		}
 
 		protected virtual void SetCurrentSystemSettingsTo(SystemSettings settings) {
