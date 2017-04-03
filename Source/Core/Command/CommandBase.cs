@@ -138,9 +138,10 @@ namespace MAPE.Command {
 
 					// switch system settings
 					this.backup = switcher.Switch(proxy);
-
-					// save backup settings
-					this.Owner.SaveSystemSettingsBackup(backup);
+					if (this.backup != null) {
+						// save backup settings
+						this.Owner.SaveSystemSettingsBackup(this.backup);
+					}
 				} catch {
 					Stop();
 					throw;
@@ -352,8 +353,8 @@ namespace MAPE.Command {
 				if (createdNew == false) {
 					// Another MAPE instance is running proxy.
 					// signal the event to notify another MAPE to move foreground
-					forwardingEvent.Set();
 					ShowErrorMessage(Resources.CommandBase_Message_AnotherInstanceIsRunning);
+					forwardingEvent.Set();
 					// quit
 				} else {
 					// this is the only MAPE instance to be running proxy
