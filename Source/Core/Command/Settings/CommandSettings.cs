@@ -17,6 +17,8 @@ namespace MAPE.Command.Settings {
 		public static class SettingNames {
 			#region constants
 
+			public const string InitialSetupDone = "InitialSetupDone";
+
 			public const string Culture = "Culture";
 
 			public const string LogLevel = "LogLevel";
@@ -36,6 +38,8 @@ namespace MAPE.Command.Settings {
 
 		public static class Defaults {
 			#region constants
+
+			public const bool InitialSetupDone = false;
 
 			public const TraceLevel LogLevel = TraceLevel.Error;
 
@@ -61,6 +65,8 @@ namespace MAPE.Command.Settings {
 
 
 		#region data
+
+		public bool InitialSetupDone { get; set; }
 
 		public TraceLevel LogLevel { get; set; }
 
@@ -139,6 +145,7 @@ namespace MAPE.Command.Settings {
 
 		public CommandSettings(IObjectData data): base(data) {
 			// prepare settings
+			bool initialSetupDone = Defaults.InitialSetupDone;
 			TraceLevel logLevel = Defaults.LogLevel;
 			CultureInfo culture = null;
 			bool noLogo = Defaults.NoLogo;
@@ -148,6 +155,7 @@ namespace MAPE.Command.Settings {
 			ProxySettings proxy = null;
 			if (data != null) {
 				// get settings from data
+				initialSetupDone = data.GetBooleanValue(SettingNames.InitialSetupDone, Defaults.InitialSetupDone);
 				logLevel = (TraceLevel)data.GetEnumValue(SettingNames.LogLevel, logLevel, typeof(TraceLevel));
 				culture = data.GetValue(SettingNames.Culture, culture, ExtractCultureInfoValue);
 				noLogo = data.GetBooleanValue(SettingNames.NoLogo, noLogo);
@@ -172,6 +180,7 @@ namespace MAPE.Command.Settings {
 			// set settings
 			try {
 				// may throw ArgumentException for an invalid value
+				this.InitialSetupDone = initialSetupDone;
 				this.LogLevel = logLevel;
 				this.Culture = culture;
 				this.NoLogo = noLogo;

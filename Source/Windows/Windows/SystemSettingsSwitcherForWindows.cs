@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Configuration;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using Microsoft.Win32;
 using MAPE.Utils;
 using MAPE.Server;
@@ -34,6 +36,14 @@ namespace MAPE.Windows {
 			public const string HttpProxy = "http_proxy";
 
 			public const string HttpsProxy = "https_proxy";
+
+			#endregion
+		}
+
+		public static class ConfigNames {
+			#region constants
+
+			public const string DefaultProxyOverride = "DefaultProxyOverride";
 
 			#endregion
 		}
@@ -74,6 +84,19 @@ namespace MAPE.Windows {
 			}
 
 			return;
+		}
+
+		#endregion
+
+
+		#region methods
+
+		public new SystemSettingsForWindows GetCurrentSystemSettings() {
+			return base.GetCurrentSystemSettings() as SystemSettingsForWindows;
+		}
+		
+		public static string GetDefaultProxyOverride() {
+			return ConfigurationManager.AppSettings[ConfigNames.DefaultProxyOverride];
 		}
 
 		#endregion

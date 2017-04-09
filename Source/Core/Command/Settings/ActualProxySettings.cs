@@ -23,7 +23,7 @@ namespace MAPE.Command.Settings {
 
 			public const string Host = "proxy.example.org";
 
-			public const int Port = 80;     // default http port
+			public const int Port = 8080;
 
 			#endregion
 		}
@@ -119,14 +119,14 @@ namespace MAPE.Command.Settings {
 		#region methods
 
 		public WebProxy CreateWebProxy() {
-				// state checks
-				EnsureHostIsValid();
-				Debug.Assert(string.IsNullOrEmpty(this.Host) == false);
-				Debug.Assert(IPEndPoint.MinPort <= this.Port && this.Port <= IPEndPoint.MaxPort);
+			// state checks
+			EnsureHostIsValid();
+			Debug.Assert(string.IsNullOrEmpty(this.Host) == false);
+			Debug.Assert(IPEndPoint.MinPort <= this.Port && this.Port <= IPEndPoint.MaxPort);
 
-				// create a WebProxy object
-				return new WebProxy(this.Host, this.Port);
-			}
+			// create a WebProxy object
+			return new WebProxy(this.Host, this.Port);
+		}
 
 		#endregion
 

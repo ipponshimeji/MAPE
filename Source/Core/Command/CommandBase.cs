@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using MAPE.Utils;
@@ -128,7 +129,25 @@ namespace MAPE.Command {
 
 					// create a system settings swither
 					SystemSettingsSwitcher switcher = componentFactory.CreateSystemSettingsSwitcher(this.Owner, systemSettingsSwitcherSettings);
+					if (switcher.ActualProxy == null) {
+						// no actual proxy to which it connects
+						throw new Exception(Resources.CommandBase_Message_NoActualProxy);
+					}
 					this.switcher = switcher;
+
+					// log
+					CommandBase owner = this.Owner;
+					if (owner.ShouldLog(TraceEventType.Verbose)) {
+						// log the actual proxy if it is static
+						DnsEndPoint actualProxyEndPoint = switcher.ActualProxyEndPoint;
+						if (actualProxyEndPoint != null) {
+							owner.LogVerbose($"ActualProxy is {actualProxyEndPoint.Host}:{actualProxyEndPoint.Port}");
+						}
+
+						// log whether system settings is being switched
+						string label = switcher.Enabled ? "enabled" : "disabled";
+						owner.LogVerbose($"SystemSettingsSwitch: {label}");
+					}
 
 					// start the proxy
 					Proxy proxy = componentFactory.CreateProxy(proxySettings);
@@ -140,7 +159,7 @@ namespace MAPE.Command {
 					this.backup = switcher.Switch(proxy);
 					if (this.backup != null) {
 						// save backup settings
-						this.Owner.SaveSystemSettingsBackup(this.backup);
+						owner.SaveSystemSettingsBackup(this.backup);
 					}
 				} catch {
 					Stop();
@@ -554,6 +573,41 @@ namespace MAPE.Command {
 		#endregion
 
 
+		#region methods - initial setup
+
+		protected void DoInitialSetup(CommandSettings settings) {
+			// argument checks
+			if (settings == null) {
+				throw new ArgumentNullException(nameof(settings));
+			}
+
+			// state checks
+			string settingsFilePath = this.SettingsFilePath;
+			if (string.IsNullOrEmpty(settingsFilePath)) {
+				// it is temporary running
+				return;
+			}
+
+			// do initial setup if it has not been done
+			if (settings.InitialSetupDone == false) {
+				if (DoInitialSetupImpl(settings)) {
+					settings.InitialSetupDone = true;
+
+					// update settings as it was set up initiallly 
+					UpdateSettingsFile(
+						(s) => { s.InitialSetupDone = true; },
+						settingsFilePath
+					);
+				}
+			}
+
+			return;
+		}
+
+
+		#endregion
+
+
 		#region methods - for RunningProxyState and SystemSettingSwitcher class
 
 		public void ShowRestoreSystemSettingsErrorMessage(string message) {
@@ -844,6 +898,10 @@ namespace MAPE.Command {
 		protected abstract bool? Prompt(string message, bool threeState);
 
 		protected virtual void BringAppToForeground() {
+		}
+
+		protected virtual bool DoInitialSetupImpl(CommandSettings settings) {
+			return false;
 		}
 
 		#endregion

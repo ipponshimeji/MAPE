@@ -53,6 +53,10 @@ namespace MAPE.Windows.GUI {
 
 		#region methods
 
+		public void DoInitialSetup() {
+			base.DoInitialSetup(this.Settings);
+		}
+
 		public void SetSettings(CommandForWindowsGUISettings newSettings, bool save) {
 			// change the current settings
 			CommandForWindowsGUISettings oldSettings = this.Settings;

@@ -19,6 +19,22 @@ namespace MAPE.Command {
 		#endregion
 
 
+		#region properties
+
+		/// <summary>
+		/// Returns the end point of the actual proxy if it has a static end point.
+		/// </summary>
+		public DnsEndPoint ActualProxyEndPoint {
+			get {
+				// ToDo: can improve?
+				WebProxy webProxy = this.ActualProxy as WebProxy;
+				return (webProxy == null) ? null : new DnsEndPoint(webProxy.Address.Host, webProxy.Address.Port);
+			}
+		}
+
+		#endregion
+
+
 		#region creation and disposal
 
 		/// <summary>
@@ -49,17 +65,7 @@ namespace MAPE.Command {
 					actualProxy = CreateWebProxy(settings.ActualProxy);
 				} else {
 					actualProxy = DetectSystemProxy();
-					if (actualProxy == null) {
-						throw new Exception(Properties.Resources.SystemSettingsSwitcher_NoActualProxy);
-					}
-				}
-
-				// log
-				if (owner.ShouldLog(TraceEventType.Verbose)) {
-					Uri address = actualProxy.Address;
-					owner.LogVerbose($"ActualProxy is {address.Host}:{address.Port}");
-					string label = enabled ? "enabled" : "disabled";
-					owner.LogVerbose($"SystemSettingsSwitch: {label}");
+					// Note that actualProxy may be null
 				}
 			}
 
@@ -121,7 +127,7 @@ namespace MAPE.Command {
 			Restore(CreateSystemSettings(data));
 		}
 
-		protected SystemSettings GetCurrentSystemSettings() {
+		public SystemSettings GetCurrentSystemSettings() {
 			// create a new SystemSettings instance
 			SystemSettings settings = CreateSystemSettings(null);
 
@@ -131,7 +137,7 @@ namespace MAPE.Command {
 			return settings;			
 		}
 
-		protected SystemSettings GetSwitchingSystemSettings(Proxy proxy) {
+		public SystemSettings GetSwitchingSystemSettings(Proxy proxy) {
 			// argument checks
 			if (proxy == null) {
 				throw new ArgumentNullException(nameof(proxy));
