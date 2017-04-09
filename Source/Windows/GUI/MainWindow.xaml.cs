@@ -100,6 +100,8 @@ namespace MAPE.Windows.GUI {
 
 		private AboutWindow aboutWindow;
 
+		private bool showingSetupWindow = false;
+
 		#endregion
 
 
@@ -179,6 +181,30 @@ namespace MAPE.Windows.GUI {
 
 
 		#region methods
+
+		internal CommandForWindowsGUISettings ShowSetupWindow(CommandForWindowsGUISettings settings) {
+			// argument checks
+			Debug.Assert(settings != null);
+
+			// state checks
+			Command command = this.Command;
+			Debug.Assert(command.IsProxyRunning == false);
+
+			// open the setup window as dialog
+			CommandForWindowsGUISettings newSettings = null;
+			this.showingSetupWindow = true;
+			try {
+				SetupWindow window = new SetupWindow(settings);
+				window.Owner = this;
+				if (window.ShowDialog() ?? false) {
+					newSettings = window.CommandSettings;
+				}
+			} finally {
+				this.showingSetupWindow = false;
+			}
+
+			return newSettings;
+		}
 
 		internal void ShowSettingsWindow() {
 			// state checks
@@ -297,6 +323,9 @@ namespace MAPE.Windows.GUI {
 		private UIStateFlags GetUIState() {
 			// base state
 			UIStateFlags state = UIStateFlags.Invariable;
+			if (this.showingSetupWindow) {
+				return state;
+			}
 
 			// reflect dialog state
 			if (this.settingsWindow == null && this.aboutWindow == null) {

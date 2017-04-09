@@ -575,7 +575,7 @@ namespace MAPE.Command {
 
 		#region methods - initial setup
 
-		protected void DoInitialSetup(CommandSettings settings) {
+		protected CommandSettings DoInitialSetup(CommandSettings settings) {
 			// argument checks
 			if (settings == null) {
 				throw new ArgumentNullException(nameof(settings));
@@ -585,25 +585,31 @@ namespace MAPE.Command {
 			string settingsFilePath = this.SettingsFilePath;
 			if (string.IsNullOrEmpty(settingsFilePath)) {
 				// it is temporary running
-				return;
+				return null;
 			}
 
 			// do initial setup if it has not been done
+			CommandSettings newSettings = null;
 			if (settings.InitialSetupDone == false) {
-				if (DoInitialSetupImpl(settings)) {
-					settings.InitialSetupDone = true;
+				newSettings = DoInitialSetupImpl(settings);
+				if (newSettings != null) {
+					// set the 'InitialSetupDone' setting
+					newSettings.InitialSetupDone = true;
 
-					// update settings as it was set up initiallly 
-					UpdateSettingsFile(
-						(s) => { s.InitialSetupDone = true; },
-						settingsFilePath
-					);
+					// save the new settings
+					Action saveTask = () => {
+						try {
+							SaveSettingsToFile(newSettings, settingsFilePath);
+						} catch (Exception exception) {
+							LogError($"Fail to save settings: {exception.Message}");
+						}
+					};
+					Task.Run(saveTask);
 				}
 			}
 
-			return;
+			return newSettings;
 		}
-
 
 		#endregion
 
@@ -900,8 +906,8 @@ namespace MAPE.Command {
 		protected virtual void BringAppToForeground() {
 		}
 
-		protected virtual bool DoInitialSetupImpl(CommandSettings settings) {
-			return false;
+		protected virtual CommandSettings DoInitialSetupImpl(CommandSettings settings) {
+			return null;	// null means not changed
 		}
 
 		#endregion

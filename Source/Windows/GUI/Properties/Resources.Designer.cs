@@ -773,5 +773,77 @@ namespace MAPE.Windows.GUI.Properties {
                 return ResourceManager.GetString("SettingsWindow_userNameColumn_Header", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Authentication Proxy に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_authenticationProxyTabItem_Header {
+            get {
+                return ResourceManager.GetString("SetupWindow_authenticationProxyTabItem_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Back に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_backButton_Content {
+            get {
+                return ResourceManager.GetString("SetupWindow_backButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Finish に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_finishButton_Content {
+            get {
+                return ResourceManager.GetString("SetupWindow_finishButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Finishing に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_finishingTabItem_Header {
+            get {
+                return ResourceManager.GetString("SetupWindow_finishingTabItem_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Next に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_nextButton_Content {
+            get {
+                return ResourceManager.GetString("SetupWindow_nextButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   System Settings Switch に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_systemSettingsSwitchTabItem_Header {
+            get {
+                return ResourceManager.GetString("SetupWindow_systemSettingsSwitchTabItem_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Test に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_testTabItem_Header {
+            get {
+                return ResourceManager.GetString("SetupWindow_testTabItem_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Initial Setup に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_Title {
+            get {
+                return ResourceManager.GetString("SetupWindow_Title", resourceCulture);
+            }
+        }
     }
 }

@@ -345,4 +345,28 @@
   <data name="AboutWindow_ComponentsGroupBox_Header" xml:space="preserve">
     <value>このソフトウェアは以下のコンポーネントを利用しています</value>
   </data>
+  <data name="SetupWindow_Title" xml:space="preserve">
+    <value>初期設定</value>
+  </data>
+  <data name="SetupWindow_backButton_Content" xml:space="preserve">
+    <value>戻る(_B)</value>
+  </data>
+  <data name="SetupWindow_nextButton_Content" xml:space="preserve">
+    <value>次へ(_N)</value>
+  </data>
+  <data name="SetupWindow_finishButton_Content" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="SetupWindow_authenticationProxyTabItem_Header" xml:space="preserve">
+    <value>認証プロキシ</value>
+  </data>
+  <data name="SetupWindow_systemSettingsSwitchTabItem_Header" xml:space="preserve">
+    <value>システム設定切替</value>
+  </data>
+  <data name="SetupWindow_testTabItem_Header" xml:space="preserve">
+    <value>テスト</value>
+  </data>
+  <data name="SetupWindow_finishingTabItem_Header" xml:space="preserve">
+    <value>完了</value>
+  </data>
 </root>

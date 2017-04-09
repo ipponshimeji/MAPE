@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using MAPE.Utils;
+using MAPE.Windows.GUI.Settings;
 using AssemblyResources = MAPE.Windows.GUI.Properties.Resources;
 
 
@@ -25,7 +26,8 @@ namespace MAPE.Windows.GUI {
 			SettingsEnabled = 0x08,
 			AboutEnabled = 0x10,
 
-			InitialState = ExitEnabled | StartEnabled | SettingsEnabled | AboutEnabled,
+			None = 0,
+			InitialState = None,
 		}
 
 		#endregion
@@ -158,6 +160,17 @@ namespace MAPE.Windows.GUI {
 			return window;
 		}
 
+		internal CommandForWindowsGUISettings ShowSetupWindow(CommandForWindowsGUISettings settings) {
+			CommandForWindowsGUISettings newSettings = null;
+			try {
+				newSettings = OpenMainWindow().ShowSetupWindow(settings);
+			} catch (Exception exception) {
+				ErrorMessage(exception.Message);
+			}
+
+			return newSettings;
+		}
+
 		internal void ErrorMessage(string message) {
 			MessageBox.Show(message, this.Command.ComponentName, MessageBoxButton.OK, MessageBoxImage.Error);
 		}
@@ -177,6 +190,7 @@ namespace MAPE.Windows.GUI {
 			this.onIcon = BitmapFrame.Create(new Uri("pack://siteoforigin:,,,/Resources/OnIcon.ico"));
 			this.offIcon = BitmapFrame.Create(new Uri("pack://siteoforigin:,,,/Resources/OffIcon.ico"));
 
+			// setup task tray menu
 			NotifyIconComponent notifyIcon = new NotifyIconComponent();
 			notifyIcon.StartMenuItem.Click += this.StartMenuItem_Click;
 			notifyIcon.StopMenuItem.Click += this.StopMenuItem_Click;
@@ -186,8 +200,14 @@ namespace MAPE.Windows.GUI {
 			notifyIcon.ExitMenuItem.Click += this.ExitMenuItem_Click;
 			this.notifyIcon = notifyIcon;
 
+			// misc
 			this.Command.ProxyStateChanged += command_ProxyStateChanged;
 
+			OnUIStateChanged(UIStateFlags.None);
+			this.Command.DoInitialSetup();
+
+			// UI state must be updated after the initial setup
+			// otherwise another window can be opened from the context menu
 			OnUIStateChanged(GetUIState());
 
 			return;

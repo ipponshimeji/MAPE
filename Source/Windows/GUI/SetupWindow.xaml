@@ -1,0 +1,29 @@
+﻿<Window x:Class="MAPE.Windows.GUI.SetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MAPE.Windows.GUI"
+        xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
+        mc:Ignorable="d"
+        Title="{x:Static properties:Resources.SetupWindow_Title}" Height="400" Width="600">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TabControl x:Name="setupTab" Grid.Row="0" >
+            <TabItem x:Name="authenticationProxyTabItem" Header="{x:Static properties:Resources.SetupWindow_authenticationProxyTabItem_Header}" />
+            <TabItem x:Name="systemSettingsSwitchTabItem" Header="{x:Static properties:Resources.SetupWindow_systemSettingsSwitchTabItem_Header}" />
+            <TabItem x:Name="testTabItem" Header="{x:Static properties:Resources.SetupWindow_testTabItem_Header}" />
+            <TabItem x:Name="finishingTabItem" Header="{x:Static properties:Resources.SetupWindow_finishingTabItem_Header}" />
+        </TabControl>
+        <StackPanel Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Orientation="Horizontal">
+            <Button x:Name="backButton" Content="{x:Static properties:Resources.SetupWindow_backButton_Content}" MinWidth="100" Margin="8,8,4,8" Padding="4" />
+            <Button x:Name="nextButton" Content="{x:Static properties:Resources.SetupWindow_nextButton_Content}" MinWidth="100" Margin="8,8,12,8" Padding="4" />
+            <Button x:Name="finishButton" Content="{x:Static properties:Resources.SetupWindow_finishButton_Content}" MinWidth="100" Margin="8,8,4,8" IsDefault="True" Padding="4" />
+            <Button x:Name="cancelButton" Content="{x:Static properties:Resources.Common_Cancel}" MinWidth="100" Margin="8,8,6,8" IsCancel="True" Padding="4" />
+        </StackPanel>
+    </Grid>
+</Window>

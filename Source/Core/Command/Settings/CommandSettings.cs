@@ -205,6 +205,7 @@ namespace MAPE.Command.Settings {
 			}
 
 			// clone members
+			this.InitialSetupDone = src.InitialSetupDone;
 			this.LogLevel = src.LogLevel;
 			this.Culture = src.Culture;
 			this.NoLogo = src.NoLogo;
@@ -230,6 +231,7 @@ namespace MAPE.Command.Settings {
 			Debug.Assert(data != null);
 
 			// save settings
+			data.SetBooleanValue(SettingNames.InitialSetupDone, this.InitialSetupDone, omitDefault, this.InitialSetupDone == Defaults.InitialSetupDone);
 			data.SetEnumValue(SettingNames.LogLevel, this.LogLevel, omitDefault, this.LogLevel == Defaults.LogLevel);
 			data.SetValue(SettingNames.Culture, this.Culture, CreateCultureInfoValue, omitDefault, Defaults.IsDefaultCulture(this.Culture));
 			data.SetBooleanValue(SettingNames.NoLogo, this.NoLogo, omitDefault, this.NoLogo == Defaults.NoLogo);

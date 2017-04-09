@@ -349,6 +349,30 @@
   <data name="AboutWindow_ComponentsList" xml:space="preserve">
     <value>Newtonsoft.Json v9.0.1</value>
   </data>
+  <data name="SetupWindow_Title" xml:space="preserve">
+    <value>Initial Setup</value>
+  </data>
+  <data name="SetupWindow_backButton_Content" xml:space="preserve">
+    <value>_Back</value>
+  </data>
+  <data name="SetupWindow_nextButton_Content" xml:space="preserve">
+    <value>_Next</value>
+  </data>
+  <data name="SetupWindow_finishButton_Content" xml:space="preserve">
+    <value>Finish</value>
+  </data>
+  <data name="SetupWindow_authenticationProxyTabItem_Header" xml:space="preserve">
+    <value>Authentication Proxy</value>
+  </data>
+  <data name="SetupWindow_systemSettingsSwitchTabItem_Header" xml:space="preserve">
+    <value>System Settings Switch</value>
+  </data>
+  <data name="SetupWindow_testTabItem_Header" xml:space="preserve">
+    <value>Test</value>
+  </data>
+  <data name="SetupWindow_finishingTabItem_Header" xml:space="preserve">
+    <value>Finishing</value>
+  </data>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="OffIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\OffIcon.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>
