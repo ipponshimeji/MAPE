@@ -182,28 +182,25 @@ namespace MAPE.Windows.GUI {
 
 		#region methods
 
-		internal CommandForWindowsGUISettings ShowSetupWindow(CommandForWindowsGUISettings settings) {
+		internal bool ShowSetupWindow(SetupContext setupContext) {
 			// argument checks
-			Debug.Assert(settings != null);
+			Debug.Assert(setupContext != null);
 
 			// state checks
-			Command command = this.Command;
-			Debug.Assert(command.IsProxyRunning == false);
+			Debug.Assert(this.Command.IsProxyRunning == false);
 
 			// open the setup window as dialog
-			CommandForWindowsGUISettings newSettings = null;
+			bool result = false;
 			this.showingSetupWindow = true;
 			try {
-				SetupWindow window = new SetupWindow(settings);
+				SetupWindow window = new SetupWindow(setupContext);
 				window.Owner = this;
-				if (window.ShowDialog() ?? false) {
-					newSettings = window.CommandSettings;
-				}
+				result = (window.ShowDialog() ?? false);
 			} finally {
 				this.showingSetupWindow = false;
 			}
 
-			return newSettings;
+			return result;
 		}
 
 		internal void ShowSettingsWindow() {

@@ -39,7 +39,7 @@ namespace MAPE.Windows.GUI {
 
 		#region data
 
-		public CommandForWindowsGUISettings CommandSettings {
+		public SetupContext SetupContext {
 			get; private set;
 		}
 
@@ -52,14 +52,14 @@ namespace MAPE.Windows.GUI {
 
 		#region creation and disposal
 
-		public SetupWindow(CommandForWindowsGUISettings commandSettings) {
+		public SetupWindow(SetupContext setupContext) {
 			// argument checks
-			if (commandSettings == null) {
-				throw new ArgumentNullException(nameof(commandSettings));
+			if (setupContext == null) {
+				throw new ArgumentNullException(nameof(setupContext));
 			}
 
 			// initialize members
-			this.CommandSettings = commandSettings;
+			this.SetupContext = setupContext;
 
 			// initialize components
 			InitializeComponent();

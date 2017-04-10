@@ -54,10 +54,11 @@ namespace MAPE.Windows.GUI {
 		#region methods
 
 		public void DoInitialSetup() {
-			CommandForWindowsGUISettings newSettings = base.DoInitialSetup(CloneSettings(this.Settings)) as CommandForWindowsGUISettings;
-			if (newSettings != null) {
+			CommandForWindowsGUISettings settings = CloneSettings(this.Settings);
+			if (base.DoInitialSetup(settings)) {
+				// settings are set up
 				// Note that the new settings have been saved in  base.DoInitialSetup()
-				SetSettings(newSettings, false);
+				SetSettings(settings, save: false);
 			}
 
 			return;
@@ -225,36 +226,17 @@ namespace MAPE.Windows.GUI {
 			);
 		}
 
-		protected override CommandSettings DoInitialSetupImpl(CommandSettings settings) {
+		protected override bool DoInitialSetupImpl(CommandSettings settings) {
 			// argument checks
 			CommandForWindowsGUISettings actualSettings = settings as CommandForWindowsGUISettings;
 			if (actualSettings == null) {
 				throw new ArgumentException($"It must be an instance of {nameof(CommandForWindowsGUISettings)} class.", nameof(settings));
 			}
 
-			// check settings
-			bool needSetup = false;
-			SystemSettingsSwitcherForWindows switcher = this.ComponentFactory.CreateSystemSettingsSwitcher(this, settings.SystemSettingsSwitcher) as SystemSettingsSwitcherForWindows;
-			Debug.Assert(switcher != null);
+			// create context
+			SetupContext setupContext = new SetupContext(this, actualSettings);
 
-			// ActualProxy
-			if (switcher.ActualProxy == null) {
-				// authentication proxy must be specified explicitly
-				needSetup = true;
-			}
-
-			// ProxyOverride
-			SystemSettingsForWindows current = switcher.GetCurrentSystemSettings();
-			if (
-				(current.AutoDetect || string.IsNullOrEmpty(current.AutoConfigURL) == false) &&
-				string.IsNullOrEmpty(actualSettings.SystemSettingsSwitcher.FilteredProxyOverride)
-			) {
-				// ProxyOverride is essential if proxy has been configured automatically
-				actualSettings.SystemSettingsSwitcher.FilteredProxyOverride = SystemSettingsSwitcherForWindows.GetDefaultProxyOverride();
-				needSetup = true;
-			}
-
-			return needSetup? this.app.ShowSetupWindow(actualSettings): settings;
+			return setupContext.NeedSetup? this.app.ShowSetupWindow(setupContext): false;
 		}
 
 		#endregion

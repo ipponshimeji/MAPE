@@ -66,6 +66,7 @@
     <Compile Include="CLICommandForWindows.cs" />
     <Compile Include="Settings\CommandForWindowsSettings.cs" />
     <Compile Include="Settings\SystemSettingsSwitcherForWindowsSettings.cs" />
+    <Compile Include="SetupContext.cs" />
     <Compile Include="SystemSettingsForWindows.cs" />
     <Compile Include="SystemSettingsSwitcherForWindows.cs" />
   </ItemGroup>

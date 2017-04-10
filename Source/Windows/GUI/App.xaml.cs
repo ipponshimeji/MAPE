@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using MAPE.Utils;
+using MAPE.Windows.Settings;
 using MAPE.Windows.GUI.Settings;
 using AssemblyResources = MAPE.Windows.GUI.Properties.Resources;
 
@@ -160,15 +161,15 @@ namespace MAPE.Windows.GUI {
 			return window;
 		}
 
-		internal CommandForWindowsGUISettings ShowSetupWindow(CommandForWindowsGUISettings settings) {
-			CommandForWindowsGUISettings newSettings = null;
+		internal bool ShowSetupWindow(SetupContext setupContext) {
+			bool result = false;
 			try {
-				newSettings = OpenMainWindow().ShowSetupWindow(settings);
+				result = OpenMainWindow().ShowSetupWindow(setupContext);
 			} catch (Exception exception) {
 				ErrorMessage(exception.Message);
 			}
 
-			return newSettings;
+			return result;
 		}
 
 		internal void ErrorMessage(string message) {
