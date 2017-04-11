@@ -198,7 +198,9 @@ namespace MAPE.Windows.GUI {
 
 				// open the settings window as dialog
 				Command command = this.Command;
-				window = new SettingsWindow(Command.CloneSettings(command.Settings), command.HasSettingsFile, command.IsProxyRunning);
+				CommandForWindowsGUISettings settings = Command.CloneSettings(command.Settings);
+				settings.LogLevel = Logger.LogLevel;	// LogLevel might be changed by LogLevel menu
+				window = new SettingsWindow(settings, command.HasSettingsFile, command.IsProxyRunning);
 				window.Owner = this;
 				this.settingsWindow = window;
 				try {
