@@ -98,6 +98,42 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   Authentication Proxy に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ActualProxySettingsControl_authenticationProxyGroup_Header {
+            get {
+                return ResourceManager.GetString("ActualProxySettingsControl_authenticationProxyGroup_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Detect Automatically に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ActualProxySettingsControl_autoDetectProxyCheckBox_Content {
+            get {
+                return ResourceManager.GetString("ActualProxySettingsControl_autoDetectProxyCheckBox_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Host Name: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ActualProxySettingsControl_hostNameLabel_Content {
+            get {
+                return ResourceManager.GetString("ActualProxySettingsControl_hostNameLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Port: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ActualProxySettingsControl_portLabel_Content {
+            get {
+                return ResourceManager.GetString("ActualProxySettingsControl_portLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   MAPE に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string App_Title {
@@ -478,24 +514,6 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
-        ///   Authentication Proxy に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string SettingsWindow_authenticationProxyGroup_Header {
-            get {
-                return ResourceManager.GetString("SettingsWindow_authenticationProxyGroup_Header", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   _Detect Automatically に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string SettingsWindow_autoDetectProxyCheckBox_Content {
-            get {
-                return ResourceManager.GetString("SettingsWindow_autoDetectProxyCheckBox_Content", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Backlog に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string SettingsWindow_backlogColumn_Header {
@@ -564,15 +582,6 @@ namespace MAPE.Windows.GUI.Properties {
         public static string SettingsWindow_exclusionLabel_Content {
             get {
                 return ResourceManager.GetString("SettingsWindow_exclusionLabel_Content", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   _Host Name: に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string SettingsWindow_hostNameLabel_Content {
-            get {
-                return ResourceManager.GetString("SettingsWindow_hostNameLabel_Content", resourceCulture);
             }
         }
         
@@ -663,15 +672,6 @@ namespace MAPE.Windows.GUI.Properties {
         public static string SettingsWindow_portColumn_Header {
             get {
                 return ResourceManager.GetString("SettingsWindow_portColumn_Header", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   _Port: に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string SettingsWindow_portLabel_Content {
-            get {
-                return ResourceManager.GetString("SettingsWindow_portLabel_Content", resourceCulture);
             }
         }
         

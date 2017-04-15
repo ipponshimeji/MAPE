@@ -26,6 +26,15 @@ namespace MAPE.Command.Settings {
 			public const int Port = 8080;
 
 			#endregion
+
+
+			#region methods
+
+			public static bool IsDefaultHostName(string hostName) {
+				return AreSameHostName(Host, hostName);
+			}
+
+			#endregion
 		}
 
 		#endregion
@@ -117,6 +126,10 @@ namespace MAPE.Command.Settings {
 
 
 		#region methods
+
+		public static bool AreSameHostName(string hostName1, string hostName2) {
+			return string.Compare(hostName1, hostName2, StringComparison.OrdinalIgnoreCase) == 0;
+		}
 
 		public WebProxy CreateWebProxy() {
 			// state checks

@@ -216,6 +216,18 @@
   <data name="CredentialDialog_EnableAssumptionModeCheckBox_Content" xml:space="preserve">
     <value>Enable "Basic Authentication _Assumption Mode"</value>
   </data>
+  <data name="ActualProxySettingsControl_authenticationProxyGroup_Header" xml:space="preserve">
+    <value>Authentication Proxy</value>
+  </data>
+  <data name="ActualProxySettingsControl_autoDetectProxyCheckBox_Content" xml:space="preserve">
+    <value>_Detect Automatically</value>
+  </data>
+  <data name="ActualProxySettingsControl_hostNameLabel_Content" xml:space="preserve">
+    <value>_Host Name:</value>
+  </data>
+  <data name="ActualProxySettingsControl_portLabel_Content" xml:space="preserve">
+    <value>_Port:</value>
+  </data>
   <data name="SettingsWindow_Title" xml:space="preserve">
     <value>Settings</value>
   </data>
@@ -236,18 +248,6 @@
   </data>
   <data name="SettingsWindow_miscTab_Header" xml:space="preserve">
     <value>Misc</value>
-  </data>
-  <data name="SettingsWindow_authenticationProxyGroup_Header" xml:space="preserve">
-    <value>Authentication Proxy</value>
-  </data>
-  <data name="SettingsWindow_autoDetectProxyCheckBox_Content" xml:space="preserve">
-    <value>_Detect Automatically</value>
-  </data>
-  <data name="SettingsWindow_hostNameLabel_Content" xml:space="preserve">
-    <value>_Host Name:</value>
-  </data>
-  <data name="SettingsWindow_portLabel_Content" xml:space="preserve">
-    <value>_Port:</value>
   </data>
   <data name="SettingsWindow_systemSettingsSwitherGroup_Header" xml:space="preserve">
     <value>System Settings Switcher</value>

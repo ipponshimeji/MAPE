@@ -66,6 +66,9 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActualProxySettingsControl.xaml.cs">
+      <DependentUpon>ActualProxySettingsControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ComponentFactoryForWindowsGUI.cs" />
     <Compile Include="ListenerDialog.xaml.cs">
       <DependentUpon>ListenerDialog.xaml</DependentUpon>
@@ -85,6 +88,10 @@
     <Compile Include="SetupWindow.xaml.cs">
       <DependentUpon>SetupWindow.xaml</DependentUpon>
     </Compile>
+    <Page Include="ActualProxySettingsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
