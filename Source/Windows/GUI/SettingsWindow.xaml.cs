@@ -1,18 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using MAPE.Utils;
 using MAPE.Server.Settings;
 using MAPE.Command;
 using MAPE.Command.Settings;
@@ -67,32 +58,10 @@ namespace MAPE.Windows.GUI {
 
 		private UIStateFlags uiState = UIStateFlags.InitialState;
 
-		private bool suppressUpdatingBypassLocalSource = false;
-
 		#endregion
 
 
 		#region properties - data binding adapters
-
-		public bool EnableSystemSettingsSwitch {
-			get {
-				return this.CommandSettings.SystemSettingsSwitcher.EnableSystemSettingsSwitch;
-			}
-			set {
-				this.CommandSettings.SystemSettingsSwitcher.EnableSystemSettingsSwitch = value;
-			}
-		}
-
-		public string ProxyOverride {
-			get {
-				return this.CommandSettings.SystemSettingsSwitcher.FilteredProxyOverride;
-			}
-			set {
-				SystemSettingsSwitcherForWindowsSettings systemSettingsSwitcherSettings = this.CommandSettings.SystemSettingsSwitcher;
-				systemSettingsSwitcherSettings.FilteredProxyOverride = value;
-				SetBypassLocalSuppressingUpdatingSource(systemSettingsSwitcherSettings.BypassLocal);
-			}
-		}
 
 		public int RetryCount {
 			get {
@@ -144,8 +113,7 @@ namespace MAPE.Windows.GUI {
 
 			// SystemSettingSwither
 			// this.enableSystemSettingSwitherCheckBox.IsChecked is bound to this.EnableSystemSettingSwitch
-			SetBypassLocalSuppressingUpdatingSource(systemSettingsSwitcherSettings.BypassLocal);
-			// this.exclusionTextBox.Text is bound to this.ProxyOverride
+			this.systemSettingsSwitcher.SystemSettingsSwitcherSettings = systemSettingsSwitcherSettings;
 
 			// Misc
 			// this.retryTextBox.Text is bound to this.RetryCount
@@ -180,9 +148,7 @@ namespace MAPE.Windows.GUI {
 				// Note that buttons are disabled through GetUIState().
 				Control[] inputControls = new Control[] {
 					this.actualProxy,
-					this.enableSystemSettingSwitchCheckBox,
-					this.bypassLocalCheckBox,
-					this.exclusionTextBox,
+					this.systemSettingsSwitcher,
 					this.retryTextBox,
 					this.logLevelComboBox
 				};
@@ -327,38 +293,11 @@ namespace MAPE.Windows.GUI {
 			if (errorControl == null) {
 				errorControl = this.actualProxy.GetErrorControl();
 			}
+			if (errorControl == null) {
+				errorControl = this.systemSettingsSwitcher.GetErrorControl();
+			}
 
 			return errorControl;
-		}
-
-		private void UpdateSource(TextBox textBox) {
-			// update the source
-			textBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
-		}
-
-		private void ClearError(TextBox textBox) {
-			// clear errors on property binding
-			BindingExpression binding = textBox.GetBindingExpression(TextBox.TextProperty);
-			if (binding != null) {
-				Validation.ClearInvalid(binding);
-			}
-
-			return;
-		}
-
-		private void SetBypassLocalSuppressingUpdatingSource(bool value) {
-			// state checks
-			Debug.Assert(this.suppressUpdatingBypassLocalSource == false);
-
-			// change this.bypassProxyCheckBox.IsChecked supressing updating ProxyOverride
-			this.suppressUpdatingBypassLocalSource = true;
-			try {
-				this.bypassLocalCheckBox.IsChecked = value;
-			} finally {
-				this.suppressUpdatingBypassLocalSource = false;
-			}
-
-			return;
 		}
 
 		private void AddListItem(ListView listView, object newItem) {
@@ -454,18 +393,6 @@ namespace MAPE.Windows.GUI {
 		private void saveAsDefaultButton_Click(object sender, RoutedEventArgs e) {
 			this.DialogResult = true;
 			this.SaveAsDefault = true;
-		}
-
-		private void bypassLocalCheckBox_Checked(object sender, RoutedEventArgs e) {
-			if (this.suppressUpdatingBypassLocalSource == false) {
-				this.CommandSettings.SystemSettingsSwitcher.BypassLocal = true;
-			}
-		}
-
-		private void bypassLocalCheckBox_Unchecked(object sender, RoutedEventArgs e) {
-			if (this.suppressUpdatingBypassLocalSource == false) {
-				this.CommandSettings.SystemSettingsSwitcher.BypassLocal = false;
-			}
 		}
 
 		private void listenerListView_SelectionChanged(object sender, SelectionChangedEventArgs e) {
