@@ -100,6 +100,23 @@ namespace MAPE.Windows.GUI {
 		#endregion
 
 
+		#region methods
+
+		public Control GetErrorControl() {
+			// check error state of controls
+			if (Validation.GetHasError(this.hostNameTextBox)) {
+				return this.hostNameTextBox;
+			}
+			if (Validation.GetHasError(this.portTextBox)) {
+				return this.portTextBox;
+			}
+
+			return null;
+		}
+
+		#endregion
+
+
 		#region privates
 
 		private void UpdateTextSource(TextBox textBox) {

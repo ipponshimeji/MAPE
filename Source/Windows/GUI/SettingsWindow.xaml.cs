@@ -74,38 +74,6 @@ namespace MAPE.Windows.GUI {
 
 		#region properties - data binding adapters
 
-		public string HostName {
-			get {
-				ActualProxySettings actualProxySettings = this.CommandSettings.SystemSettingsSwitcher.ActualProxy;
-				return (actualProxySettings == null)? string.Empty: actualProxySettings.Host;
-			}
-			set {
-				ActualProxySettings actualProxySettings = this.CommandSettings.SystemSettingsSwitcher.ActualProxy;
-				if (actualProxySettings == null) {
-					// ignore
-					return;
-				}
-
-				actualProxySettings.Host = value;
-			}
-		}
-
-		public int Port {
-			get {
-				ActualProxySettings actualProxySettings = this.CommandSettings.SystemSettingsSwitcher.ActualProxy;
-				return (actualProxySettings == null)? ActualProxySettings.Defaults.Port: actualProxySettings.Port;
-			}
-			set {
-				ActualProxySettings actualProxySettings = this.CommandSettings.SystemSettingsSwitcher.ActualProxy;
-				if (actualProxySettings == null) {
-					// ignore
-					return;
-				}
-
-				actualProxySettings.Port = value;
-			}
-		}
-
 		public bool EnableSystemSettingsSwitch {
 			get {
 				return this.CommandSettings.SystemSettingsSwitcher.EnableSystemSettingsSwitch;
@@ -164,8 +132,6 @@ namespace MAPE.Windows.GUI {
 			// initialize components
 			InitializeComponent();
 			this.validatableControls = new Control[] {
-				this.hostNameTextBox,
-				this.portTextBox,
 				this.retryTextBox
 			};
 			this.Icon = App.Current.OnIcon;
@@ -174,10 +140,7 @@ namespace MAPE.Windows.GUI {
 			// Proxy Tab
 			// Actual Proxy
 			SystemSettingsSwitcherForWindowsSettings systemSettingsSwitcherSettings = commandSettings.SystemSettingsSwitcher;
-			ActualProxySettings actualProxy = systemSettingsSwitcherSettings.ActualProxy;
-			this.autoDetectProxyCheckBox.IsChecked = (actualProxy == null);
-			// this.hostNameTextBox.Text is bound to this.HostName
-			// this.portTextBox.Text is bound to this.Port
+			this.actualProxy.SystemSettingsSwitcherSettings = systemSettingsSwitcherSettings;
 
 			// SystemSettingSwither
 			// this.enableSystemSettingSwitherCheckBox.IsChecked is bound to this.EnableSystemSettingSwitch
@@ -216,9 +179,7 @@ namespace MAPE.Windows.GUI {
 				// disable input controls
 				// Note that buttons are disabled through GetUIState().
 				Control[] inputControls = new Control[] {
-					this.autoDetectProxyCheckBox,
-					this.hostNameTextBox,
-					this.portTextBox,
+					this.actualProxy,
 					this.enableSystemSettingSwitchCheckBox,
 					this.bypassLocalCheckBox,
 					this.exclusionTextBox,
@@ -362,7 +323,12 @@ namespace MAPE.Windows.GUI {
 		}
 
 		private Control GetErrorControl() {
-			return this.validatableControls.Where(c => Validation.GetHasError(c)).FirstOrDefault();
+			Control errorControl = this.validatableControls.Where(c => Validation.GetHasError(c)).FirstOrDefault();
+			if (errorControl == null) {
+				errorControl = this.actualProxy.GetErrorControl();
+			}
+
+			return errorControl;
 		}
 
 		private void UpdateSource(TextBox textBox) {
@@ -488,28 +454,6 @@ namespace MAPE.Windows.GUI {
 		private void saveAsDefaultButton_Click(object sender, RoutedEventArgs e) {
 			this.DialogResult = true;
 			this.SaveAsDefault = true;
-		}
-
-		private void autoDetectProxyCheckBox_Checked(object sender, RoutedEventArgs e) {
-			// clear ActualProxy object
-			this.CommandSettings.SystemSettingsSwitcher.ActualProxy = null;
-			this.hostNameTextBox.IsEnabled = false;
-			this.portTextBox.IsEnabled = false;
-			ClearError(this.hostNameTextBox);
-			ClearError(this.portTextBox);
-
-			return;
-		}
-
-		private void autoDetectProxyCheckBox_Unchecked(object sender, RoutedEventArgs e) {
-			// set ActualProxy object
-			this.CommandSettings.SystemSettingsSwitcher.ActualProxy = new ActualProxySettings();
-			this.hostNameTextBox.IsEnabled = true;
-			this.portTextBox.IsEnabled = true;
-			UpdateSource(this.hostNameTextBox);
-			UpdateSource(this.portTextBox);
-
-			return;
 		}
 
 		private void bypassLocalCheckBox_Checked(object sender, RoutedEventArgs e) {

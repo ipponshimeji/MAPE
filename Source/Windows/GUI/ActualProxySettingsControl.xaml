@@ -5,7 +5,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:MAPE.Windows.GUI"
              xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
-             mc:Ignorable="d" Height="52" Width="592">
+             mc:Ignorable="d" Height="Auto" Width="Auto">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
