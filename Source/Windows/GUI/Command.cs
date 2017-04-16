@@ -234,7 +234,7 @@ namespace MAPE.Windows.GUI {
 			}
 
 			// create context
-			SetupContext setupContext = new SetupContext(this, actualSettings);
+			SetupContextForWindows setupContext = new SetupContextForWindows(actualSettings, this);
 
 			return setupContext.NeedSetup? this.app.ShowSetupWindow(setupContext): false;
 		}

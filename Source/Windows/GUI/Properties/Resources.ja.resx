@@ -349,10 +349,10 @@
     <value>初期設定</value>
   </data>
   <data name="SetupWindow_backButton_Content" xml:space="preserve">
-    <value>戻る(_B)</value>
+    <value>戻る(_&lt;)</value>
   </data>
   <data name="SetupWindow_nextButton_Content" xml:space="preserve">
-    <value>次へ(_N)</value>
+    <value>次へ(_&gt;)</value>
   </data>
   <data name="SetupWindow_finishButton_Content" xml:space="preserve">
     <value>完了</value>
@@ -361,12 +361,15 @@
     <value>認証プロキシ</value>
   </data>
   <data name="SetupWindow_systemSettingsSwitchTabItem_Header" xml:space="preserve">
-    <value>システム設定切替</value>
+    <value>システム設定書換</value>
   </data>
   <data name="SetupWindow_testTabItem_Header" xml:space="preserve">
     <value>テスト</value>
   </data>
   <data name="SetupWindow_finishingTabItem_Header" xml:space="preserve">
     <value>完了</value>
+  </data>
+  <data name="SetupWindow_Message_Error" xml:space="preserve">
+    <value>入力に誤りがあります。</value>
   </data>
 </root>

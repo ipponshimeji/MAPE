@@ -182,7 +182,7 @@ namespace MAPE.Windows.GUI {
 
 		#region methods
 
-		internal bool ShowSetupWindow(SetupContext setupContext) {
+		internal bool ShowSetupWindow(SetupContextForWindows setupContext) {
 			// argument checks
 			Debug.Assert(setupContext != null);
 

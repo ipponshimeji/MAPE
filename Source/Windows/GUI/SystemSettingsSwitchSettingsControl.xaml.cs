@@ -1,18 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using MAPE.Windows.Settings;
 
 
@@ -50,21 +40,28 @@ namespace MAPE.Windows.GUI {
 
 		public bool EnableSystemSettingsSwitch {
 			get {
-				return this.SystemSettingsSwitcherSettings.EnableSystemSettingsSwitch;
+				SystemSettingsSwitcherForWindowsSettings settings = this.SystemSettingsSwitcherSettings;
+				return (settings == null)? false: settings.EnableSystemSettingsSwitch;
 			}
 			set {
-				this.SystemSettingsSwitcherSettings.EnableSystemSettingsSwitch = value;
+				SystemSettingsSwitcherForWindowsSettings settings = this.SystemSettingsSwitcherSettings;
+				if (settings != null) {
+					settings.EnableSystemSettingsSwitch = value;
+				}
 			}
 		}
 
 		public string ProxyOverride {
 			get {
-				return this.SystemSettingsSwitcherSettings.FilteredProxyOverride;
+				SystemSettingsSwitcherForWindowsSettings settings = this.SystemSettingsSwitcherSettings;
+				return (settings == null)? string.Empty: settings.FilteredProxyOverride;
 			}
 			set {
-				SystemSettingsSwitcherForWindowsSettings systemSettingsSwitcherSettings = this.SystemSettingsSwitcherSettings;
-				systemSettingsSwitcherSettings.FilteredProxyOverride = value;
-				SetBypassLocalSuppressingUpdatingSource(systemSettingsSwitcherSettings.BypassLocal);
+				SystemSettingsSwitcherForWindowsSettings settings = this.SystemSettingsSwitcherSettings;
+				if (settings != null) {
+					settings.FilteredProxyOverride = value;
+					SetBypassLocalSuppressingUpdatingSource(settings.BypassLocal);
+				}
 			}
 		}
 

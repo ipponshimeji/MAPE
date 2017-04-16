@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Diagnostics;
 using System.Net;
 using MAPE.Utils;
@@ -8,6 +9,21 @@ using MAPE.Command.Settings;
 
 namespace MAPE.Command {
 	public class SystemSettingsSwitcher {
+		#region types
+
+		public static class ConfigNames {
+			#region constants
+
+			public const string DefaultActualProxyHostName = "DefaultActualProxyHostName";
+
+			public const string DefaultActualProxyPort = "DefaultActualProxyPort";
+
+			#endregion
+		}
+
+		#endregion
+
+
 		#region data
 
 		public readonly CommandBase Owner;
@@ -150,6 +166,34 @@ namespace MAPE.Command {
 			SetSwitchingSystemSettingsTo(settings, proxy);
 
 			return settings;
+		}
+
+		protected static string GetAppSettings(string key) {
+			string value = ConfigurationManager.AppSettings[key];
+			if (string.IsNullOrWhiteSpace(value)) {
+				value = null;
+			}
+
+			return value;
+		}
+
+		public static string GetDefaultActualProxyHostName() {
+			return GetAppSettings(ConfigNames.DefaultActualProxyHostName);
+		}
+
+		public static int? GetDefaultActualProxyPort() {
+			int? value = null;
+			try {
+				string configValue = ConfigurationManager.AppSettings[ConfigNames.DefaultActualProxyPort];
+				if (string.IsNullOrEmpty(configValue) == false) {
+					value = int.Parse(configValue);
+				}
+			} catch {
+				Debug.Assert(value == null);
+				// continue
+			}
+
+			return value;
 		}
 
 		#endregion

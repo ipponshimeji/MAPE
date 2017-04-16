@@ -353,10 +353,10 @@
     <value>Initial Setup</value>
   </data>
   <data name="SetupWindow_backButton_Content" xml:space="preserve">
-    <value>_Back</value>
+    <value>Back(_&lt;)</value>
   </data>
   <data name="SetupWindow_nextButton_Content" xml:space="preserve">
-    <value>_Next</value>
+    <value>Next(_&gt;)</value>
   </data>
   <data name="SetupWindow_finishButton_Content" xml:space="preserve">
     <value>Finish</value>
@@ -373,6 +373,10 @@
   <data name="SetupWindow_finishingTabItem_Header" xml:space="preserve">
     <value>Finishing</value>
   </data>
+  <data name="SetupWindow_Message_Error" xml:space="preserve">
+    <value>There is an unacceptable input.</value>
+  </data>
+
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="OffIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\OffIcon.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>

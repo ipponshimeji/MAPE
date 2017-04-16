@@ -6,6 +6,7 @@ mapegui.exe
 mapegui.exe.config
 Newtonsoft.Json.dll
 ja\MAPE.Core.resources.dll
+ja\MAPE.Windows.resources.dll
 ja\mape.resources.dll
 ja\mapegui.resources.dll
 Resources\OffIcon.ico

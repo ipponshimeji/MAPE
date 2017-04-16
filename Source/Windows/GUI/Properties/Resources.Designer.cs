@@ -784,7 +784,7 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
-        ///   _Back に類似しているローカライズされた文字列を検索します。
+        ///   Back(_&lt;) に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string SetupWindow_backButton_Content {
             get {
@@ -811,7 +811,16 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
-        ///   _Next に類似しているローカライズされた文字列を検索します。
+        ///   There is an unacceptable input. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_Message_Error {
+            get {
+                return ResourceManager.GetString("SetupWindow_Message_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Next(_&gt;) に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string SetupWindow_nextButton_Content {
             get {

@@ -161,7 +161,7 @@ namespace MAPE.Windows.GUI {
 			return window;
 		}
 
-		internal bool ShowSetupWindow(SetupContext setupContext) {
+		internal bool ShowSetupWindow(SetupContextForWindows setupContext) {
 			bool result = false;
 			try {
 				result = OpenMainWindow().ShowSetupWindow(setupContext);

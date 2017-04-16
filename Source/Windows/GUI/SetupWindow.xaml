@@ -14,14 +14,52 @@
         </Grid.RowDefinitions>
 
         <TabControl x:Name="setupTab" Grid.Row="0" >
-            <TabItem x:Name="authenticationProxyTabItem" Header="{x:Static properties:Resources.SetupWindow_authenticationProxyTabItem_Header}" />
-            <TabItem x:Name="systemSettingsSwitchTabItem" Header="{x:Static properties:Resources.SetupWindow_systemSettingsSwitchTabItem_Header}" />
-            <TabItem x:Name="testTabItem" Header="{x:Static properties:Resources.SetupWindow_testTabItem_Header}" />
-            <TabItem x:Name="finishingTabItem" Header="{x:Static properties:Resources.SetupWindow_finishingTabItem_Header}" />
+            <TabItem x:Name="authenticationProxyTabItem" Header="{x:Static properties:Resources.SetupWindow_authenticationProxyTabItem_Header}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="authenticationProxyDescriptionTextBlock" Grid.Row="0" Margin="4,4,4,12" />
+                    <local:ActualProxySettingsControl x:Name="actualProxy" Grid.Row="1" />
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="systemSettingsSwitchTabItem" Header="{x:Static properties:Resources.SetupWindow_systemSettingsSwitchTabItem_Header}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="systemSettingsSwitcherDescriptionTextBlock" Grid.Row="0" Margin="4,4,4,12" />
+                    <local:SystemSettingsSwitchSettingsControl x:Name="systemSettingsSwitcher" Grid.Row="1" />
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="testTabItem" Header="{x:Static properties:Resources.SetupWindow_testTabItem_Header}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="testDescriptionTextBlock" Grid.Row="0" Margin="4,4,4,12" Text="Not Implemented Yet."/>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="finishingTabItem" Header="{x:Static properties:Resources.SetupWindow_finishingTabItem_Header}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="finishingDescriptionTextBlock" Grid.Row="0" Margin="4,4,4,12"  Text="Not Implemented Yet." />
+                </Grid>
+            </TabItem>
         </TabControl>
         <StackPanel Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Orientation="Horizontal">
-            <Button x:Name="backButton" Content="{x:Static properties:Resources.SetupWindow_backButton_Content}" MinWidth="100" Margin="8,8,4,8" Padding="4" />
-            <Button x:Name="nextButton" Content="{x:Static properties:Resources.SetupWindow_nextButton_Content}" MinWidth="100" Margin="8,8,12,8" Padding="4" />
+            <Button x:Name="backButton" Content="{x:Static properties:Resources.SetupWindow_backButton_Content}" MinWidth="100" Margin="8,8,4,8" Padding="4" Click="backButton_Click" />
+            <Button x:Name="nextButton" Content="{x:Static properties:Resources.SetupWindow_nextButton_Content}" MinWidth="100" Margin="8,8,12,8" Padding="4" Click="nextButton_Click" />
             <Button x:Name="finishButton" Content="{x:Static properties:Resources.SetupWindow_finishButton_Content}" MinWidth="100" Margin="8,8,4,8" IsDefault="True" Padding="4" />
             <Button x:Name="cancelButton" Content="{x:Static properties:Resources.Common_Cancel}" MinWidth="100" Margin="8,8,6,8" IsCancel="True" Padding="4" />
         </StackPanel>

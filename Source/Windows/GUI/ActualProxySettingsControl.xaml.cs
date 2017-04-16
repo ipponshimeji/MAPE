@@ -11,6 +11,10 @@ namespace MAPE.Windows.GUI {
 
 		private SystemSettingsSwitcherSettings systemSettingsSwitcherSettings = null;
 
+		public string DefaultActualProxyHostName { get; set; } = null;
+
+		public int? DefaultActualProxyPort { get; set; } = null;
+
 		#endregion
 
 
@@ -21,6 +25,13 @@ namespace MAPE.Windows.GUI {
 				return this.systemSettingsSwitcherSettings;
 			}
 			set {
+				// adjust the value
+				if (this.AutoDetectEnabled == false && value.ActualProxy == null) {
+					// user must specify actuao proxy information
+					value.ActualProxy = CreateActualProxySettings();
+				}
+
+				// set the value
 				this.systemSettingsSwitcherSettings = value;
 
 				// update UI
@@ -29,21 +40,21 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
-		public bool IsValid {
+		public bool AutoDetectEnabled {
 			get {
-				return this.AutoDetectProxy || this.IsHostNameSet;
+				return this.autoDetectProxyCheckBox.IsEnabled;
+			}
+			set {
+				if (value == false) {
+					this.autoDetectProxyCheckBox.IsChecked = false;
+				}
+				this.autoDetectProxyCheckBox.IsEnabled = value;
 			}
 		}
 
 		private bool AutoDetectProxy {
 			get {
 				return this.autoDetectProxyCheckBox.IsChecked ?? false;
-			}
-		}
-
-		private bool IsHostNameSet {
-			get {
-				return ActualProxySettings.Defaults.IsDefaultHostName(this.HostName);
 			}
 		}
 
@@ -60,8 +71,7 @@ namespace MAPE.Windows.GUI {
 			set {
 				ActualProxySettings actualProxySettings = this.SystemSettingsSwitcherSettings.ActualProxy;
 				if (actualProxySettings == null) {
-					// ignore
-					return;
+					return;	// ignore
 				}
 
 				actualProxySettings.Host = value;
@@ -102,13 +112,20 @@ namespace MAPE.Windows.GUI {
 
 		#region methods
 
-		public Control GetErrorControl() {
+		public Control GetErrorControl(bool setupMode = false) {
 			// check error state of controls
 			if (Validation.GetHasError(this.hostNameTextBox)) {
 				return this.hostNameTextBox;
 			}
 			if (Validation.GetHasError(this.portTextBox)) {
 				return this.portTextBox;
+			}
+
+			if (setupMode) {
+				if (this.AutoDetectProxy == false && ActualProxySettings.Defaults.IsDefaultHostName(this.HostName)) {
+					// HostName is not edited
+					return this.hostNameTextBox;
+				}
 			}
 
 			return null;
@@ -134,6 +151,18 @@ namespace MAPE.Windows.GUI {
 			return;
 		}
 
+		private ActualProxySettings CreateActualProxySettings() {
+			ActualProxySettings actualProxySettings = new ActualProxySettings();
+			if (string.IsNullOrEmpty(this.DefaultActualProxyHostName) == false) {
+				actualProxySettings.Host = this.DefaultActualProxyHostName;
+			}
+			if (this.DefaultActualProxyPort != null) {
+				actualProxySettings.Port = this.DefaultActualProxyPort.Value;
+			}
+
+			return actualProxySettings;
+		}
+
 		#endregion
 
 
@@ -156,7 +185,7 @@ namespace MAPE.Windows.GUI {
 
 		private void autoDetectProxyCheckBox_Unchecked(object sender, RoutedEventArgs e) {
 			// set ActualProxy object
-			this.SystemSettingsSwitcherSettings.ActualProxy = new ActualProxySettings();
+			this.SystemSettingsSwitcherSettings.ActualProxy = CreateActualProxySettings();
 
 			// enable the settings for ActualProxy
 			this.hostNameTextBox.IsEnabled = true;

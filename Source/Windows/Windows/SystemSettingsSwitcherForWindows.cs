@@ -40,7 +40,7 @@ namespace MAPE.Windows {
 			#endregion
 		}
 
-		public static class ConfigNames {
+		public static new class ConfigNames {
 			#region constants
 
 			public const string DefaultProxyOverride = "DefaultProxyOverride";
@@ -96,7 +96,7 @@ namespace MAPE.Windows {
 		}
 		
 		public static string GetDefaultProxyOverride() {
-			return ConfigurationManager.AppSettings[ConfigNames.DefaultProxyOverride];
+			return GetAppSettings(ConfigNames.DefaultProxyOverride);
 		}
 
 		#endregion
