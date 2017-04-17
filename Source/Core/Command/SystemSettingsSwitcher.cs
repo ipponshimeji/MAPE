@@ -168,6 +168,40 @@ namespace MAPE.Command {
 			return settings;
 		}
 
+		public WebProxy DetectSystemProxy() {
+			// detect the system web proxy by try to give external urls
+			// ToDo: return IWebProxy which can emulate the *.pac file currently effective.
+			// Note this implementation simply detect a possible typical proxy.
+			// Actual system logic to select proxy may be complicated,
+			// for example, it may be scripted by an auto configuration script (*.pac).
+			// If WebRequest.GetSystemWebProxy() returns IWebProxy of fixed logic at this point,
+			// it can be returned simply here.
+			// But this IWebProxy instance will reflect upcoming system proxy switch.
+			// So this implementation returns fixed address IWebProxy.
+			IWebProxy proxy = WebRequest.GetSystemWebProxy();
+			Func<string, WebProxy> detect = (sampleExternalUrl) => {
+				Uri sampleUri = new Uri(sampleExternalUrl);
+				WebProxy value = null;
+				if (proxy.IsBypassed(sampleUri) == false) {
+					Uri uri = proxy.GetProxy(sampleUri);
+					if (uri != sampleUri) {
+						// uri seems to be a proxy
+						value = new WebProxy(uri.Host, uri.Port);
+					}
+				}
+				return value;
+			};
+
+			// try with google's URL
+			WebProxy systemProxy = detect("http://www.google.com/");
+			if (systemProxy == null) {
+				// try with Microsoft's URL
+				systemProxy = detect("http://www.microsoft.com/");
+			}
+
+			return systemProxy; // may be null
+		}
+
 		protected static string GetAppSettings(string key) {
 			string value = ConfigurationManager.AppSettings[key];
 			if (string.IsNullOrWhiteSpace(value)) {
@@ -237,40 +271,6 @@ namespace MAPE.Command {
 
 
 		#region privates
-
-		private WebProxy DetectSystemProxy() {
-			// detect the system web proxy by try to give external urls
-			// ToDo: return IWebProxy which can emulate the *.pac file currently effective.
-			// Note this implementation simply detect a possible typical proxy.
-			// Actual system logic to select proxy may be complicated,
-			// for example, it may be scripted by an auto configuration script (*.pac).
-			// If WebRequest.GetSystemWebProxy() returns IWebProxy of fixed logic at this point,
-			// it can be returned simply here.
-			// But this IWebProxy instance will reflect upcoming system proxy switch.
-			// So this implementation returns fixed address IWebProxy.
-			IWebProxy proxy = WebRequest.GetSystemWebProxy();
-			Func<string, WebProxy> detect = (sampleExternalUrl) => {
-				Uri sampleUri = new Uri(sampleExternalUrl);
-				WebProxy value = null;
-				if (proxy.IsBypassed(sampleUri) == false) {
-					Uri uri = proxy.GetProxy(sampleUri);
-					if (uri != sampleUri) {
-						// uri seems to be a proxy
-						value = new WebProxy(uri.Host, uri.Port);
-					}
-				}
-				return value;
-			};
-
-			// try with google's URL
-			WebProxy systemProxy = detect("http://www.google.com/");
-			if (systemProxy == null) {
-				// try with Microsoft's URL
-				systemProxy = detect("http://www.microsoft.com/");
-			}
-
-			return systemProxy;	// may be null
-		}
 
 		private bool SwitchToInternal(SystemSettings settings, SystemSettings backup) {
 			bool switched = false;

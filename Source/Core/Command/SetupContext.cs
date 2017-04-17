@@ -54,7 +54,7 @@ namespace MAPE.Command {
 			// ActualProxy
 			this.DefaultActualProxyHostName = SystemSettingsSwitcher.GetDefaultActualProxyHostName();
 			this.DefaultActualProxyPort = SystemSettingsSwitcher.GetDefaultActualProxyPort();
-			if (switcher.ActualProxy != null) {
+			if (switcher.DetectSystemProxy() != null) {
 				this.ProxyDetected = true;
 			}
 			if (this.ProxyDetected == false && settings.SystemSettingsSwitcher.ActualProxy == null) {
