@@ -373,8 +373,17 @@
   <data name="SetupWindow_finishingTabItem_Header" xml:space="preserve">
     <value>Finishing</value>
   </data>
+  <data name="SetupWindow_targetUrlLabel_Content" xml:space="preserve">
+    <value>Target _URL:</value>
+  </data>
+  <data name="SetupWindow_testButton_Content" xml:space="preserve">
+    <value>_Test</value>
+  </data>
   <data name="SetupWindow_Message_Error" xml:space="preserve">
     <value>There is an unacceptable input.</value>
+  </data>
+  <data name="SetupWindow_Message_NotTested" xml:space="preserve">
+    <value>The current settings are not tested. Do you want to proceed anyway?</value>
   </data>
 
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />

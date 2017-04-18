@@ -5,6 +5,13 @@ using MAPE.Command.Settings;
 
 namespace MAPE.Command {
 	public class SetupContext {
+		#region constants
+
+		public const int LatestInitialSetupLevel = 1;
+
+		#endregion
+
+
 		#region data
 
 		protected readonly CommandSettings Settings;

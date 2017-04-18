@@ -41,6 +41,8 @@ namespace MAPE.Windows.GUI {
 
 		#region data
 
+		internal readonly Command Command;
+
 		public SetupContextForWindows SetupContext {
 			get; private set;
 		}
@@ -49,19 +51,25 @@ namespace MAPE.Windows.GUI {
 
 		private int doneIndex = 0;
 
+		private bool tested = false;
+
 		#endregion
 
 
 		#region creation and disposal
 
-		public SetupWindow(SetupContextForWindows setupContext) {
+		internal SetupWindow(Command command, SetupContextForWindows setupContext) {
 			// argument checks
+			if (command == null) {
+				throw new ArgumentNullException(nameof(command));
+			}
 			if (setupContext == null) {
 				throw new ArgumentNullException(nameof(setupContext));
 			}
 			CommandForWindowsSettings settings = setupContext.Settings;
 
 			// initialize members
+			this.Command = command;
 			this.SetupContext = setupContext;
 
 			// initialize components
@@ -98,8 +106,13 @@ namespace MAPE.Windows.GUI {
 			}
 
 			// Test tab
+			this.testDescriptionTextBlock.Text = Windows.Properties.Resources.Setup_Test_Description;
+			this.targetUrlTextBox.Text = "https://www.google.com/";
 
-			OnUIStateChanged(GetUIState());
+			// Finish tab
+			this.finishingDescriptionTextBlock.Text = Windows.Properties.Resources.Setup_Finishing_Description;
+
+			OnUIStateChanged(DetectUIState());
 
 			return;
 		}
@@ -113,7 +126,7 @@ namespace MAPE.Windows.GUI {
 			MessageBox.Show(this, message, this.Title, MessageBoxButton.OK, MessageBoxImage.Error);
 		}
 
-		private UIStateFlags GetUIState() {
+		private UIStateFlags DetectUIState() {
 			// base state
 			UIStateFlags state = UIStateFlags.Invariable;
 
@@ -131,6 +144,7 @@ namespace MAPE.Windows.GUI {
 			}
 			if (3 <= doneIndex) {
 				state |= UIStateFlags.FinishingTabEnabled;
+				state |= UIStateFlags.FinishEnabled;
 			}
 
 			if (currentIndex < this.setupTab.Items.Count - 1) {
@@ -141,7 +155,7 @@ namespace MAPE.Windows.GUI {
 		}
 
 		private void UpdateUIState() {
-			UIStateFlags newState = GetUIState();
+			UIStateFlags newState = DetectUIState();
 			if (newState != this.uiState) {
 				this.uiState = newState;
 				OnUIStateChanged(newState);
@@ -169,13 +183,41 @@ namespace MAPE.Windows.GUI {
 		}
 
 		private Control HasError(int currentIndex) {
-			switch (this.setupTab.SelectedIndex) {
+			switch (currentIndex) {
 				case 0:
 					// Authentication Proxy tab
 					return this.actualProxy.GetErrorControl(setupMode: true);
+				case 2:
+					if (this.tested == false) {
+						return this.testButton;
+					}
+					break;
 			}
 
 			return null;
+		}
+
+		private bool CanMoveNext() {
+			// check error in each page
+			for (int i = 0; i <= this.doneIndex; ++i) {
+				Control errorControl = HasError(i);
+				if (errorControl != null) {
+					string message = Properties.Resources.SetupWindow_Message_Error;
+					if (i == 2) {
+						MessageBoxResult result = MessageBox.Show(this, Properties.Resources.SetupWindow_Message_NotTested, this.Title, MessageBoxButton.YesNo, MessageBoxImage.Warning, MessageBoxResult.No);
+						if (result == MessageBoxResult.Yes) {
+							continue;
+						}
+					} else {
+						ShowErrorDialog(Properties.Resources.SetupWindow_Message_Error);
+					}
+					this.setupTab.SelectedIndex = i;
+					errorControl.Focus();
+					return false;
+				}
+			}
+
+			return true;
 		}
 
 		#endregion
@@ -184,21 +226,20 @@ namespace MAPE.Windows.GUI {
 		#region event handlers
 
 		private void finishButton_Click(object sender, RoutedEventArgs e) {
-			this.DialogResult = true;
+			if (CanMoveNext()) {
+				this.DialogResult = true;
+			}
 		}
 
 		private void nextButton_Click(object sender, RoutedEventArgs e) {
 			try {
 				// check state
-				int currentIndex = this.setupTab.SelectedIndex;
-				Debug.Assert(currentIndex < this.setupTab.Items.Count - 1);
-				Control errorControl = HasError(currentIndex);
-				if (errorControl != null) {
-					ShowErrorDialog(Properties.Resources.SetupWindow_Message_Error);
-					errorControl.Focus();
+				if (CanMoveNext() == false) {
 					return;
 				}
 
+				int currentIndex = this.setupTab.SelectedIndex;
+				Debug.Assert(currentIndex < this.setupTab.Items.Count - 1);
 				if (currentIndex == this.doneIndex) {
 					// enable the next tab item
 					++this.doneIndex;
@@ -218,6 +259,22 @@ namespace MAPE.Windows.GUI {
 			if (0 < currentIndex) {
 				this.setupTab.SelectedIndex = --currentIndex;
 				UpdateUIState();
+			}
+
+			return;
+		}
+
+		private void testButton_Click(object sender, RoutedEventArgs e) {
+			try {
+				this.testResultTextBlock.Text = string.Empty;
+				this.Command.Test(this.SetupContext.Settings, this.targetUrlTextBox.Text);
+				this.testResultTextBlock.Foreground = Brushes.Green;
+				this.testResultTextBlock.Text = "OK";
+				this.tested = true;
+			} catch (Exception exception) {
+				this.testResultTextBlock.Foreground = Brushes.Red;
+				this.testResultTextBlock.Text = exception.Message;
+				this.tested = false;
 			}
 
 			return;

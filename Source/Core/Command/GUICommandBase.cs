@@ -93,7 +93,7 @@ namespace MAPE.Command {
 				}
 
 				// start 
-				this.runningProxyState = StartProxy(this.settings, this, checkPreviousBackup: true);
+				this.runningProxyState = StartProxy(this.settings, saveCredentials: true, checkPreviousBackup: true);
 			}
 
 			// notify

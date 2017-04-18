@@ -88,11 +88,31 @@ namespace MAPE.Windows.Properties {
         }
         
         /// <summary>
+        ///   Initial setup is finished.
+        ///Note that some software does not recognize the switched system settings unless it is launched after MAPE starts proxying. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Setup_Finishing_Description {
+            get {
+                return ResourceManager.GetString("Setup_Finishing_Description", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   The settings for the proxy server in this environment is configured automatically, by an automatic configuration script for example. In this case MAPE cannot detect the &quot;Bypass proxy server for local addresses&quot; and &quot;Do not use proxy server for addresses beginning with:&quot; settings automatically. You must specify them explicitly. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Setup_SystemSettingsSwitch_Description_NeedToChange {
             get {
                 return ResourceManager.GetString("Setup_SystemSettingsSwitch_Description_NeedToChange", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Test connecting to an external URL. The credential for the authentication proxy may be required during the test.
+        ///If you want to authenticate automatically after this, specify &quot;save the credential&quot; at &quot;How save the credential?&quot; selection when you input your credential. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Setup_Test_Description {
+            get {
+                return ResourceManager.GetString("Setup_Test_Description", resourceCulture);
             }
         }
     }

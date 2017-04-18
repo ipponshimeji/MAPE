@@ -80,8 +80,17 @@ namespace MAPE.Windows {
 			return;
 		}
 
+		#endregion
+
+
+		#region overridables - misc
+
 		protected override void BringAppToForeground() {
 			SetForegroundWindow(GetConsoleWindow());
+		}
+
+		protected override int DoInitialSetupImpl(CommandSettings settings) {
+			return 0;    // Currently CLI does not support initial setup
 		}
 
 		#endregion

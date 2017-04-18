@@ -161,15 +161,15 @@ namespace MAPE.Windows.GUI {
 			return window;
 		}
 
-		internal bool ShowSetupWindow(SetupContextForWindows setupContext) {
-			bool result = false;
+		internal int ShowSetupWindow(SetupContextForWindows setupContext) {
+			int level = 0;
 			try {
-				result = OpenMainWindow().ShowSetupWindow(setupContext);
+				level = OpenMainWindow().ShowSetupWindow(setupContext);
 			} catch (Exception exception) {
 				ErrorMessage(exception.Message);
 			}
 
-			return result;
+			return level;
 		}
 
 		internal void ErrorMessage(string message) {
@@ -204,12 +204,12 @@ namespace MAPE.Windows.GUI {
 			// misc
 			this.Command.ProxyStateChanged += command_ProxyStateChanged;
 
-			OnUIStateChanged(UIStateFlags.None);
+			SetUIState(UIStateFlags.None);
 			this.Command.DoInitialSetup();
 
 			// UI state must be updated after the initial setup
 			// otherwise another window can be opened from the context menu
-			OnUIStateChanged(GetUIState());
+			UpdateUIState();
 
 			return;
 		}
@@ -229,7 +229,7 @@ namespace MAPE.Windows.GUI {
 
 		#region privates
 
-		private UIStateFlags GetUIState() {
+		private UIStateFlags DetectUIState() {
 			// base state
 			UIStateFlags state = UIStateFlags.ExitEnabled;
 
@@ -258,13 +258,17 @@ namespace MAPE.Windows.GUI {
 			return state;
 		}
 
-		private void UpdateUIState() {
-			UIStateFlags newState = GetUIState();
+		private void SetUIState(UIStateFlags newState) {
 			if (newState != this.UIState) {
 				this.UIState = newState;
 				OnUIStateChanged(newState);
 			}
 
+			return;
+		}
+
+		private void UpdateUIState() {
+			SetUIState(DetectUIState());
 			return;
 		}
 

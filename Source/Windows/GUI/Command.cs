@@ -226,7 +226,7 @@ namespace MAPE.Windows.GUI {
 			);
 		}
 
-		protected override bool DoInitialSetupImpl(CommandSettings settings) {
+		protected override int DoInitialSetupImpl(CommandSettings settings) {
 			// argument checks
 			CommandForWindowsGUISettings actualSettings = settings as CommandForWindowsGUISettings;
 			if (actualSettings == null) {
@@ -236,7 +236,8 @@ namespace MAPE.Windows.GUI {
 			// create context
 			SetupContextForWindows setupContext = new SetupContextForWindows(actualSettings, this);
 
-			return setupContext.NeedSetup? this.app.ShowSetupWindow(setupContext): false;
+			// Note that it returns the latest level if no need to setup, it sets 'InitialSetupLevel' settings up-to-date 
+			return setupContext.NeedSetup? this.app.ShowSetupWindow(setupContext): SetupContext.LatestInitialSetupLevel;
 		}
 
 		#endregion

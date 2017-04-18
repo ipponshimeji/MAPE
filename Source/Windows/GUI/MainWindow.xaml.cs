@@ -182,7 +182,7 @@ namespace MAPE.Windows.GUI {
 
 		#region methods
 
-		internal bool ShowSetupWindow(SetupContextForWindows setupContext) {
+		internal int ShowSetupWindow(SetupContextForWindows setupContext) {
 			// argument checks
 			Debug.Assert(setupContext != null);
 
@@ -190,17 +190,18 @@ namespace MAPE.Windows.GUI {
 			Debug.Assert(this.Command.IsProxyRunning == false);
 
 			// open the setup window as dialog
+			int currentLevel = setupContext.Settings.InitialSetupLevel;
 			bool result = false;
 			this.showingSetupWindow = true;
 			try {
-				SetupWindow window = new SetupWindow(setupContext);
+				SetupWindow window = new SetupWindow(this.Command, setupContext);
 				window.Owner = this;
 				result = (window.ShowDialog() ?? false);
 			} finally {
 				this.showingSetupWindow = false;
 			}
 
-			return result;
+			return result? SetupContextForWindows.LatestInitialSetupLevel: currentLevel;
 		}
 
 		internal void ShowSettingsWindow() {
@@ -516,17 +517,10 @@ namespace MAPE.Windows.GUI {
 		}
 
 		private string GetListenerEndpoint(ListenerSettings listenerSettings) {
-			IPAddress address;
-			int port;
-			if (listenerSettings == null) {
-				address = ListenerSettings.Defaults.Address;
-				port = ListenerSettings.Defaults.Port;
-			} else {
-				address = listenerSettings.Address;
-				port = listenerSettings.Port;
-			}
+			// listenerSettings can be null
+			IPEndPoint endPoint = ListenerSettings.GetEndPoint(listenerSettings);
 
-			return $"{address}:{port}";
+			return $"{endPoint.Address}:{endPoint.Port}";
 		}
 
 		private string GetHelpTopicUrl() {

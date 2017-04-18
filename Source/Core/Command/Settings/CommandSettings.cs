@@ -17,7 +17,7 @@ namespace MAPE.Command.Settings {
 		public static class SettingNames {
 			#region constants
 
-			public const string InitialSetupDone = "InitialSetupDone";
+			public const string InitialSetupLevel = "InitialSetupLevel";
 
 			public const string Culture = "Culture";
 
@@ -39,7 +39,7 @@ namespace MAPE.Command.Settings {
 		public static class Defaults {
 			#region constants
 
-			public const bool InitialSetupDone = false;
+			public const int InitialSetupLevel = 0;
 
 			public const TraceLevel LogLevel = TraceLevel.Error;
 
@@ -66,7 +66,7 @@ namespace MAPE.Command.Settings {
 
 		#region data
 
-		public bool InitialSetupDone { get; set; }
+		private int initialSetupLevel;
 
 		public TraceLevel LogLevel { get; set; }
 
@@ -86,6 +86,20 @@ namespace MAPE.Command.Settings {
 
 
 		#region properties
+
+		public int InitialSetupLevel {
+			get {
+				return this.initialSetupLevel;
+			}
+			set {
+				// argument checks
+				if (value < 0) {
+					throw new ArgumentOutOfRangeException(nameof(value));
+				}
+
+				this.initialSetupLevel = value;
+			}
+		}
 
 		public IEnumerable<CredentialSettings> Credentials {
 			get {
@@ -145,7 +159,7 @@ namespace MAPE.Command.Settings {
 
 		public CommandSettings(IObjectData data): base(data) {
 			// prepare settings
-			bool initialSetupDone = Defaults.InitialSetupDone;
+			int initialSetupLevel = Defaults.InitialSetupLevel;
 			TraceLevel logLevel = Defaults.LogLevel;
 			CultureInfo culture = null;
 			bool noLogo = Defaults.NoLogo;
@@ -155,7 +169,7 @@ namespace MAPE.Command.Settings {
 			ProxySettings proxy = null;
 			if (data != null) {
 				// get settings from data
-				initialSetupDone = data.GetBooleanValue(SettingNames.InitialSetupDone, Defaults.InitialSetupDone);
+				initialSetupLevel = data.GetInt32Value(SettingNames.InitialSetupLevel, Defaults.InitialSetupLevel);
 				logLevel = (TraceLevel)data.GetEnumValue(SettingNames.LogLevel, logLevel, typeof(TraceLevel));
 				culture = data.GetValue(SettingNames.Culture, culture, ExtractCultureInfoValue);
 				noLogo = data.GetBooleanValue(SettingNames.NoLogo, noLogo);
@@ -180,7 +194,7 @@ namespace MAPE.Command.Settings {
 			// set settings
 			try {
 				// may throw ArgumentException for an invalid value
-				this.InitialSetupDone = initialSetupDone;
+				this.InitialSetupLevel = initialSetupLevel;
 				this.LogLevel = logLevel;
 				this.Culture = culture;
 				this.NoLogo = noLogo;
@@ -205,7 +219,7 @@ namespace MAPE.Command.Settings {
 			}
 
 			// clone members
-			this.InitialSetupDone = src.InitialSetupDone;
+			this.InitialSetupLevel = src.InitialSetupLevel;
 			this.LogLevel = src.LogLevel;
 			this.Culture = src.Culture;
 			this.NoLogo = src.NoLogo;
@@ -215,6 +229,33 @@ namespace MAPE.Command.Settings {
 			this.GUI = Clone(src.GUI);
 
 			return;
+		}
+
+		#endregion
+
+
+		#region methods
+
+		public IEnumerable<CredentialSettings> GetPersistentCredentials() {
+			return this.credentials?.Where(c => c.Persistence == CredentialPersistence.Persistent).ToArray();
+		}
+
+		public void AddCredential(CredentialSettings credential) {
+			// argument checks
+			if (credential == null) {
+				throw new ArgumentNullException(nameof(credential));
+			}
+
+			IEnumerable<CredentialSettings> credentials = this.credentials;
+			if (credentials == null) {
+				this.credentials = new CredentialSettings[] { credential };
+			} else {
+				List<CredentialSettings> list = new List<CredentialSettings>(credentials);
+				list.Add(credential);
+				this.credentials = list;
+			}
+
+			return; 
 		}
 
 		#endregion
@@ -231,11 +272,13 @@ namespace MAPE.Command.Settings {
 			Debug.Assert(data != null);
 
 			// save settings
-			data.SetBooleanValue(SettingNames.InitialSetupDone, this.InitialSetupDone, omitDefault, this.InitialSetupDone == Defaults.InitialSetupDone);
+			data.SetInt32Value(SettingNames.InitialSetupLevel, this.InitialSetupLevel, omitDefault, this.InitialSetupLevel == Defaults.InitialSetupLevel);
 			data.SetEnumValue(SettingNames.LogLevel, this.LogLevel, omitDefault, this.LogLevel == Defaults.LogLevel);
 			data.SetValue(SettingNames.Culture, this.Culture, CreateCultureInfoValue, omitDefault, Defaults.IsDefaultCulture(this.Culture));
 			data.SetBooleanValue(SettingNames.NoLogo, this.NoLogo, omitDefault, this.NoLogo == Defaults.NoLogo);
-			data.SetObjectArrayValue(SettingNames.Credentials, this.Credentials, omitDefault, Defaults.IsDefaultCredentials(this.Credentials));
+			// Credentials: Note that only persistent credentials are saved.
+			IEnumerable<CredentialSettings> persistentCredentials = GetPersistentCredentials();
+			data.SetObjectArrayValue(SettingNames.Credentials, persistentCredentials, omitDefault, Defaults.IsDefaultCredentials(persistentCredentials));
 			// SystemSettingsSwitcher: overwrite mode, not omittable (that is, isDefault should be false)
 			data.SetObjectValue(SettingNames.SystemSettingsSwitcher, this.SystemSettingsSwitcher, true, omitDefault, false);
 			// Proxy: replace mode, not omittable (that is, isDefault should be false)

@@ -129,4 +129,12 @@
   <data name="Setup_SystemSettingsSwitch_Description_NeedToChange" xml:space="preserve">
     <value>The settings for the proxy server in this environment is configured automatically, by an automatic configuration script for example. In this case MAPE cannot detect the "Bypass proxy server for local addresses" and "Do not use proxy server for addresses beginning with:" settings automatically. You must specify them explicitly.</value>
   </data>
+  <data name="Setup_Test_Description" xml:space="preserve">
+    <value>Test connecting to an external URL. The credential for the authentication proxy may be required during the test.
+If you want to authenticate automatically after this, specify "save the credential" at "How save the credential?" selection when you input your credential.</value>
+  </data>
+  <data name="Setup_Finishing_Description" xml:space="preserve">
+    <value>Initial setup is finished.
+Note that some software does not recognize the switched system settings unless it is launched after MAPE starts proxying.</value>
+  </data>
 </root>

@@ -820,6 +820,15 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   The current settings are not tested. Do you want to proceed anyway? に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_Message_NotTested {
+            get {
+                return ResourceManager.GetString("SetupWindow_Message_NotTested", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Next(_&gt;) に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string SetupWindow_nextButton_Content {
@@ -834,6 +843,24 @@ namespace MAPE.Windows.GUI.Properties {
         public static string SetupWindow_systemSettingsSwitchTabItem_Header {
             get {
                 return ResourceManager.GetString("SetupWindow_systemSettingsSwitchTabItem_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Target _URL: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_targetUrlLabel_Content {
+            get {
+                return ResourceManager.GetString("SetupWindow_targetUrlLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Test に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_testButton_Content {
+            get {
+                return ResourceManager.GetString("SetupWindow_testButton_Content", resourceCulture);
             }
         }
         
