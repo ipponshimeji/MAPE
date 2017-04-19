@@ -61,7 +61,7 @@ namespace MAPE.Windows.Properties {
         }
         
         /// <summary>
-        ///   The target proxy cannot be detected in this environment. You must specify its information explicitly. に類似しているローカライズされた文字列を検索します。
+        ///   The target proxy cannot be detected automatically in this environment. You must specify its information manually. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Setup_AuthenticationProxy_Description_NeedToChange {
             get {

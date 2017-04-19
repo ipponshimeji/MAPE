@@ -127,7 +127,7 @@
     <value>この環境向けの推奨値が提供されています。この設定をそのまま利用することをお勧めします。</value>
   </data>
   <data name="Setup_AuthenticationProxy_Description_NeedToChange" xml:space="preserve">
-    <value>この環境では接続先プロキシを自動検出できませんでした。プロキシの情報を明に設定する必要があります。</value>
+    <value>この環境では接続先プロキシを自動検出できませんでした。プロキシの情報を手動で設定する必要があります。</value>
   </data>
   <data name="Setup_SystemSettingsSwitch_Description_NeedToChange" xml:space="preserve">
     <value>この環境では自動構成スクリプト等によってプロキシが自動設定されています。この場合、「認証プロキシ爆発しろ！」はプロキシ設定書き換え時に適用すべき「ローカルアドレスにはプロキシサーバーを使用しない」と「次で始まるアドレスにはプロキシを使用しない」の設定を自動的に検出することができません。これらの設定を明に指定する必要があります。</value>

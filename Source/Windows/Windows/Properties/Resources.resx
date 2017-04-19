@@ -127,7 +127,7 @@
     <value>The default setting is provided for this environment. Use this settings if possible.</value>
   </data>
   <data name="Setup_AuthenticationProxy_Description_NeedToChange" xml:space="preserve">
-    <value>The target proxy cannot be detected in this environment. You must specify its information explicitly.</value>
+    <value>The target proxy cannot be detected automatically in this environment. You must specify its information manually.</value>
   </data>
   <data name="Setup_SystemSettingsSwitch_Description_NeedToChange" xml:space="preserve">
     <value>The settings for the proxy server in this environment is configured automatically, by an automatic configuration script for example. In this case MAPE cannot detect the "Bypass proxy server for local addresses" and "Do not use proxy server for addresses beginning with:" settings automatically. You must specify them explicitly.</value>
