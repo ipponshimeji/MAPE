@@ -802,6 +802,16 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   You can operate MAPE by the context menu of its task tray icon or the menu of its main window.
+        ///Select the &quot;Start Proxying&quot; menu to start proxying connections. Select the &quot;Settings&quot; menu to edit its settings. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_finishingDescriptionTextBox_Text_Addition {
+            get {
+                return ResourceManager.GetString("SetupWindow_finishingDescriptionTextBox_Text_Addition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Finishing に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string SetupWindow_finishingTabItem_Header {

@@ -158,7 +158,8 @@ namespace MAPE.Windows.GUI {
 			} else {
 				credentialSettings = new CredentialSettings();
 				// set default Persistence value to Session (i.e. volatile)
-				credentialSettings.Persistence = CredentialPersistence.Session;
+				// The default value reverted because it was confusing. 
+//				credentialSettings.Persistence = CredentialPersistence.Session;
 			}
 			credentialSettings.EndPoint = endPoint;
 

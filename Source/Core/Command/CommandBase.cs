@@ -625,22 +625,41 @@ namespace MAPE.Command {
 		public bool Test(CommandSettings settings, string targetUrl) {
 			SystemSettingsSwitcherSettings systemSettingsSwitcherSettings = settings.SystemSettingsSwitcher;
 			bool backup = systemSettingsSwitcherSettings.EnableSystemSettingsSwitch;
+			string logLevelLog = string.Empty;
+			TraceLevel backupLogLevel = Logger.LogLevel;
+			TraceLevel tempLogLevel = backupLogLevel;
+			if (tempLogLevel < TraceLevel.Info) {
+				tempLogLevel = TraceLevel.Info;
+				logLevelLog = $" The LogLevel is changed to '{tempLogLevel}' temporarily.";
+			}
 
 			// test suppressing system settings switch
-			systemSettingsSwitcherSettings.EnableSystemSettingsSwitch = false;
 			try {
+				LogStart($"Start a test connection to '{targetUrl}'.{logLevelLog}");
+				Logger.LogLevel = tempLogLevel;
+				systemSettingsSwitcherSettings.EnableSystemSettingsSwitch = false;
+
 				using (RunningProxyState proxyState = StartProxy(settings, saveCredentials: false, checkPreviousBackup: false)) {
 					IPEndPoint proxyEndPoint = ListenerSettings.GetEndPoint(settings.Proxy.MainListener);
 					WebClient webClient = new WebClient();
 					webClient.Proxy = new WebProxy(proxyEndPoint.Address.ToString(), proxyEndPoint.Port);
 
-					webClient.DownloadData(targetUrl);	// an exception is thrown on error
+					webClient.DownloadData(targetUrl);  // an exception is thrown on error
+
+					// wait for stop for 3 seconds 
+					proxyState.Stop(3000);
 				}
 			} finally {
 				systemSettingsSwitcherSettings.EnableSystemSettingsSwitch = backup;
+				Logger.LogLevel = backupLogLevel;
+				LogStop($"Stop the test connection.");
 			}
 
 			return true;
+		}
+
+		public Task<bool> TestAsync(CommandSettings settings, string targetUrl) {
+			return Task.Run<bool>(() => Test(settings, targetUrl));
 		}
 
 		#endregion

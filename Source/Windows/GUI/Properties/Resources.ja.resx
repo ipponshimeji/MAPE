@@ -375,6 +375,10 @@
   <data name="SetupWindow_testButton_Content" xml:space="preserve">
     <value>テスト(_T)</value>
   </data>
+  <data name="SetupWindow_finishingDescriptionTextBox_Text_Addition" xml:space="preserve">
+    <value>「認証プロキシ爆発しろ！」はタスクトレイアイコンのコンテキストメニュー、またはメインウィンドウのメニューから操作することができます。
+通信の中継を開始するには「中継の開始」メニューを、設定を変更するには「設定」メニューを選択してください。</value>
+  </data>
   <data name="SetupWindow_Message_Error" xml:space="preserve">
     <value>入力に誤りがあります。</value>
   </data>

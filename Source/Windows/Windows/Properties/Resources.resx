@@ -120,6 +120,9 @@
   <data name="Setup_Description_NoNeedToChange" xml:space="preserve">
     <value>No need to change the current settings.</value>
   </data>
+  <data name="Setup_Description_Confirm" xml:space="preserve">
+    <value>Confirm the current settings, and change them if necessary.</value>
+  </data>
   <data name="Setup_Description_DefaultValueProvided" xml:space="preserve">
     <value>The default setting is provided for this environment. Use this settings if possible.</value>
   </data>
@@ -131,7 +134,7 @@
   </data>
   <data name="Setup_Test_Description" xml:space="preserve">
     <value>Test connecting to an external URL. The credential for the authentication proxy may be required during the test.
-If you want to authenticate automatically after this, specify "save the credential" at "How save the credential?" selection when you input your credential.</value>
+MAPE does not switch the system settings in this test, so it does not affect communications of other applications.</value>
   </data>
   <data name="Setup_Finishing_Description" xml:space="preserve">
     <value>Initial setup is finished.

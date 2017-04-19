@@ -33,7 +33,7 @@
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <TextBlock x:Name="systemSettingsSwitcherDescriptionTextBlock" Grid.Row="0" Margin="4,4,4,12" TextWrapping="Wrap" />
-                    <local:SystemSettingsSwitchSettingsControl x:Name="systemSettingsSwitcher" Grid.Row="1" />
+                    <local:SystemSettingsSwitchSettingsControl x:Name="systemSettingsSwitcher" Grid.Row="1" MinHeight="180" />
                 </Grid>
             </TabItem>
             <TabItem x:Name="testTabItem" Header="{x:Static properties:Resources.SetupWindow_testTabItem_Header}">

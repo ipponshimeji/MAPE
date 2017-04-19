@@ -70,6 +70,15 @@ namespace MAPE.Windows.Properties {
         }
         
         /// <summary>
+        ///   Confirm the current settings, and change them if necessary. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string Setup_Description_Confirm {
+            get {
+                return ResourceManager.GetString("Setup_Description_Confirm", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   The default setting is provided for this environment. Use this settings if possible. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Setup_Description_DefaultValueProvided {
@@ -108,7 +117,7 @@ namespace MAPE.Windows.Properties {
         
         /// <summary>
         ///   Test connecting to an external URL. The credential for the authentication proxy may be required during the test.
-        ///If you want to authenticate automatically after this, specify &quot;save the credential&quot; at &quot;How save the credential?&quot; selection when you input your credential. に類似しているローカライズされた文字列を検索します。
+        ///MAPE does not switch the system settings in this test, so it does not affect communications of other applications. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Setup_Test_Description {
             get {

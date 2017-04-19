@@ -120,6 +120,9 @@
   <data name="Setup_Description_NoNeedToChange" xml:space="preserve">
     <value>設定を変更する必要はありません。</value>
   </data>
+  <data name="Setup_Description_Confirm" xml:space="preserve">
+    <value>設定を確認し、必要があれば変更してください。</value>
+  </data>
   <data name="Setup_Description_DefaultValueProvided" xml:space="preserve">
     <value>この環境向けの推奨値が提供されています。この設定をそのまま利用することをお勧めします。</value>
   </data>
@@ -131,7 +134,7 @@
   </data>
   <data name="Setup_Test_Description" xml:space="preserve">
     <value>外部URLに対して接続テストを行います。接続を試みる際に認証プロキシに対する認証情報を要求される場合があります。
-今後、認証を自動的に行いたい場合は、認証情報を入力する際に「認証情報の保存方法」として「保存する」を指定してください。</value>
+なお、接続テストではシステム設定書換えは行わないため、他のアプリケーションの通信には影響しません。</value>
   </data>
   <data name="Setup_Finishing_Description" xml:space="preserve">
     <value>初期設定を完了しました。

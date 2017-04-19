@@ -53,6 +53,8 @@ namespace MAPE.Windows.GUI {
 
 		private bool tested = false;
 
+		private bool testing = false;
+
 		#endregion
 
 
@@ -83,6 +85,7 @@ namespace MAPE.Windows.GUI {
 				StringBuilder buf = new StringBuilder(Windows.Properties.Resources.Setup_AuthenticationProxy_Description_NeedToChange);
 				if (setupContext.IsDefaultActualProxyProvided) {
 					buf.AppendLine();
+					buf.AppendLine();
 					buf.Append(Windows.Properties.Resources.Setup_Description_DefaultValueProvided);
 				}
 				this.authenticationProxyDescriptionTextBlock.Text = buf.ToString();
@@ -98,11 +101,12 @@ namespace MAPE.Windows.GUI {
 				StringBuilder buf = new StringBuilder(Windows.Properties.Resources.Setup_SystemSettingsSwitch_Description_NeedToChange);
 				if (string.IsNullOrEmpty(setupContext.DefaultProxyOverride) == false) {
 					buf.AppendLine();
+					buf.AppendLine();
 					buf.Append(Windows.Properties.Resources.Setup_Description_DefaultValueProvided);
 				}
 				this.systemSettingsSwitcherDescriptionTextBlock.Text = buf.ToString();
 			} else {
-				this.systemSettingsSwitcherDescriptionTextBlock.Text = Windows.Properties.Resources.Setup_Description_NoNeedToChange;
+				this.systemSettingsSwitcherDescriptionTextBlock.Text = Windows.Properties.Resources.Setup_Description_Confirm;
 			}
 
 			// Test tab
@@ -110,7 +114,8 @@ namespace MAPE.Windows.GUI {
 			this.targetUrlTextBox.Text = "https://www.google.com/";
 
 			// Finish tab
-			this.finishingDescriptionTextBlock.Text = Windows.Properties.Resources.Setup_Finishing_Description;
+			string description = string.Concat(Windows.Properties.Resources.Setup_Finishing_Description, Environment.NewLine, Environment.NewLine, Properties.Resources.SetupWindow_finishingDescriptionTextBox_Text_Addition);
+			this.finishingDescriptionTextBlock.Text = description;
 
 			OnUIStateChanged(DetectUIState());
 
@@ -127,6 +132,11 @@ namespace MAPE.Windows.GUI {
 		}
 
 		private UIStateFlags DetectUIState() {
+			// state checks
+			if (this.testing) {
+				return UIStateFlags.None;
+			}
+
 			// base state
 			UIStateFlags state = UIStateFlags.Invariable;
 
@@ -197,9 +207,12 @@ namespace MAPE.Windows.GUI {
 			return null;
 		}
 
-		private bool CanMoveNext() {
+		private bool CanMoveNext(int currentIndex) {
+			// argument checks
+			Debug.Assert(0 <= currentIndex && currentIndex <= this.doneIndex);
+
 			// check error in each page
-			for (int i = 0; i <= this.doneIndex; ++i) {
+			for (int i = 0; i <= currentIndex; ++i) {
 				Control errorControl = HasError(i);
 				if (errorControl != null) {
 					string message = Properties.Resources.SetupWindow_Message_Error;
@@ -226,20 +239,21 @@ namespace MAPE.Windows.GUI {
 		#region event handlers
 
 		private void finishButton_Click(object sender, RoutedEventArgs e) {
-			if (CanMoveNext()) {
+			if (CanMoveNext(3)) {
 				this.DialogResult = true;
 			}
 		}
 
 		private void nextButton_Click(object sender, RoutedEventArgs e) {
 			try {
+				int currentIndex = this.setupTab.SelectedIndex;
+				Debug.Assert(currentIndex < this.setupTab.Items.Count - 1);
+
 				// check state
-				if (CanMoveNext() == false) {
+				if (CanMoveNext(currentIndex) == false) {
 					return;
 				}
 
-				int currentIndex = this.setupTab.SelectedIndex;
-				Debug.Assert(currentIndex < this.setupTab.Items.Count - 1);
 				if (currentIndex == this.doneIndex) {
 					// enable the next tab item
 					++this.doneIndex;
@@ -264,17 +278,35 @@ namespace MAPE.Windows.GUI {
 			return;
 		}
 
-		private void testButton_Click(object sender, RoutedEventArgs e) {
+		private async void testButton_Click(object sender, RoutedEventArgs e) {
+			// state checks
+			if (this.testing) {
+				return;
+			}
+
+			this.testing = true;
 			try {
+				// update UI state
+				UpdateUIState();
+
+				// test connection
 				this.testResultTextBlock.Text = string.Empty;
-				this.Command.Test(this.SetupContext.Settings, this.targetUrlTextBox.Text);
+				string targetUrl = this.targetUrlTextBox.Text;
+				await this.Command.TestAsync(this.SetupContext.Settings, targetUrl);
+
+				// display the result
 				this.testResultTextBlock.Foreground = Brushes.Green;
 				this.testResultTextBlock.Text = "OK";
 				this.tested = true;
 			} catch (Exception exception) {
+				// display the error
 				this.testResultTextBlock.Foreground = Brushes.Red;
 				this.testResultTextBlock.Text = exception.Message;
 				this.tested = false;
+			} finally {
+				// restore UI state
+				this.testing = false;
+				UpdateUIState();
 			}
 
 			return;

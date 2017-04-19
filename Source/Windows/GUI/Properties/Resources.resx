@@ -385,6 +385,10 @@
   <data name="SetupWindow_Message_NotTested" xml:space="preserve">
     <value>The current settings are not tested. Do you want to proceed anyway?</value>
   </data>
+  <data name="SetupWindow_finishingDescriptionTextBox_Text_Addition" xml:space="preserve">
+    <value>You can operate MAPE by the context menu of its task tray icon or the menu of its main window.
+Select the "Start Proxying" menu to start proxying connections. Select the "Settings" menu to edit its settings.</value>
+  </data>
 
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="OffIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">

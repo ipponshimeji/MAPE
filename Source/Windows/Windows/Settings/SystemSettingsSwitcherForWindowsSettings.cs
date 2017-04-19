@@ -101,14 +101,17 @@ namespace MAPE.Windows.Settings {
 				}
 				if (AreSameProxyOverrideValues(this.filteredProxyOverride, value) == false) {
 					// do not set values through property accessors not to be updated redundantly
-					this.filteredProxyOverride = FilterLocalFragment(value, out this.bypassLocal);
+					bool hasBypassLocal;
+					this.filteredProxyOverride = FilterLocalFragment(value, out hasBypassLocal);
+					if (hasBypassLocal) {
+						this.bypassLocal = true;
+					}
+
 					if (this.bypassLocal) {
 						this.proxyOverride = AppendLocalFragment(this.filteredProxyOverride);
 					} else {
 						this.proxyOverride = this.filteredProxyOverride;
 					}
-
-					this.proxyOverride = value;
 				}
 			}
 		}

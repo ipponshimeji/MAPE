@@ -529,7 +529,8 @@ namespace MAPE.Windows.GUI {
 				// create a new CredentialSettings
 				CredentialSettings newItem = new CredentialSettings();
 				// set its default persistence to Process (i.e. not persistent)
-				newItem.Persistence = CredentialPersistence.Process;
+				// The default value reverted because it was confusing. 
+//				newItem.Persistence = CredentialPersistence.Process;
 
 				// prepare a validator
 				CredentialSettings[] items = listView.Items.Cast<CredentialSettings>().ToArray();
