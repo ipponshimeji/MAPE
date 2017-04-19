@@ -268,6 +268,15 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
+        ///   Tha actual proxy is not detected automatically. Specify it explicitly by settings file or command line. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string CommandBase_Message_NoActualProxy {
+            get {
+                return ResourceManager.GetString("CommandBase_Message_NoActualProxy", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   The settings file does not exist. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CommandBase_Message_NoSettingsFile {
@@ -298,15 +307,6 @@ namespace MAPE.Properties {
         internal static string RunningProxyState_Message_FailToRestoreSystemSettings {
             get {
                 return ResourceManager.GetString("RunningProxyState_Message_FailToRestoreSystemSettings", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   Tha actual proxy is not detected automatically. Specify it explicitly by settings file or command line. に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        internal static string SystemSettingsSwitcher_NoActualProxy {
-            get {
-                return ResourceManager.GetString("SystemSettingsSwitcher_NoActualProxy", resourceCulture);
             }
         }
     }

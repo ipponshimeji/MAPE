@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Globalization;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using MAPE.Utils;
@@ -15,7 +16,7 @@ using MAPE.Server.Settings;
 
 
 namespace MAPE.Command {
-	public abstract class CommandBase: Component, IProxyRunner {
+	public abstract class CommandBase: Component {
 		#region types
 
 		public static class OptionNames {
@@ -56,16 +57,31 @@ namespace MAPE.Command {
 			#endregion
 		}
 
-		protected class RunningProxyState: IDisposable {
+		protected class RunningProxyState: IDisposable, IProxyRunner {
 			#region data
 
 			public readonly CommandBase Owner;
+
+			private CommandSettings commandSettings = null;
 
 			private Proxy proxy = null;
 
 			private SystemSettingsSwitcher switcher = null;
 
 			private SystemSettings backup = null;
+
+			private bool saveCredentials = false;
+
+			#endregion
+
+
+			#region data - data synchronized by credentialsLocker
+
+			private readonly object credentialsLocker = new object();
+
+			private Dictionary<string, CredentialSettings> dictionary = null;
+
+			private bool isCredentialsDirty = false;
 
 			#endregion
 
@@ -90,6 +106,7 @@ namespace MAPE.Command {
 					Stop();
 				}
 				Debug.Assert(this.proxy == null);
+				Debug.Assert(this.dictionary == null);
 
 				return;
 			}
@@ -99,16 +116,18 @@ namespace MAPE.Command {
 
 			#region methods
 
-			public void Start(SystemSettingsSwitcherSettings systemSettingsSwitcherSettings, ProxySettings proxySettings, IProxyRunner proxyRunner, bool checkPreviousBackup) {
+			public void Start(CommandSettings commandSettings, bool saveCredentials, bool checkPreviousBackup) {
 				// argument checks
+				if (commandSettings == null) {
+					throw new ArgumentNullException(nameof(commandSettings));
+				}
+				SystemSettingsSwitcherSettings systemSettingsSwitcherSettings = commandSettings.SystemSettingsSwitcher;
 				if (systemSettingsSwitcherSettings == null) {
-					throw new ArgumentNullException(nameof(systemSettingsSwitcherSettings));
+					throw new ArgumentNullException(nameof(commandSettings.SystemSettingsSwitcher));
 				}
+				ProxySettings proxySettings = commandSettings.Proxy;
 				if (proxySettings == null) {
-					throw new ArgumentNullException(nameof(proxySettings));
-				}
-				if (proxyRunner == null) {
-					throw new ArgumentNullException(nameof(proxyRunner));
+					throw new ArgumentNullException(nameof(commandSettings.Proxy));
 				}
 
 				// state checks
@@ -128,20 +147,48 @@ namespace MAPE.Command {
 
 					// create a system settings swither
 					SystemSettingsSwitcher switcher = componentFactory.CreateSystemSettingsSwitcher(this.Owner, systemSettingsSwitcherSettings);
+					if (switcher.ActualProxy == null) {
+						// no actual proxy to which it connects
+						throw new Exception(Resources.CommandBase_Message_NoActualProxy);
+					}
 					this.switcher = switcher;
+
+					// log
+					CommandBase owner = this.Owner;
+					if (owner.ShouldLog(TraceEventType.Verbose)) {
+						// log the actual proxy if it is static
+						DnsEndPoint actualProxyEndPoint = switcher.ActualProxyEndPoint;
+						if (actualProxyEndPoint != null) {
+							owner.LogVerbose($"ActualProxy is {actualProxyEndPoint.Host}:{actualProxyEndPoint.Port}");
+						}
+
+						// log whether system settings is being switched
+						string label = switcher.Enabled ? "enabled" : "disabled";
+						owner.LogVerbose($"SystemSettingsSwitch: {label}");
+					}
+
+					// setup credential dictionary
+					lock (this.credentialsLocker) {
+						IEnumerable<CredentialSettings> credentials = commandSettings.Credentials;
+						this.dictionary = (credentials == null)? new Dictionary<string, CredentialSettings>(): credentials.ToDictionary(c => c.EndPoint);
+						this.isCredentialsDirty = false;
+					}
 
 					// start the proxy
 					Proxy proxy = componentFactory.CreateProxy(proxySettings);
 					proxy.ActualProxy = switcher.ActualProxy;
-					proxy.Start(proxyRunner);
+					proxy.Start(this);
 					this.proxy = proxy;
+					this.saveCredentials = saveCredentials;
 
 					// switch system settings
 					this.backup = switcher.Switch(proxy);
 					if (this.backup != null) {
 						// save backup settings
-						this.Owner.SaveSystemSettingsBackup(this.backup);
+						owner.SaveSystemSettingsBackup(this.backup);
 					}
+
+					this.commandSettings = commandSettings;
 				} catch {
 					Stop();
 					throw;
@@ -170,6 +217,7 @@ namespace MAPE.Command {
 				// stop and dispose the proxy
 				Proxy proxy = this.proxy;
 				this.proxy = null;
+
 				bool stopConfirmed = false;
 				if (proxy == null) {
 					stopConfirmed = true;
@@ -181,23 +229,133 @@ namespace MAPE.Command {
 					}
 				}
 
+				// update credentials if necessary
+				IEnumerable<CredentialSettings> credentials = null;
+				lock (this.credentialsLocker) {
+					if (this.isCredentialsDirty) {
+						this.isCredentialsDirty = false;
+						credentials = this.dictionary.Select(pair => CloneSettings(pair.Value)).ToArray();
+					}
+					this.dictionary = null;
+				}
+				if (credentials != null) {
+					if (this.commandSettings != null) {
+						this.commandSettings.Credentials = credentials;
+					}
+					if (this.saveCredentials) {
+						Action saveTask = () => {
+							try {
+								this.Owner.UpdateSettingsFile((s) => { s.Credentials = credentials; }, null);
+							} catch (Exception exception) {
+								string message = string.Format(Resources.CommandBase_Message_FailToSaveCredentials, exception.Message);
+								this.Owner.ShowErrorMessage(message);
+							}
+						};
+
+						// launch save task
+						Task.Run(saveTask);
+					}
+				}
+				this.saveCredentials = false;
+
 				// checks
 				Debug.Assert(this.proxy == null);
 				Debug.Assert(this.switcher == null);
 				Debug.Assert(this.backup == null);
+				Debug.Assert(this.saveCredentials == false);
 
 				return stopConfirmed;
 			}
 
 			#endregion
+
+
+			#region IProxyRunner
+
+			CredentialSettings IProxyRunner.GetCredential(string endPoint, string realm, bool needUpdate) {
+				// argument checks
+				if (endPoint == null) {
+					throw new ArgumentNullException(nameof(endPoint));
+				}
+				if (realm == null) {
+					realm = string.Empty;
+				}
+
+				// Note lock is needed not only to access this.credentials but also to share the user response
+				CredentialSettings credential = null;
+				lock (this.credentialsLocker) {
+					// state checks
+					IDictionary<string, CredentialSettings> dictionary = this.dictionary;
+					if (dictionary == null) {
+						throw new ObjectDisposedException(nameof(RunningProxyState));
+					}
+
+					if (needUpdate == false) {
+						// try to find the credential for the end point
+						if (dictionary.TryGetValue(endPoint, out credential) == false) {
+							// try to find the credential for the "wildcard"
+							if (dictionary.TryGetValue(string.Empty, out credential) == false) {
+								needUpdate = true;
+							}
+						}
+					}
+
+					// update the credential if necessary
+					if (needUpdate) {
+						credential = this.Owner.UpdateCredential(endPoint, realm, credential);
+						if (credential != null) {
+							SetCredential(credential);
+						}
+					} else {
+						Debug.Assert(credential != null);
+					}
+				}
+
+				// return the clone of the credential not to be changed
+				return CloneSettings(credential);
+			}
+
+			#endregion
+
+
+			#region privates
+
+			private void SetCredential(CredentialSettings credential) {
+				// argument checks
+				Debug.Assert(credential != null);
+
+				// state checks
+				IDictionary<string, CredentialSettings> dictionary = this.dictionary;
+				Debug.Assert(dictionary != null);
+
+				// register the credential to the credential list
+				string endPoint = credential.EndPoint;
+				bool changed = false;
+				CredentialSettings oldCredential;
+				if (dictionary.TryGetValue(endPoint, out oldCredential)) {
+					// the credential for the endpoint exists
+					changed = !credential.Equals(oldCredential);
+				} else {
+					// newly added
+					changed = true;
+				}
+
+				if (changed) {
+					// register the credential
+					this.isCredentialsDirty = true;
+					if (credential.Persistence == CredentialPersistence.Session) {
+						// do not keep in the process state
+						dictionary.Remove(endPoint);
+					} else {
+						dictionary[endPoint] = credential;
+					}
+				}
+
+				return;
+			}
+
+			#endregion
 		}
-
-		#endregion
-
-
-		#region constants
-
-		public const CredentialPersistence DefaultCredentialPersistence = CredentialPersistence.Persistent;
 
 		#endregion
 
@@ -213,15 +371,6 @@ namespace MAPE.Command {
 		protected string SettingsFilePath { get; set; } = null;
 
 		protected string Kind { get; set; } = ExecutionKind.RunProxy;
-
-		#endregion
-
-
-		#region data - data synchronized by credentialsLocker
-
-		private readonly object credentialsLocker = new object();
-
-		private Dictionary<string, CredentialSettings> credentials = new Dictionary<string, CredentialSettings>();
 
 		#endregion
 
@@ -254,7 +403,6 @@ namespace MAPE.Command {
 
 		public override void Dispose() {
 			// clear members
-			this.credentials = null;
 			this.Kind = null;
 			this.SettingsFilePath = null;
 
@@ -433,101 +581,24 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected RunningProxyState StartProxy(CommandSettings settings, IProxyRunner proxyRunner, bool checkPreviousBackup) {
+		protected RunningProxyState StartProxy(CommandSettings settings, bool saveCredentials, bool checkPreviousBackup) {
 			// argument checks
 			if (settings == null) {
 				throw new ArgumentNullException(nameof(settings));
 			}
 			Debug.Assert(settings.SystemSettingsSwitcher != null);
 			Debug.Assert(settings.Proxy != null);
-			if (proxyRunner == null) {
-				throw new ArgumentNullException(nameof(proxyRunner));
-			}
-
-			// state checks
-			if (this.credentials == null) {
-				throw CreateObjectDisposedException();
-			}
-
-			// get setting valuses to be used
-			SystemSettingsSwitcherSettings systemSettingSwitcherSettings = settings.SystemSettingsSwitcher;
-			ProxySettings proxySettings = settings.Proxy;
 
 			// create a RunningProxyState and start the proxy
 			RunningProxyState state = new RunningProxyState(this);
 			try {
-				state.Start(systemSettingSwitcherSettings, proxySettings, proxyRunner, checkPreviousBackup);
+				state.Start(settings, saveCredentials, checkPreviousBackup);
 			} catch {
 				state.Dispose();
 				throw;
 			}
 
 			return state;
-		}
-
-		protected void SetCredential(CredentialSettings credential, bool saveIfNecessary) {
-			// argument checks
-			if (credential == null) {
-				throw new ArgumentNullException(nameof(credential));
-			}
-
-			lock (this.credentialsLocker) {
-				// state checks
-				IDictionary<string, CredentialSettings> credentials = this.credentials;
-				if (credential == null) {
-					throw CreateObjectDisposedException();
-				}
-
-				// register the credential to the credential list
-				string endPoint = credential.EndPoint;
-				bool changed = false;
-				CredentialSettings oldCredential;
-				if (credentials.TryGetValue(endPoint, out oldCredential)) {
-					// the credential for the endpoint exists
-					changed = !credential.Equals(oldCredential);
-				} else {
-					// newly added
-					changed = true;
-				}
-				if (changed) {
-					// register the credential
-					if (credential.Persistence == CredentialPersistence.Session) {
-						// do not keep in the process state
-						credentials.Remove(endPoint);
-					} else {
-						credentials[endPoint] = credential;
-					}
-
-					// update settings file if necessary
-					if (saveIfNecessary) {
-						string settingsFilePath = this.SettingsFilePath;
-						if (string.IsNullOrEmpty(settingsFilePath) == false) {
-							// create a clone of the credential list
-							CredentialSettings[] credentialsToBeSaved = (
-								from c in credentials.Values
-								where c.Persistence == CredentialPersistence.Persistent
-								select CloneSettings(c)
-							).ToArray();
-							Action saveTask = () => {
-								try {
-									UpdateSettingsFile((s) => { s.Credentials = credentialsToBeSaved; }, null);
-								} catch (Exception exception) {
-									string message = string.Format(Resources.CommandBase_Message_FailToSaveCredentials, exception.Message);
-									ShowErrorMessage(message);
-								}
-							};
-
-							// launch save task
-							Task.Run(saveTask);
-						} else {
-							string message = string.Format(Resources.CommandBase_Message_FailToSaveCredentials, Resources.CommandBase_Message_NoSettingsFile);
-							ShowErrorMessage(message);
-						}
-					}
-				}
-			}
-
-			return;
 		}
 
 
@@ -549,6 +620,91 @@ namespace MAPE.Command {
 
 			// statistics of the ComponentFactory
 			this.ComponentFactory.LogStatistics(recap: true);
+		}
+
+		public bool Test(CommandSettings settings, string targetUrl) {
+			SystemSettingsSwitcherSettings systemSettingsSwitcherSettings = settings.SystemSettingsSwitcher;
+			bool backup = systemSettingsSwitcherSettings.EnableSystemSettingsSwitch;
+			string logLevelLog = string.Empty;
+			TraceLevel backupLogLevel = Logger.LogLevel;
+			TraceLevel tempLogLevel = backupLogLevel;
+			if (tempLogLevel < TraceLevel.Info) {
+				tempLogLevel = TraceLevel.Info;
+				logLevelLog = $" The LogLevel is changed to '{tempLogLevel}' temporarily.";
+			}
+
+			// test suppressing system settings switch
+			try {
+				LogStart($"Start a test connection to '{targetUrl}'.{logLevelLog}");
+				Logger.LogLevel = tempLogLevel;
+				systemSettingsSwitcherSettings.EnableSystemSettingsSwitch = false;
+
+				using (RunningProxyState proxyState = StartProxy(settings, saveCredentials: false, checkPreviousBackup: false)) {
+					IPEndPoint proxyEndPoint = ListenerSettings.GetEndPoint(settings.Proxy.MainListener);
+					WebClient webClient = new WebClient();
+					webClient.Proxy = new WebProxy(proxyEndPoint.Address.ToString(), proxyEndPoint.Port);
+
+					webClient.DownloadData(targetUrl);  // an exception is thrown on error
+
+					// wait for stop for 3 seconds 
+					proxyState.Stop(3000);
+				}
+			} finally {
+				systemSettingsSwitcherSettings.EnableSystemSettingsSwitch = backup;
+				Logger.LogLevel = backupLogLevel;
+				LogStop($"Stop the test connection.");
+			}
+
+			return true;
+		}
+
+		public Task<bool> TestAsync(CommandSettings settings, string targetUrl) {
+			return Task.Run<bool>(() => Test(settings, targetUrl));
+		}
+
+		#endregion
+
+
+		#region methods - initial setup
+
+		protected bool DoInitialSetup(CommandSettings settings) {
+			// argument checks
+			if (settings == null) {
+				throw new ArgumentNullException(nameof(settings));
+			}
+			int currentLevel = settings.InitialSetupLevel;
+
+			// state checks
+			string settingsFilePath = this.SettingsFilePath;
+			if (string.IsNullOrEmpty(settingsFilePath)) {
+				// it is temporary running
+				return false;
+			}
+
+			// do initial setup if it has not been done
+			bool result = false;
+			if (currentLevel < SetupContext.LatestInitialSetupLevel) {
+				int newLevel = DoInitialSetupImpl(settings);
+				if (newLevel != currentLevel) {
+					// settings are set up
+					result = true;
+
+					// set the 'InitialSetupDone' setting
+					settings.InitialSetupLevel = newLevel;
+
+					// save the new settings
+					Action saveTask = () => {
+						try {
+							SaveSettingsToFile(settings, settingsFilePath);
+						} catch (Exception exception) {
+							LogError($"Fail to save settings: {exception.Message}");
+						}
+					};
+					Task.Run(saveTask);
+				}
+			}
+
+			return result;
 		}
 
 		#endregion
@@ -696,15 +852,7 @@ namespace MAPE.Command {
 				throw new ArgumentNullException(nameof(settings));
 			}
 
-			// Credentials
-			if (settings.Credentials != null) {
-				IDictionary<string, CredentialSettings> dictionary = this.credentials;
-				dictionary.Clear();
-
-				foreach (CredentialSettings credential in settings.Credentials) {
-					dictionary.Add(credential.EndPoint, CloneSettings(credential));
-				}
-			}
+			// do nothing
 
 			return;
 		}
@@ -726,7 +874,7 @@ namespace MAPE.Command {
 			} else if (AreSameOptionNames(name, OptionNames.Culture)) {
 				settings.Culture = new CultureInfo(value);
 			} else if (AreSameOptionNames(name, OptionNames.Credential)) {
-				SetCredential(new CredentialSettings(new JsonObjectData(value)), saveIfNecessary: false);
+				settings.AddCredential(new CredentialSettings(new JsonObjectData(value)));
 			} else if (AreSameOptionNames(name, OptionNames.MainListener)) {
 				settings.Proxy.MainListener = new ListenerSettings(new JsonObjectData(value));
 			} else if (AreSameOptionNames(name, OptionNames.AdditionalListeners)) {
@@ -846,48 +994,8 @@ namespace MAPE.Command {
 		protected virtual void BringAppToForeground() {
 		}
 
-		#endregion
-
-
-		#region IProxyRunner - for Proxy class only
-
-		CredentialSettings IProxyRunner.GetCredential(string endPoint, string realm, bool needUpdate) {
-			// argument checks
-			if (endPoint == null) {
-				throw new ArgumentNullException(nameof(endPoint));
-			}
-			if (realm == null) {
-				realm = string.Empty;
-			}
-
-			// Note lock is needed not only to access this.Credentials but also to share the user response
-			CredentialSettings credential = null;
-			lock (this.credentialsLocker) {
-				// state checks
-				IDictionary<string, CredentialSettings> credentials = this.credentials;
-				if (credentials == null) {
-					throw CreateObjectDisposedException();
-				}
-
-				// try to find the credential for the end point
-				if (credentials.TryGetValue(endPoint, out credential) == false) {
-					// try to find the credential for the "wildcard"
-					if (credentials.TryGetValue(string.Empty, out credential) == false) {
-						needUpdate = true;
-					}
-				}
-
-				// update the credential if necessary
-				if (needUpdate) {
-					credential = UpdateCredential(endPoint, realm, credential);
-					if (credential != null) {
-						SetCredential(credential, saveIfNecessary: this.HasSettingsFile);
-					}
-				}
-			}
-
-			// return the clone of the credential not to be changed
-			return CloneSettings(credential);
+		protected virtual int DoInitialSetupImpl(CommandSettings settings) {
+			return SetupContext.LatestInitialSetupLevel;	// assumes set up
 		}
 
 		#endregion

@@ -148,6 +148,9 @@
   キャンセル: 何もしない
 </value>
   </data>
+  <data name="CommandBase_Message_NoActualProxy" xml:space="preserve">
+    <value>実際のプロキシを自動的に検出することができませんでした。コマンドラインや設定ファイルで明に指定して起動してください。</value>
+  </data>
   <data name="CLICommandBase_Message_NoSettingsFile" xml:space="preserve">
     <value>保存先の設定ファイルが指定されていないため、設定を保存できません。</value>
   </data>
@@ -201,8 +204,5 @@
   </data>
   <data name="CLICommandBase_Prompt_YesNoCancel" xml:space="preserve">
     <value>Y, N, Cのいずれかの文字を入力してください（Y: はい, N: いいえ, C: キャンセル）:</value>
-  </data>
-  <data name="SystemSettingsSwitcher_NoActualProxy" xml:space="preserve">
-    <value>実際のプロキシを自動的に検出することができませんでした。コマンドラインや設定ファイルで明に指定して起動してください。</value>
   </data>
 </root>

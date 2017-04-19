@@ -53,6 +53,17 @@ namespace MAPE.Windows.GUI {
 
 		#region methods
 
+		public void DoInitialSetup() {
+			CommandForWindowsGUISettings settings = CloneSettings(this.Settings);
+			if (base.DoInitialSetup(settings)) {
+				// settings are set up
+				// Note that the new settings have been saved in  base.DoInitialSetup()
+				SetSettings(settings, save: false);
+			}
+
+			return;
+		}
+
 		public void SetSettings(CommandForWindowsGUISettings newSettings, bool save) {
 			// change the current settings
 			CommandForWindowsGUISettings oldSettings = this.Settings;
@@ -147,7 +158,8 @@ namespace MAPE.Windows.GUI {
 			} else {
 				credentialSettings = new CredentialSettings();
 				// set default Persistence value to Session (i.e. volatile)
-				credentialSettings.Persistence = CredentialPersistence.Session;
+				// The default value reverted because it was confusing. 
+//				credentialSettings.Persistence = CredentialPersistence.Session;
 			}
 			credentialSettings.EndPoint = endPoint;
 
@@ -213,6 +225,20 @@ namespace MAPE.Windows.GUI {
 			this.app.Dispatcher.Invoke(
 				() => { this.app.OpenMainWindow(); }
 			);
+		}
+
+		protected override int DoInitialSetupImpl(CommandSettings settings) {
+			// argument checks
+			CommandForWindowsGUISettings actualSettings = settings as CommandForWindowsGUISettings;
+			if (actualSettings == null) {
+				throw new ArgumentException($"It must be an instance of {nameof(CommandForWindowsGUISettings)} class.", nameof(settings));
+			}
+
+			// create context
+			SetupContextForWindows setupContext = new SetupContextForWindows(actualSettings, this);
+
+			// Note that it returns the latest level if no need to setup, it sets 'InitialSetupLevel' settings up-to-date 
+			return setupContext.NeedSetup? this.app.ShowSetupWindow(setupContext): SetupContext.LatestInitialSetupLevel;
 		}
 
 		#endregion

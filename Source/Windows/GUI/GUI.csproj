@@ -66,6 +66,9 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ActualProxySettingsControl.xaml.cs">
+      <DependentUpon>ActualProxySettingsControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ComponentFactoryForWindowsGUI.cs" />
     <Compile Include="ListenerDialog.xaml.cs">
       <DependentUpon>ListenerDialog.xaml</DependentUpon>
@@ -82,6 +85,16 @@
     <Compile Include="Settings\MainWindowSettings.cs" />
     <Compile Include="Settings\GUIForWindowsGUISettings.cs" />
     <Compile Include="Settings\CommandForWindowsGUISettings.cs" />
+    <Compile Include="SetupWindow.xaml.cs">
+      <DependentUpon>SetupWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="SystemSettingsSwitchSettingsControl.xaml.cs">
+      <DependentUpon>SystemSettingsSwitchSettingsControl.xaml</DependentUpon>
+    </Compile>
+    <Page Include="ActualProxySettingsControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -115,6 +128,14 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="AboutWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SetupWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SystemSettingsSwitchSettingsControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

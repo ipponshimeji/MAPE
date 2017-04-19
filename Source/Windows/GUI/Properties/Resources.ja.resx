@@ -216,6 +216,18 @@
   <data name="CredentialDialog_EnableAssumptionModeCheckBox_Content" xml:space="preserve">
     <value>「Basic認証決めつけモード」を利用する(_A)</value>
   </data>
+  <data name="ActualProxySettingsControl_authenticationProxyGroup_Header" xml:space="preserve">
+    <value>認証プロキシ</value>
+  </data>
+  <data name="ActualProxySettingsControl_autoDetectProxyCheckBox_Content" xml:space="preserve">
+    <value>自動検出する(_D)</value>
+  </data>
+  <data name="ActualProxySettingsControl_hostNameLabel_Content" xml:space="preserve">
+    <value>ホスト名(_H):</value>
+  </data>
+  <data name="ActualProxySettingsControl_portLabel_Content" xml:space="preserve">
+    <value>ポート(_P):</value>
+  </data>
   <data name="SettingsWindow_Title" xml:space="preserve">
     <value>設定</value>
   </data>
@@ -236,18 +248,6 @@
   </data>
   <data name="SettingsWindow_miscTab_Header" xml:space="preserve">
     <value>その他</value>
-  </data>
-  <data name="SettingsWindow_authenticationProxyGroup_Header" xml:space="preserve">
-    <value>認証プロキシ</value>
-  </data>
-  <data name="SettingsWindow_autoDetectProxyCheckBox_Content" xml:space="preserve">
-    <value>自動検出する(_D)</value>
-  </data>
-  <data name="SettingsWindow_hostNameLabel_Content" xml:space="preserve">
-    <value>ホスト名(_H):</value>
-  </data>
-  <data name="SettingsWindow_portLabel_Content" xml:space="preserve">
-    <value>ポート(_P):</value>
   </data>
   <data name="SettingsWindow_systemSettingsSwitherGroup_Header" xml:space="preserve">
     <value>システム設定書換え</value>
@@ -344,5 +344,45 @@
   </data>
   <data name="AboutWindow_ComponentsGroupBox_Header" xml:space="preserve">
     <value>このソフトウェアは以下のコンポーネントを利用しています</value>
+  </data>
+  <data name="SetupWindow_Title" xml:space="preserve">
+    <value>初期設定</value>
+  </data>
+  <data name="SetupWindow_backButton_Content" xml:space="preserve">
+    <value>戻る(_&lt;)</value>
+  </data>
+  <data name="SetupWindow_nextButton_Content" xml:space="preserve">
+    <value>次へ(_&gt;)</value>
+  </data>
+  <data name="SetupWindow_finishButton_Content" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="SetupWindow_authenticationProxyTabItem_Header" xml:space="preserve">
+    <value>認証プロキシ</value>
+  </data>
+  <data name="SetupWindow_systemSettingsSwitchTabItem_Header" xml:space="preserve">
+    <value>システム設定書換</value>
+  </data>
+  <data name="SetupWindow_testTabItem_Header" xml:space="preserve">
+    <value>テスト</value>
+  </data>
+  <data name="SetupWindow_finishingTabItem_Header" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="SetupWindow_targetUrlLabel_Content" xml:space="preserve">
+    <value>接続先URL(_U):</value>
+  </data>
+  <data name="SetupWindow_testButton_Content" xml:space="preserve">
+    <value>テスト(_T)</value>
+  </data>
+  <data name="SetupWindow_finishingDescriptionTextBox_Text_Addition" xml:space="preserve">
+    <value>「認証プロキシ爆発しろ！」はタスクトレイアイコンのコンテキストメニュー、またはメインウィンドウのメニューから操作することができます。
+通信の中継を開始するには「中継の開始」メニューを、設定を変更するには「設定」メニューを選択してください。</value>
+  </data>
+  <data name="SetupWindow_Message_Error" xml:space="preserve">
+    <value>入力に誤りがあります。</value>
+  </data>
+  <data name="SetupWindow_Message_NotTested" xml:space="preserve">
+    <value>現在の設定でテストを行っていません。このまま進みますか？</value>
   </data>
 </root>

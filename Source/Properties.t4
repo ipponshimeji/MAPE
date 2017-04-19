@@ -6,10 +6,10 @@
 	string copyright = "Copyright 2016-2017 Takamasa Uramoto";
 	int majorVersion = 0;
 	int minorVersion = 1;
-	int buildNumber = 10;
+	int buildNumber = 11;
 	int revision = 0;
-	string configuration = "alpha";
-//	string configuration = "developing";
+//	string configuration = "alpha";
+	string configuration = "developing";
 
 	string version = string.Format("{0}.{1}.{2}.{3}", majorVersion, minorVersion, buildNumber, revision);
 #>

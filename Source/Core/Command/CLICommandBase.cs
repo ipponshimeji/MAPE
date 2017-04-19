@@ -184,7 +184,7 @@ namespace MAPE.Command {
 					do {
 						// run the proxy
 						bool completed = false;
-						using (RunningProxyState runningProxyState = StartProxy(settings, this, checkPreviousBackup: false)) {
+						using (RunningProxyState runningProxyState = StartProxy(settings, saveCredentials: true, checkPreviousBackup: false)) {
 							// log & message
 							LogProxyStarted(eventKind == ControllerThreadEventKind.Resume);
 							Console.WriteLine(Resources.CLICommandBase_Message_StartListening);

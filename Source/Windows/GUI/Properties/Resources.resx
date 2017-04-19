@@ -216,6 +216,18 @@
   <data name="CredentialDialog_EnableAssumptionModeCheckBox_Content" xml:space="preserve">
     <value>Enable "Basic Authentication _Assumption Mode"</value>
   </data>
+  <data name="ActualProxySettingsControl_authenticationProxyGroup_Header" xml:space="preserve">
+    <value>Authentication Proxy</value>
+  </data>
+  <data name="ActualProxySettingsControl_autoDetectProxyCheckBox_Content" xml:space="preserve">
+    <value>_Detect Automatically</value>
+  </data>
+  <data name="ActualProxySettingsControl_hostNameLabel_Content" xml:space="preserve">
+    <value>_Host Name:</value>
+  </data>
+  <data name="ActualProxySettingsControl_portLabel_Content" xml:space="preserve">
+    <value>_Port:</value>
+  </data>
   <data name="SettingsWindow_Title" xml:space="preserve">
     <value>Settings</value>
   </data>
@@ -236,18 +248,6 @@
   </data>
   <data name="SettingsWindow_miscTab_Header" xml:space="preserve">
     <value>Misc</value>
-  </data>
-  <data name="SettingsWindow_authenticationProxyGroup_Header" xml:space="preserve">
-    <value>Authentication Proxy</value>
-  </data>
-  <data name="SettingsWindow_autoDetectProxyCheckBox_Content" xml:space="preserve">
-    <value>_Detect Automatically</value>
-  </data>
-  <data name="SettingsWindow_hostNameLabel_Content" xml:space="preserve">
-    <value>_Host Name:</value>
-  </data>
-  <data name="SettingsWindow_portLabel_Content" xml:space="preserve">
-    <value>_Port:</value>
   </data>
   <data name="SettingsWindow_systemSettingsSwitherGroup_Header" xml:space="preserve">
     <value>System Settings Switcher</value>
@@ -349,6 +349,47 @@
   <data name="AboutWindow_ComponentsList" xml:space="preserve">
     <value>Newtonsoft.Json v9.0.1</value>
   </data>
+  <data name="SetupWindow_Title" xml:space="preserve">
+    <value>Initial Setup</value>
+  </data>
+  <data name="SetupWindow_backButton_Content" xml:space="preserve">
+    <value>Back(_&lt;)</value>
+  </data>
+  <data name="SetupWindow_nextButton_Content" xml:space="preserve">
+    <value>Next(_&gt;)</value>
+  </data>
+  <data name="SetupWindow_finishButton_Content" xml:space="preserve">
+    <value>Finish</value>
+  </data>
+  <data name="SetupWindow_authenticationProxyTabItem_Header" xml:space="preserve">
+    <value>Authentication Proxy</value>
+  </data>
+  <data name="SetupWindow_systemSettingsSwitchTabItem_Header" xml:space="preserve">
+    <value>System Settings Switch</value>
+  </data>
+  <data name="SetupWindow_testTabItem_Header" xml:space="preserve">
+    <value>Test</value>
+  </data>
+  <data name="SetupWindow_finishingTabItem_Header" xml:space="preserve">
+    <value>Finishing</value>
+  </data>
+  <data name="SetupWindow_targetUrlLabel_Content" xml:space="preserve">
+    <value>Target _URL:</value>
+  </data>
+  <data name="SetupWindow_testButton_Content" xml:space="preserve">
+    <value>_Test</value>
+  </data>
+  <data name="SetupWindow_Message_Error" xml:space="preserve">
+    <value>There is an unacceptable input.</value>
+  </data>
+  <data name="SetupWindow_Message_NotTested" xml:space="preserve">
+    <value>The current settings are not tested. Do you want to proceed anyway?</value>
+  </data>
+  <data name="SetupWindow_finishingDescriptionTextBox_Text_Addition" xml:space="preserve">
+    <value>You can operate MAPE by the context menu of its task tray icon or the menu of its main window.
+Select the "Start Proxying" menu to start proxying connections. Select the "Settings" menu to edit its settings.</value>
+  </data>
+
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
   <data name="OffIcon" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\OffIcon.ico;System.Drawing.Icon, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a</value>

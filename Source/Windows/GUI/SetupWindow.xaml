@@ -1,0 +1,80 @@
+﻿<Window x:Class="MAPE.Windows.GUI.SetupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MAPE.Windows.GUI"
+        xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
+        mc:Ignorable="d"
+        Title="{x:Static properties:Resources.SetupWindow_Title}" Height="400" Width="600">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TabControl x:Name="setupTab" Grid.Row="0" >
+            <TabItem x:Name="authenticationProxyTabItem" Header="{x:Static properties:Resources.SetupWindow_authenticationProxyTabItem_Header}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="authenticationProxyDescriptionTextBlock" Grid.Row="0" Margin="4,4,4,12" TextWrapping="Wrap" />
+                    <local:ActualProxySettingsControl x:Name="actualProxy" Grid.Row="1" />
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="systemSettingsSwitchTabItem" Header="{x:Static properties:Resources.SetupWindow_systemSettingsSwitchTabItem_Header}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="systemSettingsSwitcherDescriptionTextBlock" Grid.Row="0" Margin="4,4,4,12" TextWrapping="Wrap" />
+                    <local:SystemSettingsSwitchSettingsControl x:Name="systemSettingsSwitcher" Grid.Row="1" MinHeight="180" />
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="testTabItem" Header="{x:Static properties:Resources.SetupWindow_testTabItem_Header}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="testDescriptionTextBlock" Grid.Row="0" Margin="4,4,4,12" TextWrapping="Wrap"/>
+                    <GroupBox Grid.Row="1" Header="Test">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <StackPanel Grid.Row="0" Orientation="Horizontal" VerticalAlignment="Center">
+                                <Label Content="{x:Static properties:Resources.SetupWindow_targetUrlLabel_Content}" Target="{Binding ElementName=targetUrlTextBox}" />
+                                <TextBox x:Name="targetUrlTextBox" Width="200" VerticalContentAlignment="Center" />
+                                <Button x:Name="testButton" Content="{x:Static properties:Resources.SetupWindow_testButton_Content}" MinWidth="100" VerticalContentAlignment="Center" Margin="8, 0, 0, 0" Padding="4" Click="testButton_Click" />
+                            </StackPanel>
+                            <TextBlock x:Name="testResultTextBlock" Grid.Row="1" TextWrapping="Wrap" Height="80" Margin="4"/>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
+            <TabItem x:Name="finishingTabItem" Header="{x:Static properties:Resources.SetupWindow_finishingTabItem_Header}">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="finishingDescriptionTextBlock" Grid.Row="0" Margin="4,4,4,12"  TextWrapping="Wrap" />
+                </Grid>
+            </TabItem>
+        </TabControl>
+        <StackPanel Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Orientation="Horizontal">
+            <Button x:Name="backButton" Content="{x:Static properties:Resources.SetupWindow_backButton_Content}" MinWidth="100" Margin="8,8,4,8" Padding="4" Click="backButton_Click" />
+            <Button x:Name="nextButton" Content="{x:Static properties:Resources.SetupWindow_nextButton_Content}" MinWidth="100" Margin="8,8,12,8" Padding="4" Click="nextButton_Click" />
+            <Button x:Name="finishButton" Content="{x:Static properties:Resources.SetupWindow_finishButton_Content}" MinWidth="100" Margin="8,8,4,8" IsDefault="True" Padding="4" Click="finishButton_Click" />
+            <Button x:Name="cancelButton" Content="{x:Static properties:Resources.Common_Cancel}" MinWidth="100" Margin="8,8,6,8" IsCancel="True" Padding="4" />
+        </StackPanel>
+    </Grid>
+</Window>

@@ -117,92 +117,27 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
-  <data name="RunningProxyState_Message_FailToRestoreSystemSettings" xml:space="preserve">
-    <value>Failed to restore the previous system settings: {0}
-Please restore it manually.
-Or, it may be restored from the backup '{1}' if it exists when you restart MAPE.</value>
+  <data name="Setup_Description_NoNeedToChange" xml:space="preserve">
+    <value>No need to change the current settings.</value>
   </data>
-  <data name="CommandBase_Message_FailToSaveCredentials" xml:space="preserve">
-    <value>Failed to save credentials: {0}</value>
+  <data name="Setup_Description_Confirm" xml:space="preserve">
+    <value>Confirm the current settings, and change them if necessary.</value>
   </data>
-  <data name="CommandBase_Message_NoSettingsFile" xml:space="preserve">
-    <value>The settings file does not exist.</value>
+  <data name="Setup_Description_DefaultValueProvided" xml:space="preserve">
+    <value>The default setting is provided for this environment. Use this settings if possible.</value>
   </data>
-  <data name="CommandBase_Message_FailToLoadSettingsFile" xml:space="preserve">
-    <value>Failed to load the settings file '{0}': {1}</value>
+  <data name="Setup_AuthenticationProxy_Description_NeedToChange" xml:space="preserve">
+    <value>The target proxy cannot be detected automatically in this environment. You must specify its information manually.</value>
   </data>
-  <data name="CommandBase_Message_InvalidOption" xml:space="preserve">
-    <value>An invalid option '{0}' is specified.</value>
+  <data name="Setup_SystemSettingsSwitch_Description_NeedToChange" xml:space="preserve">
+    <value>The settings for the proxy server in this environment is configured automatically, by an automatic configuration script for example. In this case MAPE cannot detect the "Bypass proxy server for local addresses" and "Do not use proxy server for addresses beginning with:" settings automatically. You must specify them explicitly.</value>
   </data>
-  <data name="CommandBase_Message_InvalidArgument" xml:space="preserve">
-    <value>An invalid argument '{0}' is specified.</value>
+  <data name="Setup_Test_Description" xml:space="preserve">
+    <value>Test connecting to an external URL. The credential for the authentication proxy may be required during the test.
+MAPE does not switch the system settings in this test, so it does not affect communications of other applications.</value>
   </data>
-  <data name="CommandBase_Message_AnotherInstanceIsRunning" xml:space="preserve">
-    <value>Another MAPE instance is already running.</value>
-  </data>
-  <data name="CommandBase_Message_SystemSettingsAreNotRestored" xml:space="preserve">
-    <value>The system proxy settings which were switched at previous proxing seem not to be restored. Do you want to resotre it?
-The found backup is one at {0}. The settings set manually after the point will be overwritten. Be careful especially when the backup is old. 
-  Yes: Restore the backup
-  No: Do not restore the backup, but delete it
-  Cancel: Do nothing
-</value>
-  </data>
-  <data name="CommandBase_Message_NoActualProxy" xml:space="preserve">
-    <value>Tha actual proxy is not detected automatically. Specify it explicitly by settings file or command line.</value>
-  </data>
-  <data name="CLICommandBase_Message_NoSettingsFile" xml:space="preserve">
-    <value>The settings cannot be saved because the settings file to which they are saved is not specified.</value>
-  </data>
-  <data name="CLICommandBase_Message_StartListening" xml:space="preserve">
-    <value>Listening...</value>
-  </data>
-  <data name="CLICommandBase_Message_StartingNote" xml:space="preserve">
-    <value>Press Ctrl+C to quit.</value>
-  </data>
-  <data name="CLICommandBase_Message_Completed" xml:space="preserve">
-    <value>Completed.</value>
-  </data>
-  <data name="CLICommandBase_Message_NotCompleted" xml:space="preserve">
-    <value>Cannot confirm its completion.</value>
-  </data>
-  <data name="CLICommandBase_Logo_Command" xml:space="preserve">
-    <value>MAPE (May Authentication Proxy Explode)</value>
-  </data>
-  <data name="CLICommandBase_SaveSettings_Completed" xml:space="preserve">
-    <value>The settings are saved to '{0}'.</value>
-  </data>
-  <data name="CLICommandBase_AskCredential_Description" xml:space="preserve">
-    <value>Credential for {0} is required.</value>
-  </data>
-  <data name="CLICommandBase_AskCredential_UserName" xml:space="preserve">
-    <value>UserName: </value>
-  </data>
-  <data name="CLICommandBase_AskCredential_Password" xml:space="preserve">
-    <value>Password: </value>
-  </data>
-  <data name="CLICommandBase_AskCredential_Persistence_Description" xml:space="preserve">
-    <value>How save password?</value>
-  </data>
-  <data name="CLICommandBase_AskCredential_Persistence_Session" xml:space="preserve">
-    <value>only during this http session</value>
-  </data>
-  <data name="CLICommandBase_AskCredential_Persistence_Process" xml:space="preserve">
-    <value>only during running this process</value>
-  </data>
-  <data name="CLICommandBase_AskCredential_Persistence_Persistent" xml:space="preserve">
-    <value>save the encrypted password in settings file</value>
-  </data>
-  <data name="CLICommandBase_AskCredential_Persistence_Prompt" xml:space="preserve">
-    <value>Selection: </value>
-  </data>
-  <data name="CLICommandBase_AskCredential_EnableAssumptionMode_Description" xml:space="preserve">
-    <value>Do you want to enable "Basic Authentication Assumption Mode"? The default value is "Yes".</value>
-  </data>
-  <data name="CLICommandBase_Prompt_YesNo" xml:space="preserve">
-    <value>Enter Y or N (Y: Yes, N: No):</value>
-  </data>
-  <data name="CLICommandBase_Prompt_YesNoCancel" xml:space="preserve">
-    <value>Enter Y, N or C (Y: Yes, N: No, C: Cancel):</value>
+  <data name="Setup_Finishing_Description" xml:space="preserve">
+    <value>Initial setup is finished.
+Note that some software does not recognize the switched system settings unless it is launched after MAPE starts proxying.</value>
   </data>
 </root>

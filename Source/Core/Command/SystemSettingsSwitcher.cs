@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Configuration;
 using System.Diagnostics;
 using System.Net;
 using MAPE.Utils;
@@ -8,6 +9,21 @@ using MAPE.Command.Settings;
 
 namespace MAPE.Command {
 	public class SystemSettingsSwitcher {
+		#region types
+
+		public static class ConfigNames {
+			#region constants
+
+			public const string DefaultActualProxyHostName = "DefaultActualProxyHostName";
+
+			public const string DefaultActualProxyPort = "DefaultActualProxyPort";
+
+			#endregion
+		}
+
+		#endregion
+
+
 		#region data
 
 		public readonly CommandBase Owner;
@@ -15,6 +31,22 @@ namespace MAPE.Command {
 		public bool Enabled { get; protected set; } = true;
 
 		public IWebProxy ActualProxy { get; protected set; } = null;
+
+		#endregion
+
+
+		#region properties
+
+		/// <summary>
+		/// Returns the end point of the actual proxy if it has a static end point.
+		/// </summary>
+		public DnsEndPoint ActualProxyEndPoint {
+			get {
+				// ToDo: can improve?
+				WebProxy webProxy = this.ActualProxy as WebProxy;
+				return (webProxy == null) ? null : new DnsEndPoint(webProxy.Address.Host, webProxy.Address.Port);
+			}
+		}
 
 		#endregion
 
@@ -49,17 +81,7 @@ namespace MAPE.Command {
 					actualProxy = CreateWebProxy(settings.ActualProxy);
 				} else {
 					actualProxy = DetectSystemProxy();
-					if (actualProxy == null) {
-						throw new Exception(Properties.Resources.SystemSettingsSwitcher_NoActualProxy);
-					}
-				}
-
-				// log
-				if (owner.ShouldLog(TraceEventType.Verbose)) {
-					Uri address = actualProxy.Address;
-					owner.LogVerbose($"ActualProxy is {address.Host}:{address.Port}");
-					string label = enabled ? "enabled" : "disabled";
-					owner.LogVerbose($"SystemSettingsSwitch: {label}");
+					// Note that actualProxy may be null
 				}
 			}
 
@@ -121,7 +143,7 @@ namespace MAPE.Command {
 			Restore(CreateSystemSettings(data));
 		}
 
-		protected SystemSettings GetCurrentSystemSettings() {
+		public SystemSettings GetCurrentSystemSettings() {
 			// create a new SystemSettings instance
 			SystemSettings settings = CreateSystemSettings(null);
 
@@ -131,7 +153,7 @@ namespace MAPE.Command {
 			return settings;			
 		}
 
-		protected SystemSettings GetSwitchingSystemSettings(Proxy proxy) {
+		public SystemSettings GetSwitchingSystemSettings(Proxy proxy) {
 			// argument checks
 			if (proxy == null) {
 				throw new ArgumentNullException(nameof(proxy));
@@ -144,6 +166,68 @@ namespace MAPE.Command {
 			SetSwitchingSystemSettingsTo(settings, proxy);
 
 			return settings;
+		}
+
+		public WebProxy DetectSystemProxy() {
+			// detect the system web proxy by try to give external urls
+			// ToDo: return IWebProxy which can emulate the *.pac file currently effective.
+			// Note this implementation simply detect a possible typical proxy.
+			// Actual system logic to select proxy may be complicated,
+			// for example, it may be scripted by an auto configuration script (*.pac).
+			// If WebRequest.GetSystemWebProxy() returns IWebProxy of fixed logic at this point,
+			// it can be returned simply here.
+			// But this IWebProxy instance will reflect upcoming system proxy switch.
+			// So this implementation returns fixed address IWebProxy.
+			IWebProxy proxy = WebRequest.GetSystemWebProxy();
+			Func<string, WebProxy> detect = (sampleExternalUrl) => {
+				Uri sampleUri = new Uri(sampleExternalUrl);
+				WebProxy value = null;
+				if (proxy.IsBypassed(sampleUri) == false) {
+					Uri uri = proxy.GetProxy(sampleUri);
+					if (uri != sampleUri) {
+						// uri seems to be a proxy
+						value = new WebProxy(uri.Host, uri.Port);
+					}
+				}
+				return value;
+			};
+
+			// try with google's URL
+			WebProxy systemProxy = detect("http://www.google.com/");
+			if (systemProxy == null) {
+				// try with Microsoft's URL
+				systemProxy = detect("http://www.microsoft.com/");
+			}
+
+			return systemProxy; // may be null
+		}
+
+		protected static string GetAppSettings(string key) {
+			string value = ConfigurationManager.AppSettings[key];
+			if (string.IsNullOrWhiteSpace(value)) {
+				value = null;
+			}
+
+			return value;
+		}
+
+		public static string GetDefaultActualProxyHostName() {
+			return GetAppSettings(ConfigNames.DefaultActualProxyHostName);
+		}
+
+		public static int? GetDefaultActualProxyPort() {
+			int? value = null;
+			try {
+				string configValue = ConfigurationManager.AppSettings[ConfigNames.DefaultActualProxyPort];
+				if (string.IsNullOrEmpty(configValue) == false) {
+					value = int.Parse(configValue);
+				}
+			} catch {
+				Debug.Assert(value == null);
+				// continue
+			}
+
+			return value;
 		}
 
 		#endregion
@@ -187,40 +271,6 @@ namespace MAPE.Command {
 
 
 		#region privates
-
-		private WebProxy DetectSystemProxy() {
-			// detect the system web proxy by try to give external urls
-			// ToDo: return IWebProxy which can emulate the *.pac file currently effective.
-			// Note this implementation simply detect a possible typical proxy.
-			// Actual system logic to select proxy may be complicated,
-			// for example, it may be scripted by an auto configuration script (*.pac).
-			// If WebRequest.GetSystemWebProxy() returns IWebProxy of fixed logic at this point,
-			// it can be returned simply here.
-			// But this IWebProxy instance will reflect upcoming system proxy switch.
-			// So this implementation returns fixed address IWebProxy.
-			IWebProxy proxy = WebRequest.GetSystemWebProxy();
-			Func<string, WebProxy> detect = (sampleExternalUrl) => {
-				Uri sampleUri = new Uri(sampleExternalUrl);
-				WebProxy value = null;
-				if (proxy.IsBypassed(sampleUri) == false) {
-					Uri uri = proxy.GetProxy(sampleUri);
-					if (uri != sampleUri) {
-						// uri seems to be a proxy
-						value = new WebProxy(uri.Host, uri.Port);
-					}
-				}
-				return value;
-			};
-
-			// try with google's URL
-			WebProxy systemProxy = detect("http://www.google.com/");
-			if (systemProxy == null) {
-				// try with Microsoft's URL
-				systemProxy = detect("http://www.microsoft.com/");
-			}
-
-			return systemProxy;	// may be null
-		}
 
 		private bool SwitchToInternal(SystemSettings settings, SystemSettings backup) {
 			bool switched = false;

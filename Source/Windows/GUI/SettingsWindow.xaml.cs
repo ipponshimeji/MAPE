@@ -1,18 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using MAPE.Utils;
 using MAPE.Server.Settings;
 using MAPE.Command;
 using MAPE.Command.Settings;
@@ -67,64 +58,10 @@ namespace MAPE.Windows.GUI {
 
 		private UIStateFlags uiState = UIStateFlags.InitialState;
 
-		private bool suppressUpdatingBypassLocalSource = false;
-
 		#endregion
 
 
 		#region properties - data binding adapters
-
-		public string HostName {
-			get {
-				ActualProxySettings actualProxySettings = this.CommandSettings.SystemSettingsSwitcher.ActualProxy;
-				return (actualProxySettings == null)? string.Empty: actualProxySettings.Host;
-			}
-			set {
-				ActualProxySettings actualProxySettings = this.CommandSettings.SystemSettingsSwitcher.ActualProxy;
-				if (actualProxySettings == null) {
-					// ignore
-					return;
-				}
-
-				actualProxySettings.Host = value;
-			}
-		}
-
-		public int Port {
-			get {
-				ActualProxySettings actualProxySettings = this.CommandSettings.SystemSettingsSwitcher.ActualProxy;
-				return (actualProxySettings == null)? ActualProxySettings.Defaults.Port: actualProxySettings.Port;
-			}
-			set {
-				ActualProxySettings actualProxySettings = this.CommandSettings.SystemSettingsSwitcher.ActualProxy;
-				if (actualProxySettings == null) {
-					// ignore
-					return;
-				}
-
-				actualProxySettings.Port = value;
-			}
-		}
-
-		public bool EnableSystemSettingsSwitch {
-			get {
-				return this.CommandSettings.SystemSettingsSwitcher.EnableSystemSettingsSwitch;
-			}
-			set {
-				this.CommandSettings.SystemSettingsSwitcher.EnableSystemSettingsSwitch = value;
-			}
-		}
-
-		public string ProxyOverride {
-			get {
-				return this.CommandSettings.SystemSettingsSwitcher.FilteredProxyOverride;
-			}
-			set {
-				SystemSettingsSwitcherForWindowsSettings systemSettingsSwitcherSettings = this.CommandSettings.SystemSettingsSwitcher;
-				systemSettingsSwitcherSettings.FilteredProxyOverride = value;
-				SetBypassLocalSuppressingUpdatingSource(systemSettingsSwitcherSettings.BypassLocal);
-			}
-		}
 
 		public int RetryCount {
 			get {
@@ -164,8 +101,6 @@ namespace MAPE.Windows.GUI {
 			// initialize components
 			InitializeComponent();
 			this.validatableControls = new Control[] {
-				this.hostNameTextBox,
-				this.portTextBox,
 				this.retryTextBox
 			};
 			this.Icon = App.Current.OnIcon;
@@ -174,15 +109,11 @@ namespace MAPE.Windows.GUI {
 			// Proxy Tab
 			// Actual Proxy
 			SystemSettingsSwitcherForWindowsSettings systemSettingsSwitcherSettings = commandSettings.SystemSettingsSwitcher;
-			ActualProxySettings actualProxy = systemSettingsSwitcherSettings.ActualProxy;
-			this.autoDetectProxyCheckBox.IsChecked = (actualProxy == null);
-			// this.hostNameTextBox.Text is bound to this.HostName
-			// this.portTextBox.Text is bound to this.Port
+			this.actualProxy.SystemSettingsSwitcherSettings = systemSettingsSwitcherSettings;
 
 			// SystemSettingSwither
 			// this.enableSystemSettingSwitherCheckBox.IsChecked is bound to this.EnableSystemSettingSwitch
-			SetBypassLocalSuppressingUpdatingSource(systemSettingsSwitcherSettings.BypassLocal);
-			// this.exclusionTextBox.Text is bound to this.ProxyOverride
+			this.systemSettingsSwitcher.SystemSettingsSwitcherSettings = systemSettingsSwitcherSettings;
 
 			// Misc
 			// this.retryTextBox.Text is bound to this.RetryCount
@@ -216,12 +147,8 @@ namespace MAPE.Windows.GUI {
 				// disable input controls
 				// Note that buttons are disabled through GetUIState().
 				Control[] inputControls = new Control[] {
-					this.autoDetectProxyCheckBox,
-					this.hostNameTextBox,
-					this.portTextBox,
-					this.enableSystemSettingSwitchCheckBox,
-					this.bypassLocalCheckBox,
-					this.exclusionTextBox,
+					this.actualProxy,
+					this.systemSettingsSwitcher,
 					this.retryTextBox,
 					this.logLevelComboBox
 				};
@@ -362,37 +289,15 @@ namespace MAPE.Windows.GUI {
 		}
 
 		private Control GetErrorControl() {
-			return this.validatableControls.Where(c => Validation.GetHasError(c)).FirstOrDefault();
-		}
-
-		private void UpdateSource(TextBox textBox) {
-			// update the source
-			textBox.GetBindingExpression(TextBox.TextProperty)?.UpdateSource();
-		}
-
-		private void ClearError(TextBox textBox) {
-			// clear errors on property binding
-			BindingExpression binding = textBox.GetBindingExpression(TextBox.TextProperty);
-			if (binding != null) {
-				Validation.ClearInvalid(binding);
+			Control errorControl = this.validatableControls.Where(c => Validation.GetHasError(c)).FirstOrDefault();
+			if (errorControl == null) {
+				errorControl = this.actualProxy.GetErrorControl();
+			}
+			if (errorControl == null) {
+				errorControl = this.systemSettingsSwitcher.GetErrorControl();
 			}
 
-			return;
-		}
-
-		private void SetBypassLocalSuppressingUpdatingSource(bool value) {
-			// state checks
-			Debug.Assert(this.suppressUpdatingBypassLocalSource == false);
-
-			// change this.bypassProxyCheckBox.IsChecked supressing updating ProxyOverride
-			this.suppressUpdatingBypassLocalSource = true;
-			try {
-				this.bypassLocalCheckBox.IsChecked = value;
-			} finally {
-				this.suppressUpdatingBypassLocalSource = false;
-			}
-
-			return;
+			return errorControl;
 		}
 
 		private void AddListItem(ListView listView, object newItem) {
@@ -488,40 +393,6 @@ namespace MAPE.Windows.GUI {
 		private void saveAsDefaultButton_Click(object sender, RoutedEventArgs e) {
 			this.DialogResult = true;
 			this.SaveAsDefault = true;
-		}
-
-		private void autoDetectProxyCheckBox_Checked(object sender, RoutedEventArgs e) {
-			// clear ActualProxy object
-			this.CommandSettings.SystemSettingsSwitcher.ActualProxy = null;
-			this.hostNameTextBox.IsEnabled = false;
-			this.portTextBox.IsEnabled = false;
-			ClearError(this.hostNameTextBox);
-			ClearError(this.portTextBox);
-
-			return;
-		}
-
-		private void autoDetectProxyCheckBox_Unchecked(object sender, RoutedEventArgs e) {
-			// set ActualProxy object
-			this.CommandSettings.SystemSettingsSwitcher.ActualProxy = new ActualProxySettings();
-			this.hostNameTextBox.IsEnabled = true;
-			this.portTextBox.IsEnabled = true;
-			UpdateSource(this.hostNameTextBox);
-			UpdateSource(this.portTextBox);
-
-			return;
-		}
-
-		private void bypassLocalCheckBox_Checked(object sender, RoutedEventArgs e) {
-			if (this.suppressUpdatingBypassLocalSource == false) {
-				this.CommandSettings.SystemSettingsSwitcher.BypassLocal = true;
-			}
-		}
-
-		private void bypassLocalCheckBox_Unchecked(object sender, RoutedEventArgs e) {
-			if (this.suppressUpdatingBypassLocalSource == false) {
-				this.CommandSettings.SystemSettingsSwitcher.BypassLocal = false;
-			}
 		}
 
 		private void listenerListView_SelectionChanged(object sender, SelectionChangedEventArgs e) {
@@ -658,7 +529,8 @@ namespace MAPE.Windows.GUI {
 				// create a new CredentialSettings
 				CredentialSettings newItem = new CredentialSettings();
 				// set its default persistence to Process (i.e. not persistent)
-				newItem.Persistence = CredentialPersistence.Process;
+				// The default value reverted because it was confusing. 
+//				newItem.Persistence = CredentialPersistence.Process;
 
 				// prepare a validator
 				CredentialSettings[] items = listView.Items.Cast<CredentialSettings>().ToArray();

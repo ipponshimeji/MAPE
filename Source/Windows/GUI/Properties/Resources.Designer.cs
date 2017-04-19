@@ -98,6 +98,42 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   Authentication Proxy に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ActualProxySettingsControl_authenticationProxyGroup_Header {
+            get {
+                return ResourceManager.GetString("ActualProxySettingsControl_authenticationProxyGroup_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Detect Automatically に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ActualProxySettingsControl_autoDetectProxyCheckBox_Content {
+            get {
+                return ResourceManager.GetString("ActualProxySettingsControl_autoDetectProxyCheckBox_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Host Name: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ActualProxySettingsControl_hostNameLabel_Content {
+            get {
+                return ResourceManager.GetString("ActualProxySettingsControl_hostNameLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Port: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ActualProxySettingsControl_portLabel_Content {
+            get {
+                return ResourceManager.GetString("ActualProxySettingsControl_portLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   MAPE に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string App_Title {
@@ -478,24 +514,6 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
-        ///   Authentication Proxy に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string SettingsWindow_authenticationProxyGroup_Header {
-            get {
-                return ResourceManager.GetString("SettingsWindow_authenticationProxyGroup_Header", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   _Detect Automatically に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string SettingsWindow_autoDetectProxyCheckBox_Content {
-            get {
-                return ResourceManager.GetString("SettingsWindow_autoDetectProxyCheckBox_Content", resourceCulture);
-            }
-        }
-        
-        /// <summary>
         ///   Backlog に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string SettingsWindow_backlogColumn_Header {
@@ -564,15 +582,6 @@ namespace MAPE.Windows.GUI.Properties {
         public static string SettingsWindow_exclusionLabel_Content {
             get {
                 return ResourceManager.GetString("SettingsWindow_exclusionLabel_Content", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   _Host Name: に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string SettingsWindow_hostNameLabel_Content {
-            get {
-                return ResourceManager.GetString("SettingsWindow_hostNameLabel_Content", resourceCulture);
             }
         }
         
@@ -663,15 +672,6 @@ namespace MAPE.Windows.GUI.Properties {
         public static string SettingsWindow_portColumn_Header {
             get {
                 return ResourceManager.GetString("SettingsWindow_portColumn_Header", resourceCulture);
-            }
-        }
-        
-        /// <summary>
-        ///   _Port: に類似しているローカライズされた文字列を検索します。
-        /// </summary>
-        public static string SettingsWindow_portLabel_Content {
-            get {
-                return ResourceManager.GetString("SettingsWindow_portLabel_Content", resourceCulture);
             }
         }
         
@@ -771,6 +771,124 @@ namespace MAPE.Windows.GUI.Properties {
         public static string SettingsWindow_userNameColumn_Header {
             get {
                 return ResourceManager.GetString("SettingsWindow_userNameColumn_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Authentication Proxy に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_authenticationProxyTabItem_Header {
+            get {
+                return ResourceManager.GetString("SetupWindow_authenticationProxyTabItem_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Back(_&lt;) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_backButton_Content {
+            get {
+                return ResourceManager.GetString("SetupWindow_backButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Finish に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_finishButton_Content {
+            get {
+                return ResourceManager.GetString("SetupWindow_finishButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   You can operate MAPE by the context menu of its task tray icon or the menu of its main window.
+        ///Select the &quot;Start Proxying&quot; menu to start proxying connections. Select the &quot;Settings&quot; menu to edit its settings. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_finishingDescriptionTextBox_Text_Addition {
+            get {
+                return ResourceManager.GetString("SetupWindow_finishingDescriptionTextBox_Text_Addition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Finishing に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_finishingTabItem_Header {
+            get {
+                return ResourceManager.GetString("SetupWindow_finishingTabItem_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   There is an unacceptable input. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_Message_Error {
+            get {
+                return ResourceManager.GetString("SetupWindow_Message_Error", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   The current settings are not tested. Do you want to proceed anyway? に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_Message_NotTested {
+            get {
+                return ResourceManager.GetString("SetupWindow_Message_NotTested", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Next(_&gt;) に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_nextButton_Content {
+            get {
+                return ResourceManager.GetString("SetupWindow_nextButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   System Settings Switch に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_systemSettingsSwitchTabItem_Header {
+            get {
+                return ResourceManager.GetString("SetupWindow_systemSettingsSwitchTabItem_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Target _URL: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_targetUrlLabel_Content {
+            get {
+                return ResourceManager.GetString("SetupWindow_targetUrlLabel_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Test に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_testButton_Content {
+            get {
+                return ResourceManager.GetString("SetupWindow_testButton_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Test に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_testTabItem_Header {
+            get {
+                return ResourceManager.GetString("SetupWindow_testTabItem_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Initial Setup に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_Title {
+            get {
+                return ResourceManager.GetString("SetupWindow_Title", resourceCulture);
             }
         }
     }

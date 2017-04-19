@@ -195,8 +195,22 @@ namespace MAPE.Server.Settings {
 
 		#region methods
 
+		public static IPEndPoint GetEndPoint(ListenerSettings listenerSettings) {
+			IPAddress address;
+			int port;
+			if (listenerSettings == null) {
+				address = Defaults.Address;
+				port = Defaults.Port;
+			} else {
+				address = listenerSettings.Address;
+				port = listenerSettings.Port;
+			}
+
+			return new IPEndPoint(address, port);
+		}
+
 		public IPEndPoint GetEndPoint() {
-			return new IPEndPoint(this.Address, this.Port);
+			return GetEndPoint(this);
 		}
 
 		public bool HasSameEndPointTo(IPEndPoint endPoint) {
