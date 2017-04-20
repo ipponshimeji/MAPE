@@ -130,7 +130,7 @@
     <value>The target proxy cannot be detected automatically in this environment. You must specify its information manually.</value>
   </data>
   <data name="Setup_SystemSettingsSwitch_Description_NeedToChange" xml:space="preserve">
-    <value>The settings for the proxy server in this environment is configured automatically, by an automatic configuration script for example. In this case MAPE cannot detect the "Bypass proxy server for local addresses" and "Do not use proxy server for addresses beginning with:" settings automatically. You must specify them explicitly.</value>
+    <value>The settings for the proxy server in this environment is configured automatically, by an automatic configuration script for example. In this case MAPE cannot detect the "Bypass proxy server for local addresses" and "Do not use proxy server for addresses beginning with:" settings automatically. You must specify them manually.</value>
   </data>
   <data name="Setup_Test_Description" xml:space="preserve">
     <value>Test connecting to an external URL. The credential for the authentication proxy may be required during the test.

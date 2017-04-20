@@ -107,7 +107,7 @@ namespace MAPE.Windows.Properties {
         }
         
         /// <summary>
-        ///   The settings for the proxy server in this environment is configured automatically, by an automatic configuration script for example. In this case MAPE cannot detect the &quot;Bypass proxy server for local addresses&quot; and &quot;Do not use proxy server for addresses beginning with:&quot; settings automatically. You must specify them explicitly. に類似しているローカライズされた文字列を検索します。
+        ///   The settings for the proxy server in this environment is configured automatically, by an automatic configuration script for example. In this case MAPE cannot detect the &quot;Bypass proxy server for local addresses&quot; and &quot;Do not use proxy server for addresses beginning with:&quot; settings automatically. You must specify them manually. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string Setup_SystemSettingsSwitch_Description_NeedToChange {
             get {
