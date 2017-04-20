@@ -42,3 +42,20 @@ PCがサスペンドする際に、「認証プロキシ爆発しろ！」が通
 ## MAPEのログと.NET FrameworkのTraceログとの関係
 
 （未稿）
+
+
+## 初期設定のデフォルト値
+
+初期設定時に用いる設定のデフォルト値を、
+GUI版コマンド（`mapegui.exe`）のアプリケーション構成ファイル（`mapegui.exe.config`）の`appSettings`要素に記述できます。
+カスタマイズされた`mapegui.exe.config`とともに「認証プロキシ爆発しろ！」を配布することで、
+初期設定時に各環境に合わせたデフォルト値を提供することができます。
+
+設定可能な値は以下の通りです。
+設定オブジェクトの詳細については、[設定ファイルリファレンス](Reference_Settings.md)を参照してください。
+
+| キー | 値の型 | 値の内容 |
+|:----|:----|:----|:----|
+| DefaultActualProxyHostName | 文字列 | `ActualProxy`オブジェクトの`Host`プロパティのデフォルト値 |
+| DefaultActualProxyPort | 整数 | `ActualProxy`オブジェクトの`Port`プロパティのデフォルト値 |
+| DefaultProxyOverride | 文字列 | `SystemSettingsSwitcher`オブジェクトの`ProxyOverride`プロパティのデフォルト値 |

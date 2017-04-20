@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 [assembly: AssemblyTitle("MAPE.Core")]
 [assembly: AssemblyDescription("MAPE - Core Library")]
-[assembly: AssemblyConfiguration("developing")]
+[assembly: AssemblyConfiguration("beta")]
 [assembly: AssemblyCompany("Takamasa Uramoto")]
 [assembly: AssemblyProduct("MAPE")]
 [assembly: AssemblyCopyright("Copyright 2016-2017 Takamasa Uramoto")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.1.11.0")]
-[assembly: AssemblyFileVersion("0.1.11.0")]
+[assembly: AssemblyVersion("1.0.11.0")]
+[assembly: AssemblyFileVersion("1.0.11.0")]
