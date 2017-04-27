@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 [assembly: AssemblyTitle("mapegui")]
 [assembly: AssemblyDescription("MAPE - GUI application for Windows platform")]
-[assembly: AssemblyConfiguration("beta")]
+[assembly: AssemblyConfiguration("developing")]
 [assembly: AssemblyCompany("Takamasa Uramoto")]
 [assembly: AssemblyProduct("MAPE")]
 [assembly: AssemblyCopyright("Copyright 2016-2017 Takamasa Uramoto")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers 
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("1.0.12.0")]
-[assembly: AssemblyFileVersion("1.0.12.0")]
+[assembly: AssemblyVersion("1.0.13.0")]
+[assembly: AssemblyFileVersion("1.0.13.0")]
