@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MAPE.Windows.GUI"
         xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
         mc:Ignorable="d"
-        Title="{x:Static properties:Resources.App_Title}" Height="350" Width="640" Icon="pack://siteoforigin:,,,/Resources/OnIcon.ico">
+        Title="{x:Static properties:Resources.App_Title}" Height="350" Width="640" Icon="pack://siteoforigin:,,,/Resources/OffIcon.ico">
     <Window.Resources>
         <local:LogListViewItemStyleSelector x:Key="logListViewItemSelector"/>
     </Window.Resources>
