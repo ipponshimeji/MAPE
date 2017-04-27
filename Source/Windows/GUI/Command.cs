@@ -127,6 +127,7 @@ namespace MAPE.Windows.GUI {
 				throw new InvalidOperationException();
 			}
 
+			SystemEvents.SessionEnding += SystemEvents_SessionEnding;
 			SystemEvents.PowerModeChanged += SystemEvents_PowerModeChanged;
 			try {
 				// run WPF application
@@ -141,6 +142,7 @@ namespace MAPE.Windows.GUI {
 				}
 			} finally {
 				SystemEvents.PowerModeChanged -= SystemEvents_PowerModeChanged;
+				SystemEvents.SessionEnding -= SystemEvents_SessionEnding;
 			}
 
 			return;
@@ -287,6 +289,15 @@ namespace MAPE.Windows.GUI {
 				}
 			} catch (Exception exception) {
 				LogError($"Fail to {e.Mode}: {exception.Message}");
+				// continue
+			}
+		}
+
+		private void SystemEvents_SessionEnding(object sender, SessionEndingEventArgs e) {
+			try {
+				StopProxy(5000);
+			} catch (Exception exception) {
+				LogError($"Fail to stop the proxy: {exception.Message}");
 				// continue
 			}
 		}
