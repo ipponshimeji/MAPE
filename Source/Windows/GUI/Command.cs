@@ -89,6 +89,10 @@ namespace MAPE.Windows.GUI {
 		}
 
 		public void SaveMainWindowSettings(MainWindowSettings mainWindowSettings) {
+			// update the current settings
+			this.Settings.GUI.MainWindow = mainWindowSettings;
+
+			// save the settings if necessary 
 			string settingsFilePath = this.SettingsFilePath;
 			if (string.IsNullOrEmpty(settingsFilePath) == false) {
 				MainWindowSettings mainWindowSettingsClone = CloneSettings(mainWindowSettings);
