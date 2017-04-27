@@ -171,7 +171,7 @@ namespace MAPE.Windows.GUI {
 			this.chaseLastLogMenuItem.IsChecked = guiSettings.ChaseLastLog;
 
 			this.app.UIStateChanged += app_UIStateChanged;
-			OnUIStateChanged(GetUIState());
+			UpdateUIState();
 			Logger.AddLogMonitor(this.logMonitor);
 
 			return;
@@ -320,7 +320,21 @@ namespace MAPE.Windows.GUI {
 
 		#region privates
 
-		private UIStateFlags GetUIState() {
+		private void SetUIState(UIStateFlags newState) {
+			if (newState != this.UIState) {
+				this.UIState = newState;
+				OnUIStateChanged(newState);
+			}
+
+			return;
+		}
+
+		private void UpdateUIState(bool forceSet = false) {
+			SetUIState(DetectUIState());
+			return;
+		}
+
+		private UIStateFlags DetectUIState() {
 			// base state
 			UIStateFlags state = UIStateFlags.Invariable;
 			if (this.showingSetupWindow) {
@@ -347,16 +361,6 @@ namespace MAPE.Windows.GUI {
 			}
 
 			return state;
-		}
-
-		private void UpdateUIState() {
-			UIStateFlags newState = GetUIState();
-			if (newState != this.UIState) {
-				this.UIState = newState;
-				OnUIStateChanged(newState);
-			}
-
-			return;
 		}
 
 		private void OnUIStateChanged(UIStateFlags newState) {

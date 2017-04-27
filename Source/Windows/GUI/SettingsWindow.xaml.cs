@@ -154,7 +154,7 @@ namespace MAPE.Windows.GUI {
 				};
 				Array.ForEach(inputControls, c => { c.IsEnabled = false; });
 			}
-			OnUIStateChanged(GetUIState());
+			UpdateUIState();
 
 			return;
 		}
@@ -210,7 +210,21 @@ namespace MAPE.Windows.GUI {
 
 		#region privates
 
-		private UIStateFlags GetUIState() {
+		private void SetUIState(UIStateFlags newState) {
+			if (newState != this.uiState) {
+				this.uiState = newState;
+				OnUIStateChanged(newState);
+			}
+
+			return;
+		}
+
+		private void UpdateUIState() {
+			SetUIState(DetectUIState());
+			return;
+		}
+
+		private UIStateFlags DetectUIState() {
 			// state checks
 			if (this.runningProxy) {
 				// only Cancel button is enabled
@@ -251,16 +265,6 @@ namespace MAPE.Windows.GUI {
 			}
 
 			return state;
-		}
-
-		private void UpdateUIState() {
-			UIStateFlags newState = GetUIState();
-			if (newState != this.uiState) {
-				this.uiState = newState;
-				OnUIStateChanged(newState);
-			}
-
-			return;
 		}
 
 		private void OnUIStateChanged(UIStateFlags newState) {

@@ -117,7 +117,7 @@ namespace MAPE.Windows.GUI {
 			string description = string.Concat(Windows.Properties.Resources.Setup_Finishing_Description, Environment.NewLine, Environment.NewLine, Properties.Resources.SetupWindow_finishingDescriptionTextBox_Text_Addition);
 			this.finishingDescriptionTextBlock.Text = description;
 
-			OnUIStateChanged(DetectUIState());
+			UpdateUIState();
 
 			return;
 		}
@@ -129,6 +129,20 @@ namespace MAPE.Windows.GUI {
 
 		private void ShowErrorDialog(string message) {
 			MessageBox.Show(this, message, this.Title, MessageBoxButton.OK, MessageBoxImage.Error);
+		}
+
+		private void SetUIState(UIStateFlags newState) {
+			if (newState != this.uiState) {
+				this.uiState = newState;
+				OnUIStateChanged(newState);
+			}
+
+			return;
+		}
+
+		private void UpdateUIState() {
+			SetUIState(DetectUIState());
+			return;
 		}
 
 		private UIStateFlags DetectUIState() {
@@ -162,16 +176,6 @@ namespace MAPE.Windows.GUI {
 			}
 
 			return state;
-		}
-
-		private void UpdateUIState() {
-			UIStateFlags newState = DetectUIState();
-			if (newState != this.uiState) {
-				this.uiState = newState;
-				OnUIStateChanged(newState);
-			}
-
-			return;
 		}
 
 		private void OnUIStateChanged(UIStateFlags newState) {

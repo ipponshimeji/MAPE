@@ -229,6 +229,20 @@ namespace MAPE.Windows.GUI {
 
 		#region privates
 
+		private void SetUIState(UIStateFlags newState) {
+			if (newState != this.UIState) {
+				this.UIState = newState;
+				OnUIStateChanged(newState);
+			}
+
+			return;
+		}
+
+		private void UpdateUIState() {
+			SetUIState(DetectUIState());
+			return;
+		}
+
 		private UIStateFlags DetectUIState() {
 			// base state
 			UIStateFlags state = UIStateFlags.ExitEnabled;
@@ -256,20 +270,6 @@ namespace MAPE.Windows.GUI {
 			}
 
 			return state;
-		}
-
-		private void SetUIState(UIStateFlags newState) {
-			if (newState != this.UIState) {
-				this.UIState = newState;
-				OnUIStateChanged(newState);
-			}
-
-			return;
-		}
-
-		private void UpdateUIState() {
-			SetUIState(DetectUIState());
-			return;
 		}
 
 		private void OnUIStateChanged(UIStateFlags newState) {
