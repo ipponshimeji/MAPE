@@ -257,26 +257,29 @@ namespace MAPE.Windows {
 			return true;
 		}
 
-		protected override void NotifySwitched() {
-			// notify the internet settings are changed
-			InternetSetOption(
-				IntPtr.Zero,    // NULL
-				39,             // INTERNET_OPTION_SETTINGS_CHANGED
-				IntPtr.Zero,    // NULL
-				0
-			);
+		protected override void NotifySwitched(bool systemSessionEnding) {
+			// Do not notify when the Windows user session is ending.
+			if (systemSessionEnding == false) {
+				// notify the internet settings are changed
+				InternetSetOption(
+					IntPtr.Zero,    // NULL
+					39,             // INTERNET_OPTION_SETTINGS_CHANGED
+					IntPtr.Zero,    // NULL
+					0
+				);
 
-			// notify that environment variables are changed
-			UIntPtr dummy;
-			SendMessageTimeout(
-				(IntPtr)0xffff,     // HWND_BROADCAST
-				0x001A,             // WM_SETTINGCHANGE
-				UIntPtr.Zero,
-				"Environment",
-				0x0002,             // SMTO_ABORTIFHUNG,
-				5000,
-				out dummy
-			);
+				// notify that environment variables are changed
+				UIntPtr dummy;
+				SendMessageTimeout(
+					(IntPtr)0xffff,     // HWND_BROADCAST
+					0x001A,             // WM_SETTINGCHANGE
+					UIntPtr.Zero,
+					"Environment",
+					0x0002,             // SMTO_ABORTIFHUNG,
+					5000,
+					out dummy
+				);
+			}
 
 			return;
 		}

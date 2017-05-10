@@ -54,15 +54,15 @@ namespace MAPE.Windows {
 		protected override void RunProxyImpl(CommandSettings settings) {
 			// prepare Windows system event handlers
 			SessionEndingEventHandler onSessionEnding = (o, e) => {
-				AwakeControllerThread(ControllerThreadEventKind.Quit);
+				AwakeControllerThread(ControllerThreadSynchronizer.EventKind.SystemSessionEnding);
 			};
 			PowerModeChangedEventHandler onPowerModeChanged = (o, e) => {
 				switch (e.Mode) {
 					case PowerModes.Suspend:
-						AwakeControllerThread(ControllerThreadEventKind.Suspend);
+						AwakeControllerThread(ControllerThreadSynchronizer.EventKind.Suspend);
 						break;
 					case PowerModes.Resume:
-						AwakeControllerThread(ControllerThreadEventKind.Resume);
+						AwakeControllerThread(ControllerThreadSynchronizer.EventKind.Resume);
 						break;
 				}
 			};

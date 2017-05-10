@@ -31,39 +31,131 @@ namespace MAPE.Command {
 			#endregion
 		}
 
-		protected enum ControllerThreadEventKind {
-			None = 0,
-			Quit = 1,
-			Suspend = 2,
-			Resume = 3,
-		}
+		protected class ControllerThreadSynchronizer: IDisposable {
+			#region types
 
-		#endregion
-
-
-		#region data - data synchronized by controllerThreadEventLocker
-
-		private object controllerThreadEventLocker = new object();
-
-		private ManualResetEvent controllerThreadEvent = null;
-
-		private ControllerThreadEventKind controllerThreadEventKind = ControllerThreadEventKind.None;
-
-		#endregion
-
-
-		#region properties
-
-		private ManualResetEvent ControllerThreadEvent {
-			get {
-				return this.controllerThreadEvent;
+			public enum EventKind {
+				None = 0,
+				Quit = 1,					// Ctrl+C
+				SystemSessionEnding = 2,	// logging off or shutting down
+				Suspend = 3,
+				Resume = 4,
 			}
-			set {
-				lock (this.controllerThreadEventLocker) {
-					this.controllerThreadEvent = value;
+
+			#endregion
+
+
+			#region data
+
+			private AutoResetEvent syncEvent;
+
+			public EventKind Event { get; private set; }
+
+			#endregion
+
+
+			#region creation and disposal
+
+			public ControllerThreadSynchronizer() {
+				// initialize members
+				this.syncEvent = new AutoResetEvent(false);
+				this.Event = EventKind.None;
+
+				return;
+			}
+
+			public void Dispose() {
+				// dispose members
+				Util.DisposeWithoutFail(ref this.syncEvent);
+
+				return;
+			}
+
+			#endregion
+
+
+			#region methods - called from the controller thread
+
+			public EventKind WaitForEvent() {
+				// state checks
+				EventWaitHandle syncEvent = GetSyncEventOrThrowDisposedException();
+
+				// wait for the event
+				this.Event = EventKind.None;
+				syncEvent.WaitOne();
+
+				return this.Event;  // Event was set by NotifyEventAndWaitForEventHandling() call
+			}
+
+			public void NotifyEventHandledAndWaitForAcknowledgment() {
+				// state checks
+				EventWaitHandle syncEvent = GetSyncEventOrThrowDisposedException();
+
+				// notify the completion of the event handling
+				syncEvent.Set();
+
+				// wait for the acknowledgment from the waiting thread
+				// Do not dispose this until the acknowledgment is returned.
+				syncEvent.WaitOne();
+
+				return;
+			}
+
+			#endregion
+
+
+			#region methods - called from other threads than the controller thread
+
+			public void NotifyEventAndWaitForEventHandling(EventKind eventKind) {
+				// argument checks
+				if (eventKind == EventKind.None) {
+					throw new ArgumentException($"It must not be {nameof(EventKind.None)}", nameof(eventKind));
 				}
+
+				// state checks
+				Debug.Assert(this.Event == EventKind.None);
+				EventWaitHandle syncEvent = GetSyncEventOrThrowDisposedException();
+
+				// notify the event
+				this.Event = eventKind;
+				syncEvent.Set();
+
+				// wait for completion of the event handling
+				syncEvent.WaitOne();
+
+				// notify the acknowledgment
+				syncEvent.Set();
+				syncEvent = null;    // syncEvent may be disposed after the acknowledgment
+
+				return;
 			}
+
+			#endregion
+
+
+			#region privates
+
+			private AutoResetEvent GetSyncEventOrThrowDisposedException() {
+				// state checks
+				AutoResetEvent value = this.syncEvent;
+				if (value == null) {
+					throw new ObjectDisposedException(nameof(ControllerThreadSynchronizer));
+				}
+
+				return value;
+			}
+
+			#endregion
 		}
+
+		#endregion
+
+
+		#region data - data synchronized by controllerThreadSynchronizationLocker
+
+		private object controllerThreadSynchronizationLocker = new object();
+
+		private ControllerThreadSynchronizer controllerThreadSynchronizer = null;
 
 		#endregion
 
@@ -95,13 +187,32 @@ namespace MAPE.Command {
 			return;
 		}
 
-		protected void AwakeControllerThread(ControllerThreadEventKind kind) {
-			lock (this.controllerThreadEventLocker) {
-				ManualResetEvent controllerThreadEvent = this.ControllerThreadEvent;
-				if (controllerThreadEvent != null) {
-					this.controllerThreadEventKind = kind;
-					controllerThreadEvent.Set();
+		protected void RegisterControllerThreadSynchronizer(ControllerThreadSynchronizer synchronizer) {
+			lock (this.controllerThreadSynchronizationLocker) {
+				// state checks
+				if (this.controllerThreadSynchronizer != null) {
+					// another synchronizer is already registered
+					throw new InvalidOperationException();
 				}
+
+				// register the synchronizer
+				this.controllerThreadSynchronizer = synchronizer;
+			}
+
+			return;
+		}
+
+		protected void AwakeControllerThread(ControllerThreadSynchronizer.EventKind eventKind) {
+			// try to acquire the synchronizer
+			ControllerThreadSynchronizer synchronizer;
+			lock (this.controllerThreadSynchronizationLocker) {
+				synchronizer = this.controllerThreadSynchronizer;
+				this.controllerThreadSynchronizer = null;
+			}
+
+			// notify the event if the synchronizer is acquired
+			if (synchronizer != null) {
+				synchronizer.NotifyEventAndWaitForEventHandling(eventKind);
 			}
 
 			return;
@@ -168,57 +279,57 @@ namespace MAPE.Command {
 			// argument checks
 			Debug.Assert(settings != null);
 
-			using (ManualResetEvent controllerThreadEvent = new ManualResetEvent(false)) {
-				this.ControllerThreadEvent = controllerThreadEvent;
+			using (ControllerThreadSynchronizer synchronizer = new ControllerThreadSynchronizer()) {
+				// prepare Ctrl+C handler
+				ConsoleCancelEventHandler onCtrlC = (o, e) => {
+					e.Cancel = true;
+					AwakeControllerThread(ControllerThreadSynchronizer.EventKind.Quit);
+				};
+
+				// connect Ctrl+C handler 
+				Console.CancelKeyPress += onCtrlC;
 				try {
-					// prepare Ctrl+C handler
-					ConsoleCancelEventHandler ctrlCHandler = (o, e) => {
-						e.Cancel = true;
-						AwakeControllerThread(ControllerThreadEventKind.Quit);
-					};
-
-					// set up Ctrl+C handler 
-					Console.CancelKeyPress += ctrlCHandler;
-
-					ControllerThreadEventKind eventKind = ControllerThreadEventKind.None;
+					ControllerThreadSynchronizer.EventKind eventKind = ControllerThreadSynchronizer.EventKind.None;
 					do {
+						Debug.Assert(eventKind == ControllerThreadSynchronizer.EventKind.None || eventKind == ControllerThreadSynchronizer.EventKind.Resume);
+
 						// run the proxy
 						bool completed = false;
 						using (RunningProxyState runningProxyState = StartProxy(settings, saveCredentials: true, checkPreviousBackup: false)) {
 							// log & message
-							LogProxyStarted(eventKind == ControllerThreadEventKind.Resume);
+							LogProxyStarted(eventKind == ControllerThreadSynchronizer.EventKind.Resume);
 							Console.WriteLine(Resources.CLICommandBase_Message_StartListening);
 							Console.WriteLine(Resources.CLICommandBase_Message_StartingNote);
 
 							// wait for Ctrl+C or other events
-							controllerThreadEvent.WaitOne();
-							eventKind = this.controllerThreadEventKind;
+							RegisterControllerThreadSynchronizer(synchronizer);
+							eventKind = synchronizer.WaitForEvent();
 
 							// stop the proxy
-							completed = runningProxyState.Stop(5000);
+							completed = runningProxyState.Stop(eventKind == ControllerThreadSynchronizer.EventKind.SystemSessionEnding, 5000);
 						}
-						LogProxyStopped(completed, eventKind == ControllerThreadEventKind.Suspend);
+						LogProxyStopped(completed, eventKind == ControllerThreadSynchronizer.EventKind.Suspend);
 						Console.WriteLine(completed ? Resources.CLICommandBase_Message_Completed : Resources.CLICommandBase_Message_NotCompleted);
 
-						// process the event which awake this thread
-						while (eventKind == ControllerThreadEventKind.Suspend) {
+						// resume the thread which originally accepts the event
+						synchronizer.NotifyEventHandledAndWaitForAcknowledgment();
+
+						// decide the next step
+						while (eventKind == ControllerThreadSynchronizer.EventKind.Suspend) {
 							// wait for the next event
-							controllerThreadEvent.Reset();
-							controllerThreadEvent.WaitOne();
-							eventKind = this.controllerThreadEventKind;
+							RegisterControllerThreadSynchronizer(synchronizer);
+							eventKind = synchronizer.WaitForEvent();
+							synchronizer.NotifyEventHandledAndWaitForAcknowledgment();
 						}
-						if (eventKind != ControllerThreadEventKind.Resume) {
+						if (eventKind != ControllerThreadSynchronizer.EventKind.Resume) {
 							// quit
-							Debug.Assert(eventKind == ControllerThreadEventKind.Quit);
+							Debug.Assert(eventKind == ControllerThreadSynchronizer.EventKind.Quit || eventKind == ControllerThreadSynchronizer.EventKind.SystemSessionEnding);
 							break;
 						}
-						controllerThreadEvent.Reset();
 					} while (true);
-
-					// clean up Ctrl+C handler
-					Console.CancelKeyPress -= ctrlCHandler;
 				} finally {
-					this.ControllerThreadEvent = null;
+					// disconnect Ctrl+C handler
+					Console.CancelKeyPress -= onCtrlC;
 				}
 			}
 

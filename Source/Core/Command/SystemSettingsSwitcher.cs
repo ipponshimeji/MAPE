@@ -112,7 +112,7 @@ namespace MAPE.Command {
 			SystemSettings backup = GetCurrentSystemSettings();
 
 			// switch the system setting
-			if (SwitchToInternal(switching, backup) == false) {
+			if (SwitchToInternal(switching, backup, systemSessionEnding: false) == false) {
 				// actually, not switched
 				// backup is no use
 				backup = null;
@@ -121,26 +121,26 @@ namespace MAPE.Command {
 			return backup;
 		}
 
-		public void Restore(SystemSettings backup) {
+		public void Restore(SystemSettings backup, bool systemSessionEnding) {
 			// argument checks
 			if (backup == null) {
 				throw new ArgumentNullException(nameof(backup));
 			}
 
 			// restore the system setting
-			SwitchToInternal(backup, null);
+			SwitchToInternal(backup, null, systemSessionEnding);
 
 			return;
 		}
 
-		public void Restore(IObjectData data) {
+		public void Restore(IObjectData data, bool systemSessionEnding) {
 			// argument checks
 			if (data == null) {
 				throw new ArgumentNullException(nameof(data));
 			}
 
 			// create a new SystemSettings instance
-			Restore(CreateSystemSettings(data));
+			Restore(CreateSystemSettings(data), systemSessionEnding);
 		}
 
 		public SystemSettings GetCurrentSystemSettings() {
@@ -263,7 +263,7 @@ namespace MAPE.Command {
 			return false;   // not switched, by default
 		}
 
-		protected virtual void NotifySwitched() {
+		protected virtual void NotifySwitched(bool systemSessionEnding) {
 			return;
 		}
 
@@ -272,10 +272,10 @@ namespace MAPE.Command {
 
 		#region privates
 
-		private bool SwitchToInternal(SystemSettings settings, SystemSettings backup) {
+		private bool SwitchToInternal(SystemSettings settings, SystemSettings backup, bool systemSessionEnding) {
 			bool switched = false;
 
-			// switch the system setting
+			// switch the system settings
 			try {
 				switched = SwitchTo(settings, backup);
 			} catch {
@@ -290,12 +290,12 @@ namespace MAPE.Command {
 				throw;
 			}
 
-			// notify the system setting change
+			// notify the system settings change
 			if (switched) {
 				try {
-					NotifySwitched();
+					NotifySwitched(systemSessionEnding);
 				} catch (Exception exception) {
-					this.Owner.LogVerbose($"Error on notifying system setting switch: {exception.Message}");
+					this.Owner.LogVerbose($"Error on notifying system settings switch: {exception.Message}");
 					// not fatal, continue
 				}
 			}

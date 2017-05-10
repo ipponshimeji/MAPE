@@ -103,7 +103,7 @@ namespace MAPE.Command {
 			public virtual void Dispose() {
 				// state checks
 				if (this.proxy != null) {
-					Stop();
+					Stop(systemSessionEnding: false);
 				}
 				Debug.Assert(this.proxy == null);
 				Debug.Assert(this.dictionary == null);
@@ -190,14 +190,14 @@ namespace MAPE.Command {
 
 					this.commandSettings = commandSettings;
 				} catch {
-					Stop();
+					Stop(systemSessionEnding: false);
 					throw;
 				}
 
 				return;
 			}
 
-			public bool Stop(int millisecondsTimeout = 0) {
+			public bool Stop(bool systemSessionEnding, int millisecondsTimeout = 0) {
 				// restore the system settings
 				SystemSettingsSwitcher switcher = this.switcher;
 				this.switcher = null;
@@ -206,7 +206,7 @@ namespace MAPE.Command {
 				if (backup != null) {
 					Debug.Assert(switcher != null);
 					try {
-						switcher.Restore(backup);
+						switcher.Restore(backup, systemSessionEnding);
 						this.Owner.DeleteSystemSettingsBackup();
 					} catch (Exception exception) {
 						this.Owner.ShowRestoreSystemSettingsErrorMessage(exception.Message);
@@ -569,7 +569,7 @@ namespace MAPE.Command {
 						JsonObjectData data = JsonObjectData.Load(backupFilePath, createIfNotExist: false);
 						if (data != null) {
 							SystemSettingsSwitcher switcher = this.ComponentFactory.CreateSystemSettingsSwitcher(this, null);
-							switcher.Restore(data);
+							switcher.Restore(data, systemSessionEnding: false);
 						}
 					}
 
@@ -647,7 +647,7 @@ namespace MAPE.Command {
 					webClient.DownloadData(targetUrl);  // an exception is thrown on error
 
 					// wait for stop for 3 seconds 
-					proxyState.Stop(3000);
+					proxyState.Stop(systemSessionEnding: false, millisecondsTimeout: 3000);
 				}
 			} finally {
 				systemSettingsSwitcherSettings.EnableSystemSettingsSwitch = backup;

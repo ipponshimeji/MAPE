@@ -141,7 +141,7 @@ namespace MAPE.Windows.GUI {
 
 			// stop the proxy
 			// ToDo: should use async?
-			command.StopProxy(5000);
+			command.StopProxy(systemSessionEnding: false, millisecondsTimeout: 5000);
 
 			return;
 		}

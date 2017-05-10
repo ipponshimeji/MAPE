@@ -69,7 +69,7 @@ namespace MAPE.Command {
 		public override void Dispose() {
 			// dispose this class level
 			if (this.runningProxyState != null) {
-				StopProxy();
+				StopProxy(systemSessionEnding: false);
 			}
 
 			// dispose the base class level
@@ -105,7 +105,7 @@ namespace MAPE.Command {
 			return;
 		}
 
-		public void StopProxy(int millisecondsTimeout = 0, bool suspending = false) {
+		public void StopProxy(bool systemSessionEnding, int millisecondsTimeout = 0, bool suspending = false) {
 			// stop proxy
 			bool completed = false;
 			lock (this) {
@@ -117,7 +117,7 @@ namespace MAPE.Command {
 					this.suspending = true;
 				}
 
-				completed = this.runningProxyState.Stop(millisecondsTimeout);
+				completed = this.runningProxyState.Stop(systemSessionEnding, millisecondsTimeout);
 				Util.DisposeWithoutFail(ref this.runningProxyState);
 			}
 
@@ -131,7 +131,7 @@ namespace MAPE.Command {
 		}
 
 		public void SuspendProxy(int millisecondsTimeout = 0) {
-			StopProxy(millisecondsTimeout, suspending: true);
+			StopProxy(systemSessionEnding: false, millisecondsTimeout: millisecondsTimeout, suspending: true);
 		}
 
 		public void ResumeProxy() {

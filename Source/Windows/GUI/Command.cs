@@ -295,7 +295,7 @@ namespace MAPE.Windows.GUI {
 
 		private void SystemEvents_SessionEnding(object sender, SessionEndingEventArgs e) {
 			try {
-				StopProxy(5000);
+				StopProxy(systemSessionEnding: true, millisecondsTimeout: 5000);
 			} catch (Exception exception) {
 				LogError($"Fail to stop the proxy: {exception.Message}");
 				// continue
