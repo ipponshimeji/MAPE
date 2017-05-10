@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 [assembly: AssemblyTitle("MAPE.Windows")]
 [assembly: AssemblyDescription("MAPE - Windows Library")]
-[assembly: AssemblyConfiguration("developing")]
+[assembly: AssemblyConfiguration("beta")]
 [assembly: AssemblyCompany("Takamasa Uramoto")]
 [assembly: AssemblyProduct("MAPE")]
 [assembly: AssemblyCopyright("Copyright 2016-2017 Takamasa Uramoto")]
