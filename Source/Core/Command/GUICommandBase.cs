@@ -26,7 +26,7 @@ namespace MAPE.Command {
 
 		private RunningProxyState runningProxyState = null;
 
-		private bool suspending = false;
+		private bool suspended = false;
 
 		#endregion
 
@@ -86,7 +86,11 @@ namespace MAPE.Command {
 			lock (this) {
 				// state checks
 				if (resuming) {
-					this.suspending = false;
+					if (this.suspended == false) {
+						// resume only when the proxying was suspended
+						return;
+					}
+					this.suspended = false;
 				}
 				if (this.runningProxyState != null) {
 					return;
@@ -114,7 +118,7 @@ namespace MAPE.Command {
 					return;
 				}
 				if (suspending) {
-					this.suspending = true;
+					this.suspended = true;
 				}
 
 				completed = this.runningProxyState.Stop(systemSessionEnding, millisecondsTimeout);
@@ -135,6 +139,7 @@ namespace MAPE.Command {
 		}
 
 		public void ResumeProxy() {
+			// Note the proxy won't start actually if this.suspended is false
 			StartProxy(resuming: true);
 		}
 
