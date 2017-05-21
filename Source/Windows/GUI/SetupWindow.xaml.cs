@@ -12,6 +12,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using MAPE.Command;
 using MAPE.Windows.Settings;
 using MAPE.Windows.GUI.Settings;
 
@@ -111,7 +112,7 @@ namespace MAPE.Windows.GUI {
 
 			// Test tab
 			this.testDescriptionTextBlock.Text = Windows.Properties.Resources.Setup_Test_Description;
-			this.targetUrlTextBox.Text = "https://www.google.com/";
+			this.targetUrlTextBox.Text = SystemSettingsSwitcher.GetTestUrl();
 
 			// Finish tab
 			string description = string.Concat(Windows.Properties.Resources.Setup_Finishing_Description, Environment.NewLine, Environment.NewLine, Properties.Resources.SetupWindow_finishingDescriptionTextBox_Text_Addition);

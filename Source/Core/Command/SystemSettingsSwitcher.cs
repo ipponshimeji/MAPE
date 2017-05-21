@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Net;
 using MAPE.Utils;
 using MAPE.Server;
+using MAPE.Properties;
 using MAPE.Command.Settings;
 
 
@@ -17,6 +18,8 @@ namespace MAPE.Command {
 			public const string DefaultActualProxyHostName = "DefaultActualProxyHostName";
 
 			public const string DefaultActualProxyPort = "DefaultActualProxyPort";
+
+			public const string TestUrl = "TestUrl";
 
 			#endregion
 		}
@@ -79,6 +82,13 @@ namespace MAPE.Command {
 				enabled = settings.EnableSystemSettingsSwitch;
 				if (settings.ActualProxy != null) {
 					actualProxy = CreateWebProxy(settings.ActualProxy);
+					if (actualProxy != null) {
+						if (TestWebProxy(actualProxy) == false) {
+							string endPoint = $"{settings.ActualProxy.Host}:{settings.ActualProxy.Port}";
+							string message = string.Format(Resources.SystemSettingsSwitcher_Message_ProxyIsNotConnectable, endPoint);
+							throw new Exception(message);
+						}
+					}
 				} else {
 					actualProxy = DetectSystemProxy();
 					// Note that actualProxy may be null
@@ -230,6 +240,18 @@ namespace MAPE.Command {
 			return value;
 		}
 
+		public static string GetTestUrl() {
+			string value = GetAppSettings(ConfigNames.TestUrl);
+			if (value == null) {
+				// use Microsoft's test page as default value
+				// This url is the one which Windows uses to check Internet connectivity.
+				// See https://technet.microsoft.com/en-us/library/bc3bf74c-9b46-4258-9d3e-3ed159199df8 for details.
+				value = "http://www.msftncsi.com/ncsi.txt";
+			}
+
+			return value;
+		}
+
 		#endregion
 
 
@@ -242,6 +264,34 @@ namespace MAPE.Command {
 
 			// create a WebProxy object
 			return new WebProxy(settings.Host, settings.Port);
+		}
+
+		protected virtual bool TestWebProxy(IWebProxy proxy) {
+			bool result = true;
+			try {
+				// get test url specified in application config file
+				// (not in the settings file because this information is supposed to be set for site)
+				string targetUrl = SystemSettingsSwitcher.GetTestUrl();
+				Debug.Assert(string.IsNullOrEmpty(targetUrl) == false);
+
+				WebClientForTest webClient = new WebClientForTest();
+				webClient.Proxy = proxy;
+				webClient.DownloadData(targetUrl);  // an exception is thrown on error
+				this.Owner.LogVerbose("ActualProxy check: OK");
+			} catch (WebException exception) {
+				// check only proxy related error
+				// Note that exception.Status is WebExceptionStatus.ProtocolError (503) for unknown targetUrl.
+				if (exception.Status != WebExceptionStatus.ProtocolError) {
+					result = false;
+				}
+				if (result) {
+					this.Owner.LogVerbose($"ActualProxy check: {exception.Status} -> OK");
+				} else {
+					this.Owner.LogError($"ActualProxy check: {exception.Status} -> NG");
+				}
+			}
+
+			return result;
 		}
 
 		protected virtual SystemSettings CreateSystemSettings(IObjectData data) {

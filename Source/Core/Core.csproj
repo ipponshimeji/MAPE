@@ -110,6 +110,9 @@
     <Compile Include="Utils\Log.cs" />
     <Compile Include="Utils\ILogMonitor.cs" />
     <Compile Include="Utils\Settings.cs" />
+    <Compile Include="Utils\WebClientForTest.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Utils\Util.cs" />
     <Compile Include="Command\CredentialPersistence.cs" />
     <Compile Include="Utils\Logger.cs" />

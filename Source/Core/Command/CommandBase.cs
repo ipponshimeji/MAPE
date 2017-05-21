@@ -641,7 +641,7 @@ namespace MAPE.Command {
 
 				using (RunningProxyState proxyState = StartProxy(settings, saveCredentials: false, checkPreviousBackup: false)) {
 					IPEndPoint proxyEndPoint = ListenerSettings.GetEndPoint(settings.Proxy.MainListener);
-					WebClient webClient = new WebClient();
+					WebClientForTest webClient = new WebClientForTest();
 					webClient.Proxy = new WebProxy(proxyEndPoint.Address.ToString(), proxyEndPoint.Port);
 
 					webClient.DownloadData(targetUrl);  // an exception is thrown on error

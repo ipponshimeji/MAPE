@@ -309,5 +309,14 @@ namespace MAPE.Properties {
                 return ResourceManager.GetString("RunningProxyState_Message_FailToRestoreSystemSettings", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   The specified proxy &apos;{0}&apos; is not connectable. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string SystemSettingsSwitcher_Message_ProxyIsNotConnectable {
+            get {
+                return ResourceManager.GetString("SystemSettingsSwitcher_Message_ProxyIsNotConnectable", resourceCulture);
+            }
+        }
     }
 }
