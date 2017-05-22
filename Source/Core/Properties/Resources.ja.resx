@@ -149,7 +149,7 @@
 </value>
   </data>
   <data name="CommandBase_Message_NoActualProxy" xml:space="preserve">
-    <value>実際のプロキシを自動的に検出することができませんでした。コマンドラインや設定ファイルで明に指定して起動してください。</value>
+    <value>実際のプロキシを自動的に検出することができませんでした。ネットワークに接続していない、プロキシ設定が現在のネットワーク環境に適合していない等の原因が考えられます。</value>
   </data>
   <data name="CLICommandBase_Message_NoSettingsFile" xml:space="preserve">
     <value>保存先の設定ファイルが指定されていないため、設定を保存できません。</value>

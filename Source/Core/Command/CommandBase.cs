@@ -640,8 +640,12 @@ namespace MAPE.Command {
 				systemSettingsSwitcherSettings.EnableSystemSettingsSwitch = false;
 
 				using (RunningProxyState proxyState = StartProxy(settings, saveCredentials: false, checkPreviousBackup: false)) {
-					IPEndPoint proxyEndPoint = ListenerSettings.GetEndPoint(settings.Proxy.MainListener);
+                    // In SystemSettingsSwitcher.TestWebProxy() called from StartProxy() above,
+                    // MAPE already tested connectivity to the targetUrl with the actual proxy.
+                    // In this test, on the other hand, connectivity is tested with the MAPE main listener as the proxy.
+                    IPEndPoint proxyEndPoint = ListenerSettings.GetEndPoint(settings.Proxy.MainListener);
 					WebClientForTest webClient = new WebClientForTest();
+                    webClient.Timeout = 180 * 1000; // 3 minutes
 					webClient.Proxy = new WebProxy(proxyEndPoint.Address.ToString(), proxyEndPoint.Port);
 
 					webClient.DownloadData(targetUrl);  // an exception is thrown on error

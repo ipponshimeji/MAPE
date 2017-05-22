@@ -19,7 +19,9 @@ namespace MAPE.Command {
 
 			public const string DefaultActualProxyPort = "DefaultActualProxyPort";
 
-			public const string TestUrl = "TestUrl";
+            public const string ProxyTestUrl = "ProxyTestUrl";
+
+            public const string TestUrl = "TestUrl";
 
 			#endregion
 		}
@@ -82,20 +84,19 @@ namespace MAPE.Command {
 				enabled = settings.EnableSystemSettingsSwitch;
 				if (settings.ActualProxy != null) {
 					actualProxy = CreateWebProxy(settings.ActualProxy);
-					if (actualProxy != null) {
-						if (TestWebProxy(actualProxy) == false) {
-							string endPoint = $"{settings.ActualProxy.Host}:{settings.ActualProxy.Port}";
-							string message = string.Format(Resources.SystemSettingsSwitcher_Message_ProxyIsNotConnectable, endPoint);
-							throw new Exception(message);
-						}
-					}
 				} else {
 					actualProxy = DetectSystemProxy();
 					// Note that actualProxy may be null
 				}
-			}
+                if (actualProxy != null) {
+                    if (TestWebProxy(actualProxy) == false) {
+                        string message = string.Format(Resources.SystemSettingsSwitcher_Message_ProxyIsNotConnectable, actualProxy.Address);
+                        throw new Exception(message);
+                    }
+                }
+            }
 
-			this.Enabled = enabled;
+            this.Enabled = enabled;
 			this.ActualProxy = actualProxy;
 
 			return;
@@ -243,21 +244,34 @@ namespace MAPE.Command {
 		public static string GetTestUrl() {
 			string value = GetAppSettings(ConfigNames.TestUrl);
 			if (value == null) {
-				// use Microsoft's test page as default value
-				// This url is the one which Windows uses to check Internet connectivity.
-				// See https://technet.microsoft.com/en-us/library/bc3bf74c-9b46-4258-9d3e-3ed159199df8 for details.
-				value = "http://www.msftncsi.com/ncsi.txt";
+                value = GetDefaultTestUrl();
 			}
 
 			return value;
 		}
 
-		#endregion
+        public static string GetProxyTestUrl() {
+            string value = GetAppSettings(ConfigNames.ProxyTestUrl);
+            if (value == null) {
+                value = GetDefaultTestUrl();
+            }
+
+            return value;
+        }
+
+        private static string GetDefaultTestUrl() {
+            // use Microsoft's test page as default value
+            // This url is the one which Windows uses to check Internet connectivity.
+            // See https://technet.microsoft.com/en-us/library/bc3bf74c-9b46-4258-9d3e-3ed159199df8 for details.
+            return "http://www.msftncsi.com/ncsi.txt";
+        }
+
+        #endregion
 
 
-		#region overridables
+        #region overridables
 
-		protected virtual WebProxy CreateWebProxy(ActualProxySettings settings) {
+        protected virtual WebProxy CreateWebProxy(ActualProxySettings settings) {
 			// argument checks
 			Debug.Assert(settings != null);
 			Debug.Assert(string.IsNullOrEmpty(settings.Host) == false);
@@ -271,10 +285,11 @@ namespace MAPE.Command {
 			try {
 				// get test url specified in application config file
 				// (not in the settings file because this information is supposed to be set for site)
-				string targetUrl = SystemSettingsSwitcher.GetTestUrl();
+				string targetUrl = SystemSettingsSwitcher.GetProxyTestUrl();
 				Debug.Assert(string.IsNullOrEmpty(targetUrl) == false);
 
 				WebClientForTest webClient = new WebClientForTest();
+                webClient.Timeout = 10 * 1000;      // 10 seconds
 				webClient.Proxy = proxy;
 				webClient.DownloadData(targetUrl);  // an exception is thrown on error
 				this.Owner.LogVerbose("ActualProxy check: OK");

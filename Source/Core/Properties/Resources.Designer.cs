@@ -268,7 +268,7 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
-        ///   Tha actual proxy is not detected automatically. Specify it explicitly by settings file or command line. に類似しているローカライズされた文字列を検索します。
+        ///   Tha actual proxy is not detected automatically. Maybe network connection is not available or the proxy settings are not suitable for this network environment. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CommandBase_Message_NoActualProxy {
             get {
