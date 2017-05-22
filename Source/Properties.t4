@@ -8,8 +8,8 @@
 	int minorVersion = 0;
 	int buildNumber = 15;
 	int revision = 0;
-//	string configuration = "beta";
-	string configuration = "developing";
+	string configuration = "beta";
+//	string configuration = "developing";
 
 	string version = string.Format("{0}.{1}.{2}.{3}", majorVersion, minorVersion, buildNumber, revision);
 #>
