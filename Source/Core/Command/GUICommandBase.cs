@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Threading;
+using System.Threading.Tasks;
 using MAPE.Utils;
 using MAPE.Command.Settings;
 
@@ -17,6 +19,133 @@ namespace MAPE.Command {
 			#endregion
 		}
 
+		protected class Resumer {
+			#region data
+
+			public readonly GUICommandBase Owner;
+
+			public readonly int TryCount;
+
+			public readonly int Delaly;
+
+			public readonly int Interval;
+
+			#endregion
+
+
+			#region data - data synchronized by instanceLocker
+
+			private readonly object instanceLocker = new object();
+
+			private Task task = null;
+
+			private bool canceled = false;
+
+			#endregion
+
+
+			#region creation and disposal
+
+			public Resumer(GUICommandBase owner, int tryCount, int delay, int interval) {
+				// argument checks
+				if (owner == null) {
+					throw new ArgumentNullException(nameof(owner));
+				}
+				if (tryCount <= 0) {
+					throw new ArgumentOutOfRangeException(nameof(tryCount));
+				}
+				if (delay <= 0) {
+					throw new ArgumentOutOfRangeException(nameof(delay));
+				}
+				if (interval <= 0) {
+					throw new ArgumentOutOfRangeException(nameof(interval));
+				}
+
+				// initialize members
+				this.Owner = owner;
+				this.TryCount = tryCount;
+				this.Delaly = delay;
+				this.Interval = interval;
+
+				return;
+			}
+
+			#endregion
+
+
+			#region methods
+
+			public void StartResuming() {
+				Task task;
+				lock (this.instanceLocker) {
+					// state checks
+					if (this.canceled) {
+						return;
+					}
+					if (this.task != null) {
+						// already resuming
+						return;
+					}
+
+					// create resuming task
+					task = new Task(this.Resume);
+					this.task = task;
+				}
+
+				// start the resuming task
+				task.Start();
+
+				return;
+			}
+
+			public void Cancel() {
+				lock (this.instanceLocker) {
+					this.canceled = true;
+				}
+			}
+
+			#endregion
+
+
+			#region privates
+
+			private void Resume() {
+				GUICommandBase owner = this.Owner;
+				int counter = this.TryCount;
+
+				// resume proxying 
+				Thread.Sleep(this.Delaly);
+				while (0 < counter) {
+					// check whether canceled
+					lock (this.instanceLocker) {
+						if (this.canceled) {
+							break;
+						}
+					}
+
+					// try to resume proxying
+					try {
+						// Note the proxy won't start actually if this.suspended is false
+						owner.StartProxy(resuming: true);
+						return;
+					} catch {
+						// continue;				
+					}
+
+					// prepare the next try
+					Thread.Sleep(this.Interval);
+					--counter;
+				}
+
+				// fail to resume
+				owner.GiveUpResuming();
+
+				return;
+			}
+
+			#endregion
+		}
+
 		#endregion
 
 
@@ -26,7 +155,7 @@ namespace MAPE.Command {
 
 		private RunningProxyState runningProxyState = null;
 
-		private bool suspended = false;
+		private Resumer resumer = null;
 
 		#endregion
 
@@ -68,6 +197,7 @@ namespace MAPE.Command {
 
 		public override void Dispose() {
 			// dispose this class level
+			GiveUpResuming();
 			if (this.runningProxyState != null) {
 				StopProxy(systemSessionEnding: false);
 			}
@@ -85,19 +215,20 @@ namespace MAPE.Command {
 			// start proxy
 			lock (this) {
 				// state checks
-				if (resuming) {
-					if (this.suspended == false) {
-						// resume only when the proxying was suspended
-						return;
-					}
-					this.suspended = false;
+				Resumer resumer = this.resumer;
+				if (resuming && resumer == null) {
+					// resume only when the proxying was suspended
+					return;
 				}
 				if (this.runningProxyState != null) {
+					ClearResumer();	// no use if proxying is running
 					return;
 				}
 
-				// start 
+				// start
+				// Note that the resumer won't be cleared if StartProxy() throws an exception. 
 				this.runningProxyState = StartProxy(this.settings, saveCredentials: true, checkPreviousBackup: true);
+				ClearResumer();
 			}
 
 			// notify
@@ -105,6 +236,16 @@ namespace MAPE.Command {
 
 			// log
 			LogProxyStarted(resuming);
+
+			return;
+		}
+
+		public void GiveUpResuming() {
+			// start proxy
+			lock (this) {
+				// clear the resumer
+				ClearResumer();
+			}
 
 			return;
 		}
@@ -118,7 +259,9 @@ namespace MAPE.Command {
 					return;
 				}
 				if (suspending) {
-					this.suspended = true;
+					Debug.Assert(this.resumer != null);
+					// Note that CreateResumer() returns null if proxying should not be resumed
+					this.resumer = CreateResumer();
 				}
 
 				completed = this.runningProxyState.Stop(systemSessionEnding, millisecondsTimeout);
@@ -139,8 +282,11 @@ namespace MAPE.Command {
 		}
 
 		public void ResumeProxy() {
-			// Note the proxy won't start actually if this.suspended is false
-			StartProxy(resuming: true);
+			lock (this) {
+				if (this.resumer != null) {
+					this.resumer.StartResuming();
+				}				
+			}
 		}
 
 		#endregion
@@ -201,6 +347,34 @@ namespace MAPE.Command {
 					// continue
 				}
 			}
+		}
+
+		#endregion
+
+
+		#region privates
+
+		// This method must be called in lock(this) scope. 
+		private Resumer CreateResumer() {
+			Resumer resumer = null;
+
+			GUISettings guiSettings = this.Settings.GUI;
+			if (0 < guiSettings.ResumeTryCount) {
+				resumer = new Resumer(this, guiSettings.ResumeTryCount, guiSettings.ResumeDelay, guiSettings.ResumeInterval);
+			}
+
+			return resumer;
+		}
+
+		// This method must be called in lock(this) scope. 
+		private void ClearResumer() {
+			Resumer resumer = this.resumer;
+			this.resumer = null;
+			if (resumer != null) {
+				resumer.Cancel();
+			}
+
+			return;
 		}
 
 		#endregion
