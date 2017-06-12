@@ -205,6 +205,15 @@ The found backup is one at {0}. The settings set manually after the point will b
   <data name="CLICommandBase_Prompt_YesNoCancel" xml:space="preserve">
     <value>Enter Y, N or C (Y: Yes, N: No, C: Cancel):</value>
   </data>
+  <data name="GUICommandBase_Message_Resuming" xml:space="preserve">
+    <value>MAPE will try to resume proxying after {0} milliseconds.</value>
+  </data>
+  <data name="GUICommandBase_Message_RetryResuming" xml:space="preserve">
+    <value>MAPE will retry to resume proxying after {0} milliseconds.</value>
+  </data>
+  <data name="GUICommandBase_Message_FailToResume" xml:space="preserve">
+    <value>MAPE give up resuming proxying.</value>
+  </data>
   <data name="SystemSettingsSwitcher_Message_ProxyIsNotConnectable" xml:space="preserve">
     <value>The specified proxy '{0}' is not connectable.</value>
   </data>

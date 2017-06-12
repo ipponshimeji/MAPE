@@ -593,8 +593,9 @@ namespace MAPE.Command {
 			RunningProxyState state = new RunningProxyState(this);
 			try {
 				state.Start(settings, saveCredentials, checkPreviousBackup);
-			} catch {
+			} catch (Exception exception) {
 				state.Dispose();
+				LogError(exception.Message);
 				throw;
 			}
 

@@ -28,7 +28,7 @@ namespace MAPE.Command.Settings {
 
 			public const int ResumeTryCount = 2;
 
-			public const int ResumeDelay = 8000;
+			public const int ResumeDelay = 10000;
 
 			public const int ResumeInterval = 3000;
 

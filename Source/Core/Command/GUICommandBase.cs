@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MAPE.Utils;
 using MAPE.Command.Settings;
+using MAPE.Properties;
 
 
 namespace MAPE.Command {
@@ -54,10 +55,10 @@ namespace MAPE.Command {
 				if (tryCount <= 0) {
 					throw new ArgumentOutOfRangeException(nameof(tryCount));
 				}
-				if (delay <= 0) {
+				if (delay < 0) {
 					throw new ArgumentOutOfRangeException(nameof(delay));
 				}
-				if (interval <= 0) {
+				if (interval < 0) {
 					throw new ArgumentOutOfRangeException(nameof(interval));
 				}
 
@@ -112,10 +113,14 @@ namespace MAPE.Command {
 			private void Resume() {
 				GUICommandBase owner = this.Owner;
 				int counter = this.TryCount;
+				string logMessage;
 
 				// resume proxying 
+				logMessage = string.Format(Resources.GUICommandBase_Message_Resuming, this.Delaly);
+				owner.LogVerbose(logMessage);
 				Thread.Sleep(this.Delaly);
-				while (0 < counter) {
+				Debug.Assert(0 < counter);
+				do {
 					// check whether canceled
 					lock (this.instanceLocker) {
 						if (this.canceled) {
@@ -133,12 +138,18 @@ namespace MAPE.Command {
 					}
 
 					// prepare the next try
-					Thread.Sleep(this.Interval);
 					--counter;
-				}
+					if (counter <= 0) {
+						break;
+					}
+					logMessage = string.Format(Resources.GUICommandBase_Message_RetryResuming, this.Interval);
+					owner.LogError(logMessage);
+					Thread.Sleep(this.Interval);
+				} while (true);
 
 				// fail to resume
 				owner.GiveUpResuming();
+				owner.LogError(Resources.GUICommandBase_Message_FailToResume);
 
 				return;
 			}

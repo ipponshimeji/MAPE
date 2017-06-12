@@ -300,6 +300,33 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
+        ///   MAPE give up resuming proxying. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string GUICommandBase_Message_FailToResume {
+            get {
+                return ResourceManager.GetString("GUICommandBase_Message_FailToResume", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   MAPE will try to resume proxying after {0} milliseconds. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string GUICommandBase_Message_Resuming {
+            get {
+                return ResourceManager.GetString("GUICommandBase_Message_Resuming", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   MAPE will retry to resume proxying after {0} milliseconds. に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        internal static string GUICommandBase_Message_RetryResuming {
+            get {
+                return ResourceManager.GetString("GUICommandBase_Message_RetryResuming", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Failed to restore the previous system settings: {0}
         ///Please restore it manually.
         ///Or, it may be restored from the backup &apos;{1}&apos; if it exists when you restart MAPE. に類似しているローカライズされた文字列を検索します。
