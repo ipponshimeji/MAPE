@@ -99,13 +99,14 @@
                 <Grid Margin="4">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
                         <RowDefinition />
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition/>
                     </Grid.ColumnDefinitions>
-                    <Label Grid.Row="0" Grid.Column="0" Content="{x:Static properties:Resources.SettingsWindow_logLevelLabel_Content}" />
+                    <Label Grid.Row="0" Grid.Column="0" Content="{x:Static properties:Resources.SettingsWindow_logLevelLabel_Content}" Target="{Binding ElementName=logLevelComboBox}" />
                     <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" >
                         <ComboBox x:Name="logLevelComboBox" SelectedItem="{Binding LogLevel, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}" >
                             <Diagnostics:TraceLevel>Off</Diagnostics:TraceLevel>
@@ -115,6 +116,19 @@
                             <Diagnostics:TraceLevel>Verbose</Diagnostics:TraceLevel>
                         </ComboBox>
                     </StackPanel>
+                    <GroupBox Grid.Row="1" Grid.ColumnSpan="2" Header="{x:Static properties:Resources.SettingsWindow_resumeGroup_Header}" Margin="0, 8">
+                        <StackPanel Orientation="Horizontal">
+                            <Label Content="{x:Static properties:Resources.SettingsWindow_resumeTryCount_Content}" Target="{Binding ElementName=resumeTryCountTextBox}"></Label>
+                            <TextBox x:Name="resumeTryCountTextBox" VerticalAlignment="Center" Width="50" Text="{Binding ResumeTryCount, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}"></TextBox>
+                            <Label Margin="0, 0, 4, 0"/>
+                            <Label Content="{x:Static properties:Resources.SettingsWindow_resumeDelay_Content}" Target="{Binding ElementName=resumeDelayTextBox}"></Label>
+                            <TextBox x:Name="resumeDelayTextBox" VerticalAlignment="Center" Width="50" Text="{Binding ResumeDelay, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}"></TextBox>
+                            <Label Content="[ms]" Margin="0, 0, 4, 0"/>
+                            <Label Content="{x:Static properties:Resources.SettingsWindow_resumeInterval_Content}" Target="{Binding ElementName=resumeIntervalTextBox}"></Label>
+                            <TextBox x:Name="resumeIntervalTextBox" VerticalAlignment="Center" Width="50" Text="{Binding ResumeInterval, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}"></TextBox>
+                            <Label Content="[ms]" Margin="0, 0, 4, 0"/>
+                        </StackPanel>
+                    </GroupBox>
                 </Grid>
             </TabItem>
         </TabControl>

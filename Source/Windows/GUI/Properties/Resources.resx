@@ -315,6 +315,18 @@
   <data name="SettingsWindow_logLevelLabel_Content" xml:space="preserve">
     <value>_Log Level:</value>
   </data>
+  <data name="SettingsWindow_resumeGroup_Header" xml:space="preserve">
+    <value>Resuming proxying at resuming from system sleep/hibernation</value>
+  </data>
+  <data name="SettingsWindow_resumeTryCount_Content" xml:space="preserve">
+    <value>Try _Count:</value>
+  </data>
+  <data name="SettingsWindow_resumeDelay_Content" xml:space="preserve">
+    <value>Initial _Delay:</value>
+  </data>
+  <data name="SettingsWindow_resumeInterval_Content" xml:space="preserve">
+    <value>Retry _Interval:</value>
+  </data>
   <data name="SettingsWindow_Message_ErrorExists" xml:space="preserve">
     <value>There is an error input.</value>
   </data>

@@ -42,11 +42,58 @@ namespace MAPE.Command.Settings {
 
 		public bool Start { get; set; }
 
-		public int ResumeTryCount { get; set; }
+		private int resumeTryCount;
 
-		public int ResumeDelay { get; set; }
+		private int resumeDelay;
 
-		public int ResumeInterval { get; set; }
+		private int resumeInterval;
+
+		#endregion
+
+
+		#region properties
+
+		public int ResumeTryCount {
+			get {
+				return this.resumeTryCount;
+			}
+			set {
+				// argument checks
+				if (value < 0) {
+					throw new ArgumentOutOfRangeException(nameof(value));
+				}
+
+				this.resumeTryCount = value;
+			}
+		}
+
+		public int ResumeDelay {
+			get {
+				return this.resumeDelay;
+			}
+			set {
+				// argument checks
+				if (value < 0) {
+					throw new ArgumentOutOfRangeException(nameof(value));
+				}
+
+				this.resumeDelay = value;
+			}
+		}
+
+		public int ResumeInterval {
+			get {
+				return this.resumeInterval;
+			}
+			set {
+				// argument checks
+				if (value < 0) {
+					throw new ArgumentOutOfRangeException(nameof(value));
+				}
+
+				this.resumeInterval = value;
+			}
+		}
 
 		#endregion
 

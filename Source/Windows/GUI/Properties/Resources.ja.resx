@@ -315,6 +315,18 @@
   <data name="SettingsWindow_logLevelLabel_Content" xml:space="preserve">
     <value>ログレベル(_L):</value>
   </data>
+  <data name="SettingsWindow_resumeGroup_Header" xml:space="preserve">
+    <value>システムがスリープ/休止から復帰した際の中継再開</value>
+  </data>
+  <data name="SettingsWindow_resumeTryCount_Content" xml:space="preserve">
+    <value>試行回数(_C):</value>
+  </data>
+  <data name="SettingsWindow_resumeDelay_Content" xml:space="preserve">
+    <value>初期遅延(_D):</value>
+  </data>
+  <data name="SettingsWindow_resumeInterval_Content" xml:space="preserve">
+    <value>試行間隔(_I):</value>
+  </data>
   <data name="SettingsWindow_Message_ErrorExists" xml:space="preserve">
     <value>入力エラーがあります。</value>
   </data>

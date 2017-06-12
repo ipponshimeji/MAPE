@@ -81,6 +81,33 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
+		public int ResumeTryCount {
+			get {
+				return this.CommandSettings.GUI.ResumeTryCount;
+			}
+			set {
+				this.CommandSettings.GUI.ResumeTryCount = value;
+			}
+		}
+
+		public int ResumeDelay {
+			get {
+				return this.CommandSettings.GUI.ResumeDelay;
+			}
+			set {
+				this.CommandSettings.GUI.ResumeDelay = value;
+			}
+		}
+
+		public int ResumeInterval {
+			get {
+				return this.CommandSettings.GUI.ResumeInterval;
+			}
+			set {
+				this.CommandSettings.GUI.ResumeInterval = value;
+			}
+		}
+
 		#endregion
 
 
@@ -101,7 +128,10 @@ namespace MAPE.Windows.GUI {
 			// initialize components
 			InitializeComponent();
 			this.validatableControls = new Control[] {
-				this.retryTextBox
+				this.retryTextBox,
+				this.resumeTryCountTextBox,
+				this.resumeDelayTextBox,
+				this.resumeIntervalTextBox
 			};
 			this.Icon = App.Current.OnIcon;
 			this.DataContext = this;
@@ -150,7 +180,10 @@ namespace MAPE.Windows.GUI {
 					this.actualProxy,
 					this.systemSettingsSwitcher,
 					this.retryTextBox,
-					this.logLevelComboBox
+					this.logLevelComboBox,
+					this.resumeTryCountTextBox,
+					this.resumeDelayTextBox,
+					this.resumeIntervalTextBox
 				};
 				Array.ForEach(inputControls, c => { c.IsEnabled = false; });
 			}

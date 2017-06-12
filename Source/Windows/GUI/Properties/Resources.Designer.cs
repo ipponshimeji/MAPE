@@ -703,6 +703,42 @@ namespace MAPE.Windows.GUI.Properties {
         }
         
         /// <summary>
+        ///   Initial _Delay: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_resumeDelay_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_resumeDelay_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Resuming proxying at resuming from system sleep/hibernation に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_resumeGroup_Header {
+            get {
+                return ResourceManager.GetString("SettingsWindow_resumeGroup_Header", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Retry _Interval: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_resumeInterval_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_resumeInterval_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Try _Count: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SettingsWindow_resumeTryCount_Content {
+            get {
+                return ResourceManager.GetString("SettingsWindow_resumeTryCount_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   _Authentication Retry Count: に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string SettingsWindow_retryLabel_Content {
