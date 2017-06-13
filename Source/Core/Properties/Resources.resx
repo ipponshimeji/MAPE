@@ -212,7 +212,7 @@ The found backup is one at {0}. The settings set manually after the point will b
     <value>MAPE will retry to resume proxying after {0} milliseconds.</value>
   </data>
   <data name="GUICommandBase_Message_FailToResume" xml:space="preserve">
-    <value>MAPE give up resuming proxying.</value>
+    <value>MAPE gave up resuming proxying.</value>
   </data>
   <data name="SystemSettingsSwitcher_Message_ProxyIsNotConnectable" xml:space="preserve">
     <value>The specified proxy '{0}' is not connectable.</value>

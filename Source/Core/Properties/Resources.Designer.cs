@@ -300,7 +300,7 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
-        ///   MAPE give up resuming proxying. に類似しているローカライズされた文字列を検索します。
+        ///   MAPE gave up resuming proxying. に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string GUICommandBase_Message_FailToResume {
             get {

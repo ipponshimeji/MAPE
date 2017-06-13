@@ -121,7 +121,7 @@ namespace MAPE.Command {
 				Thread.Sleep(this.Delaly);
 				Debug.Assert(0 < counter);
 				do {
-					// check whether canceled
+					// check whether resuming was canceled
 					lock (this.instanceLocker) {
 						if (this.canceled) {
 							break;
@@ -132,7 +132,7 @@ namespace MAPE.Command {
 					try {
 						// Note the proxy won't start actually if this.suspended is false
 						owner.StartProxy(resuming: true);
-						return;
+						break;
 					} catch {
 						// continue;				
 					}
@@ -140,16 +140,15 @@ namespace MAPE.Command {
 					// prepare the next try
 					--counter;
 					if (counter <= 0) {
+						// fail to resume
+						owner.GiveUpResuming();
+						owner.LogError(Resources.GUICommandBase_Message_FailToResume);
 						break;
 					}
 					logMessage = string.Format(Resources.GUICommandBase_Message_RetryResuming, this.Interval);
 					owner.LogError(logMessage);
 					Thread.Sleep(this.Interval);
 				} while (true);
-
-				// fail to resume
-				owner.GiveUpResuming();
-				owner.LogError(Resources.GUICommandBase_Message_FailToResume);
 
 				return;
 			}
