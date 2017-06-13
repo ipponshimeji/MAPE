@@ -54,7 +54,7 @@ namespace MAPE.Windows.GUI {
 
 		private readonly bool runningProxy;
 
-		private readonly Control[] validatableControls;
+		private readonly Tuple<Control, int>[] validatableControls;
 
 		private UIStateFlags uiState = UIStateFlags.InitialState;
 
@@ -127,11 +127,12 @@ namespace MAPE.Windows.GUI {
 
 			// initialize components
 			InitializeComponent();
-			this.validatableControls = new Control[] {
-				this.retryTextBox,
-				this.resumeTryCountTextBox,
-				this.resumeDelayTextBox,
-				this.resumeIntervalTextBox
+			// Tuple(control, tab index on which the control resides)
+			this.validatableControls = new Tuple<Control, int>[] {
+				new Tuple<Control, int>(this.retryTextBox, 0),
+				new Tuple<Control, int>(this.resumeTryCountTextBox, 3),
+				new Tuple<Control, int>(this.resumeDelayTextBox, 3),
+				new Tuple<Control, int>(this.resumeIntervalTextBox, 3)
 			};
 			this.Icon = App.Current.OnIcon;
 			this.DataContext = this;
@@ -203,10 +204,11 @@ namespace MAPE.Windows.GUI {
 
 			if (this.DialogResult ?? false) {
 				// error check
-				Control errorControl = GetErrorControl();
-				if (errorControl != null) {
+				Tuple<Control, int> errorControlInfo = GetErrorControlInfo();
+				if (errorControlInfo != null) {
 					ShowErrorDialog(Properties.Resources.SettingsWindow_Message_ErrorExists);
-					errorControl.Focus();
+					this.tab.SelectedIndex = errorControlInfo.Item2;
+					errorControlInfo.Item1.Focus();
 					e.Cancel = true;
 					return;
 				}
@@ -268,7 +270,7 @@ namespace MAPE.Windows.GUI {
 			UIStateFlags state = UIStateFlags.Invariable;
 
 			// reflect error state
-			if (GetErrorControl() == null) {
+			if (GetErrorControlInfo() == null) {
 				state |= UIStateFlags.OKEnabled;
 				if (this.enableSaveAsDefault) {
 					state |= UIStateFlags.SaveAsDefaultEnabled;
@@ -325,16 +327,19 @@ namespace MAPE.Windows.GUI {
 			MessageBox.Show(this, message, this.Title, MessageBoxButton.OK, MessageBoxImage.Error);
 		}
 
-		private Control GetErrorControl() {
-			Control errorControl = this.validatableControls.Where(c => Validation.GetHasError(c)).FirstOrDefault();
-			if (errorControl == null) {
-				errorControl = this.actualProxy.GetErrorControl();
+		private Tuple<Control, int> GetErrorControlInfo() {
+			Tuple<Control, int> errorInfo = this.validatableControls.Where(c => Validation.GetHasError(c.Item1)).FirstOrDefault();
+		
+			if (errorInfo == null) {
+				Control errorControl = this.actualProxy.GetErrorControl();
+				errorInfo = (errorControl == null) ? null : new Tuple<Control, int>(errorControl, 0);
 			}
-			if (errorControl == null) {
-				errorControl = this.systemSettingsSwitcher.GetErrorControl();
+			if (errorInfo == null) {
+				Control errorControl = this.systemSettingsSwitcher.GetErrorControl();
+				errorInfo = (errorControl == null) ? null : new Tuple<Control, int>(errorControl, 0);
 			}
 
-			return errorControl;
+			return errorInfo;
 		}
 
 		private void AddListItem(ListView listView, object newItem) {

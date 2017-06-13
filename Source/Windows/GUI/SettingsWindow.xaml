@@ -22,114 +22,122 @@
             <RowDefinition/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TabControl Grid.Row="0" Margin="4">
+        <TabControl x:Name="tab" Grid.Row="0" Margin="4">
             <TabItem Header="{x:Static properties:Resources.SettingsWindow_proxyTab_Header}">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <local:ActualProxySettingsControl x:Name="actualProxy" Grid.Row="0" />
-                    <local:SystemSettingsSwitchSettingsControl x:Name="systemSettingsSwitcher" Grid.Row="1" />
-                    <GroupBox Grid.Row="2" Header="{x:Static properties:Resources.SettingsWindow_miscGroup_Header}" Padding="4" Margin="0,0,0,2">
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="{x:Static properties:Resources.SettingsWindow_retryLabel_Content}" Padding="2" Target="{Binding ElementName=retryTextBox}" />
-                            <TextBox x:Name="retryTextBox" VerticalAlignment="Center" Width="50" Text="{Binding RetryCount, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
-                        </StackPanel>
-                    </GroupBox>
-                </Grid>
+                <AdornerDecorator>
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <local:ActualProxySettingsControl x:Name="actualProxy" Grid.Row="0" />
+                        <local:SystemSettingsSwitchSettingsControl x:Name="systemSettingsSwitcher" Grid.Row="1" />
+                        <GroupBox Grid.Row="2" Header="{x:Static properties:Resources.SettingsWindow_miscGroup_Header}" Padding="4" Margin="0,0,0,2">
+                            <StackPanel Orientation="Horizontal">
+                                <Label Content="{x:Static properties:Resources.SettingsWindow_retryLabel_Content}" Padding="2" Target="{Binding ElementName=retryTextBox}" />
+                                <TextBox x:Name="retryTextBox" VerticalAlignment="Center" Width="50" Text="{Binding RetryCount, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
+                            </StackPanel>
+                        </GroupBox>
+                    </Grid>
+                </AdornerDecorator>
             </TabItem>
             <TabItem Header="{x:Static properties:Resources.SettingsWindow_listenersTab_Header}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid Grid.Column="0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition />
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <ListView x:Name="listenerListView" Grid.Row="0" SelectionChanged="listenerListView_SelectionChanged">
+                <AdornerDecorator>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid Grid.Column="0">
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <ListView x:Name="listenerListView" Grid.Row="0" SelectionChanged="listenerListView_SelectionChanged">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_addressColumn_Header}" Width="Auto" DisplayMemberBinding="{Binding Address}" />
+                                        <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_portColumn_Header}" Width="Auto" DisplayMemberBinding="{Binding Port}" />
+                                        <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_backlogColumn_Header}" Width="Auto" DisplayMemberBinding="{Binding Backlog}" />
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                            <TextBlock Grid.Row="1" Text="{x:Static properties:Resources.SettingsWindow_listenerListLabel_Content}" TextWrapping="Wrap" Padding="2" />
+                        </Grid>
+                        <StackPanel Grid.Column="1">
+                            <Button x:Name="addListenerButton" Content="{x:Static properties:Resources.SettingsWindow_addButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="addListenerButton_Click" />
+                            <Button x:Name="removeListenerButton" Content="{x:Static properties:Resources.SettingsWindow_removeButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="removeListenerButton_Click" />
+                            <Button x:Name="editListenerButton" Content="{x:Static properties:Resources.SettingsWindow_editButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="editListenerButton_Click" />
+                            <Button x:Name="upListenerButton" Content="{x:Static properties:Resources.SettingsWindow_upButton_Content}" MinWidth="100" Margin="4, 12, 4, 4" Padding="4" Click="upListenerButton_Click" />
+                            <Button x:Name="downListenerButton" Content="{x:Static properties:Resources.SettingsWindow_downButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="downListenerButton_Click" />
+                            <Button x:Name="resetListenerButton" Content="{x:Static properties:Resources.SettingsWindow_resetButton_Content}" MinWidth="100" Margin="4, 12, 4, 4" Padding="4" Click="resetListenerButton_Click" />
+                        </StackPanel>
+                    </Grid>
+                </AdornerDecorator>
+            </TabItem>
+            <TabItem Header="{x:Static properties:Resources.SettingsWindow_credentialsTab_Header}">
+                <AdornerDecorator>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ListView x:Name="credentialListView" Grid.Column="0" SelectionChanged="credentialListView_SelectionChanged">
                             <ListView.View>
                                 <GridView>
-                                    <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_addressColumn_Header}" Width="Auto" DisplayMemberBinding="{Binding Address}" />
-                                    <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_portColumn_Header}" Width="Auto" DisplayMemberBinding="{Binding Port}" />
-                                    <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_backlogColumn_Header}" Width="Auto" DisplayMemberBinding="{Binding Backlog}" />
+                                    <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_endPointColumn_Header}" DisplayMemberBinding="{Binding EndPoint}" Width="Auto" />
+                                    <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_persistenceColumn_Header}" DisplayMemberBinding="{Binding Persistence}" Width="Auto" />
+                                    <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_assumptionModeColumn_Header}" DisplayMemberBinding="{Binding EnableAssumptionMode}" Width="Auto" />
+                                    <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_userNameColumn_Header}" DisplayMemberBinding="{Binding UserName}" Width="Auto" />
                                 </GridView>
                             </ListView.View>
                         </ListView>
-                        <TextBlock Grid.Row="1" Text="{x:Static properties:Resources.SettingsWindow_listenerListLabel_Content}" TextWrapping="Wrap" Padding="2" />
+                        <StackPanel Grid.Column="1">
+                            <Button x:Name="addCredentialButton" Content="{x:Static properties:Resources.SettingsWindow_addButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="addCredentialButton_Click" />
+                            <Button x:Name="removeCredentialButton" Content="{x:Static properties:Resources.SettingsWindow_removeButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="removeCredentialButton_Click" />
+                            <Button x:Name="editCredentialButton" Content="{x:Static properties:Resources.SettingsWindow_editButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="editCredentialButton_Click" />
+                        </StackPanel>
                     </Grid>
-                    <StackPanel Grid.Column="1">
-                        <Button x:Name="addListenerButton" Content="{x:Static properties:Resources.SettingsWindow_addButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="addListenerButton_Click" />
-                        <Button x:Name="removeListenerButton" Content="{x:Static properties:Resources.SettingsWindow_removeButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="removeListenerButton_Click" />
-                        <Button x:Name="editListenerButton" Content="{x:Static properties:Resources.SettingsWindow_editButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="editListenerButton_Click" />
-                        <Button x:Name="upListenerButton" Content="{x:Static properties:Resources.SettingsWindow_upButton_Content}" MinWidth="100" Margin="4, 12, 4, 4" Padding="4" Click="upListenerButton_Click" />
-                        <Button x:Name="downListenerButton" Content="{x:Static properties:Resources.SettingsWindow_downButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="downListenerButton_Click" />
-                        <Button x:Name="resetListenerButton" Content="{x:Static properties:Resources.SettingsWindow_resetButton_Content}" MinWidth="100" Margin="4, 12, 4, 4" Padding="4" Click="resetListenerButton_Click" />
-                    </StackPanel>
-                </Grid>
-            </TabItem>
-            <TabItem Header="{x:Static properties:Resources.SettingsWindow_credentialsTab_Header}">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <ListView x:Name="credentialListView" Grid.Column="0" SelectionChanged="credentialListView_SelectionChanged">
-                        <ListView.View>
-                            <GridView>
-                                <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_endPointColumn_Header}" DisplayMemberBinding="{Binding EndPoint}" Width="Auto" />
-                                <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_persistenceColumn_Header}" DisplayMemberBinding="{Binding Persistence}" Width="Auto" />
-                                <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_assumptionModeColumn_Header}" DisplayMemberBinding="{Binding EnableAssumptionMode}" Width="Auto" />
-                                <GridViewColumn Header="{x:Static properties:Resources.SettingsWindow_userNameColumn_Header}" DisplayMemberBinding="{Binding UserName}" Width="Auto" />
-                            </GridView>
-                        </ListView.View>
-                    </ListView>
-                    <StackPanel Grid.Column="1">
-                        <Button x:Name="addCredentialButton" Content="{x:Static properties:Resources.SettingsWindow_addButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="addCredentialButton_Click" />
-                        <Button x:Name="removeCredentialButton" Content="{x:Static properties:Resources.SettingsWindow_removeButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="removeCredentialButton_Click" />
-                        <Button x:Name="editCredentialButton" Content="{x:Static properties:Resources.SettingsWindow_editButton_Content}" MinWidth="100" Margin="4" Padding="4" Click="editCredentialButton_Click" />
-                    </StackPanel>
-                </Grid>
+                </AdornerDecorator>
             </TabItem>
             <TabItem Header="{x:Static properties:Resources.SettingsWindow_miscTab_Header}">
-                <Grid Margin="4">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition />
-                    </Grid.RowDefinitions>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition/>
-                    </Grid.ColumnDefinitions>
-                    <Label Grid.Row="0" Grid.Column="0" Content="{x:Static properties:Resources.SettingsWindow_logLevelLabel_Content}" Target="{Binding ElementName=logLevelComboBox}" />
-                    <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" >
-                        <ComboBox x:Name="logLevelComboBox" SelectedItem="{Binding LogLevel, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}" >
-                            <Diagnostics:TraceLevel>Off</Diagnostics:TraceLevel>
-                            <Diagnostics:TraceLevel>Error</Diagnostics:TraceLevel>
-                            <Diagnostics:TraceLevel>Warning</Diagnostics:TraceLevel>
-                            <Diagnostics:TraceLevel>Info</Diagnostics:TraceLevel>
-                            <Diagnostics:TraceLevel>Verbose</Diagnostics:TraceLevel>
-                        </ComboBox>
-                    </StackPanel>
-                    <GroupBox Grid.Row="1" Grid.ColumnSpan="2" Header="{x:Static properties:Resources.SettingsWindow_resumeGroup_Header}" Margin="0, 8">
-                        <StackPanel Orientation="Horizontal">
-                            <Label Content="{x:Static properties:Resources.SettingsWindow_resumeTryCount_Content}" Target="{Binding ElementName=resumeTryCountTextBox}"></Label>
-                            <TextBox x:Name="resumeTryCountTextBox" VerticalAlignment="Center" Width="50" Text="{Binding ResumeTryCount, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}"></TextBox>
-                            <Label Margin="0, 0, 4, 0"/>
-                            <Label Content="{x:Static properties:Resources.SettingsWindow_resumeDelay_Content}" Target="{Binding ElementName=resumeDelayTextBox}"></Label>
-                            <TextBox x:Name="resumeDelayTextBox" VerticalAlignment="Center" Width="50" Text="{Binding ResumeDelay, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}"></TextBox>
-                            <Label Content="[ms]" Margin="0, 0, 4, 0"/>
-                            <Label Content="{x:Static properties:Resources.SettingsWindow_resumeInterval_Content}" Target="{Binding ElementName=resumeIntervalTextBox}"></Label>
-                            <TextBox x:Name="resumeIntervalTextBox" VerticalAlignment="Center" Width="50" Text="{Binding ResumeInterval, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}"></TextBox>
-                            <Label Content="[ms]" Margin="0, 0, 4, 0"/>
+                <AdornerDecorator>
+                    <Grid Margin="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition/>
+                        </Grid.ColumnDefinitions>
+                        <Label Grid.Row="0" Grid.Column="0" Content="{x:Static properties:Resources.SettingsWindow_logLevelLabel_Content}" Target="{Binding ElementName=logLevelComboBox}" />
+                        <StackPanel Grid.Row="0" Grid.Column="1" Orientation="Horizontal" >
+                            <ComboBox x:Name="logLevelComboBox" SelectedItem="{Binding LogLevel, UpdateSourceTrigger=PropertyChanged, ValidatesOnExceptions=True}" >
+                                <Diagnostics:TraceLevel>Off</Diagnostics:TraceLevel>
+                                <Diagnostics:TraceLevel>Error</Diagnostics:TraceLevel>
+                                <Diagnostics:TraceLevel>Warning</Diagnostics:TraceLevel>
+                                <Diagnostics:TraceLevel>Info</Diagnostics:TraceLevel>
+                                <Diagnostics:TraceLevel>Verbose</Diagnostics:TraceLevel>
+                            </ComboBox>
                         </StackPanel>
-                    </GroupBox>
-                </Grid>
+                        <GroupBox Grid.Row="1" Grid.ColumnSpan="2" Header="{x:Static properties:Resources.SettingsWindow_resumeGroup_Header}" Margin="0, 8">
+                            <StackPanel Orientation="Horizontal">
+                                <Label Content="{x:Static properties:Resources.SettingsWindow_resumeTryCount_Content}" Target="{Binding ElementName=resumeTryCountTextBox}"></Label>
+                                <TextBox x:Name="resumeTryCountTextBox" VerticalAlignment="Center" Width="50" Text="{Binding ResumeTryCount, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}"></TextBox>
+                                <Label Margin="0, 0, 4, 0"/>
+                                <Label Content="{x:Static properties:Resources.SettingsWindow_resumeDelay_Content}" Target="{Binding ElementName=resumeDelayTextBox}"></Label>
+                                <TextBox x:Name="resumeDelayTextBox" VerticalAlignment="Center" Width="50" Text="{Binding ResumeDelay, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}"></TextBox>
+                                <Label Content="[ms]" Margin="0, 0, 4, 0"/>
+                                <Label Content="{x:Static properties:Resources.SettingsWindow_resumeInterval_Content}" Target="{Binding ElementName=resumeIntervalTextBox}"></Label>
+                                <TextBox x:Name="resumeIntervalTextBox" VerticalAlignment="Center" Width="50" Text="{Binding ResumeInterval, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}"></TextBox>
+                                <Label Content="[ms]" Margin="0, 0, 4, 0"/>
+                            </StackPanel>
+                        </GroupBox>
+                    </Grid>
+                </AdornerDecorator>
             </TabItem>
         </TabControl>
         <StackPanel Grid.Row="1" VerticalAlignment="Bottom" HorizontalAlignment="Right" Orientation="Horizontal">
