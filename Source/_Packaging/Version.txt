@@ -1,2 +1,2 @@
 ﻿1.0.16.0
-developing
+beta
