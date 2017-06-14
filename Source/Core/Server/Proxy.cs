@@ -74,9 +74,28 @@ namespace MAPE.Server {
 
 		private ConnectionCollection connections;
 
-		private Dictionary<string, BasicCredential> serverBasicCredentialCache;
-
 		protected IProxyRunner Runner { get; private set; }
+
+		#endregion
+
+
+		#region data - synchronized by locking credentialCacheLocker
+
+		private object credentialCacheLocker = new object();
+
+		/// <remarks>
+		/// Note that the value of this field itself is synchronized by locking this
+		/// while contents of this object are synchronized by locking credentialCacheLocker.
+		/// </remarks>
+		/// <example>
+		/// lock (this) {
+		///		this.serverBasicCredentialCache = new Dictionary<string, BasicCredential>();
+		/// }
+		/// lock (this.credentialCacheLocker) {
+		///		this.serverBasicCredentialCache.Clear();
+		/// }
+		/// </example>
+		private Dictionary<string, BasicCredential> serverBasicCredentialCache;
 
 		#endregion
 
@@ -189,9 +208,8 @@ namespace MAPE.Server {
 
 			// clear members
 			lock (this) {
-				Debug.Assert(this.Runner == null);
-				this.serverBasicCredentialCache.Clear();
 				this.serverBasicCredentialCache = null;
+				Debug.Assert(this.Runner == null);
 				Debug.Assert(this.connections == null);
 				this.actualProxy = null;
 				List<Listener> temp = this.listeners;
@@ -416,6 +434,13 @@ namespace MAPE.Server {
 
 		#region methods - for Connection objects
 
+		/// <remarks>
+		/// Note that Dispose() may be called during running this method.
+		/// That is, system shutdown or suspend may cause Dispose() call
+		/// while it executes runner.GetCredential(), which may be opening a CredentialDialog.
+		/// In this case, runner.GetCredential() will return in the next turn
+		/// on the GUI thread cycle after Dispose() is called.
+		/// </remarks>
 		public BasicCredential GetServerBasicCredentials(string endPoint, string realm, bool firstRequest, BasicCredential oldBasicCredentials) {
 			// argument checks
 			if (endPoint == null) {
@@ -425,13 +450,21 @@ namespace MAPE.Server {
 			// oldBasicCredentials can be null
 
 			BasicCredential basicCredential;
+			IDictionary<string, BasicCredential> basicCredentialCache;
+			IProxyRunner runner;
+
+			// the value of the this.serverBasicCredentialCache field is synchronized by locking this
 			lock (this) {
 				// state checks
-				IDictionary<string, BasicCredential> basicCredentialCache = this.serverBasicCredentialCache;
+				basicCredentialCache = this.serverBasicCredentialCache;
 				if (basicCredentialCache == null) {
 					throw new ObjectDisposedException(this.ComponentName);
 				}
+				runner = this.Runner;
+			}
 
+			// the contents of the this.serverBasicCredentialCache are synchronized by locking this.credentialCacheLocker
+			lock (this.credentialCacheLocker) {
 				// get value from the cache
 				basicCredentialCache.TryGetValue(endPoint, out basicCredential);
 
@@ -457,7 +490,10 @@ namespace MAPE.Server {
 					}
 
 					// get the credential from the runner
-					CredentialSettings credential = this.Runner.GetCredential(endPoint, realm, needUpdate: (basicCredential != null));
+					CredentialSettings credential = null;
+					if (runner != null) {
+						credential = runner.GetCredential(endPoint, realm, needUpdate: (basicCredential != null));
+					}
 					if (credential == null) {
 						// maybe user cancel entering a credential
 						basicCredential = null;

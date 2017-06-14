@@ -72,6 +72,14 @@ namespace MAPE.Command {
 
 			private bool saveCredentials = false;
 
+			/// <summary>
+			/// The object to synchronize GetCredential() call.
+			/// </summary>
+			/// <remarks>
+			/// See remarks for GetCredential() method.
+			/// </remarks>
+			private object getCredentialLocker = new object();
+
 			#endregion
 
 
@@ -272,6 +280,13 @@ namespace MAPE.Command {
 
 			#region IProxyRunner
 
+			/// <summary>
+			/// </summary>
+			/// <remarks>
+			/// GetCredential() call may cause user interaction such as showing a Credential Dialog.
+			/// So its call should be synchronized by locking this.getCredentialLocker
+			/// not to show multiple user interactions at a time.
+			/// </remarks>
 			CredentialSettings IProxyRunner.GetCredential(string endPoint, string realm, bool needUpdate) {
 				// argument checks
 				if (endPoint == null) {
@@ -281,21 +296,23 @@ namespace MAPE.Command {
 					realm = string.Empty;
 				}
 
-				// Note lock is needed not only to access this.credentials but also to share the user response
 				CredentialSettings credential = null;
-				lock (this.credentialsLocker) {
+				lock (this.getCredentialLocker) {
 					// state checks
-					IDictionary<string, CredentialSettings> dictionary = this.dictionary;
-					if (dictionary == null) {
-						throw new ObjectDisposedException(nameof(RunningProxyState));
-					}
+					IDictionary<string, CredentialSettings> dictionary;
+					lock (this.credentialsLocker) {
+						dictionary = this.dictionary;
+						if (dictionary == null) {
+							throw new ObjectDisposedException(nameof(RunningProxyState));
+						}
 
-					if (needUpdate == false) {
-						// try to find the credential for the end point
-						if (dictionary.TryGetValue(endPoint, out credential) == false) {
-							// try to find the credential for the "wildcard"
-							if (dictionary.TryGetValue(string.Empty, out credential) == false) {
-								needUpdate = true;
+						if (needUpdate == false) {
+							// try to find the credential for the end point
+							if (dictionary.TryGetValue(endPoint, out credential) == false) {
+								// try to find the credential for the "wildcard"
+								if (dictionary.TryGetValue(string.Empty, out credential) == false) {
+									needUpdate = true;
+								}
 							}
 						}
 					}
@@ -324,30 +341,32 @@ namespace MAPE.Command {
 				// argument checks
 				Debug.Assert(credential != null);
 
-				// state checks
-				IDictionary<string, CredentialSettings> dictionary = this.dictionary;
-				Debug.Assert(dictionary != null);
+				lock (this.credentialsLocker) {
+					// state checks
+					IDictionary<string, CredentialSettings> dictionary = this.dictionary;
+					Debug.Assert(dictionary != null);
 
-				// register the credential to the credential list
-				string endPoint = credential.EndPoint;
-				bool changed = false;
-				CredentialSettings oldCredential;
-				if (dictionary.TryGetValue(endPoint, out oldCredential)) {
-					// the credential for the endpoint exists
-					changed = !credential.Equals(oldCredential);
-				} else {
-					// newly added
-					changed = true;
-				}
-
-				if (changed) {
-					// register the credential
-					this.isCredentialsDirty = true;
-					if (credential.Persistence == CredentialPersistence.Session) {
-						// do not keep in the process state
-						dictionary.Remove(endPoint);
+					// register the credential to the credential list
+					string endPoint = credential.EndPoint;
+					bool changed = false;
+					CredentialSettings oldCredential;
+					if (dictionary.TryGetValue(endPoint, out oldCredential)) {
+						// the credential for the endpoint exists
+						changed = !credential.Equals(oldCredential);
 					} else {
-						dictionary[endPoint] = credential;
+						// newly added
+						changed = true;
+					}
+
+					if (changed) {
+						// register the credential
+						this.isCredentialsDirty = true;
+						if (credential.Persistence == CredentialPersistence.Session) {
+							// do not keep in the process state
+							dictionary.Remove(endPoint);
+						} else {
+							dictionary[endPoint] = credential;
+						}
 					}
 				}
 

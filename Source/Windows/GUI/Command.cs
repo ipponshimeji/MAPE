@@ -16,6 +16,8 @@ namespace MAPE.Windows.GUI {
 
 		private App app = null;
 
+		private CredentialDialog credentialDialog = null;
+
 		#endregion
 
 
@@ -184,7 +186,12 @@ namespace MAPE.Windows.GUI {
 				}
 
 				// show the credential dialog and get user input
-				return (dialog.ShowDialog() ?? false) ? dialog.CredentialSettings : null;
+				this.credentialDialog = dialog;
+				try {
+					return (dialog.ShowDialog() ?? false) ? dialog.CredentialSettings : null;
+				} finally {
+					this.credentialDialog = null;
+				}
 			};
 
 			return this.app.Dispatcher.Invoke<CredentialSettings>(callback);
@@ -281,6 +288,14 @@ namespace MAPE.Windows.GUI {
 			try {
 				switch (e.Mode) {
 					case PowerModes.Suspend:
+						// the credential dialog should be closed if it is being opened,
+						// because it is opened by a request from a connection
+						// and proxying in which the connection is running is going to be stopped here.
+						CredentialDialog dialog = this.credentialDialog;
+						if (dialog != null) {
+							dialog.DialogResult = false;
+							dialog.Close();
+						}
 						SuspendProxy();
 						break;
 					case PowerModes.Resume:
