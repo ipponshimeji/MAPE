@@ -72,6 +72,7 @@
     <Compile Include="Settings\SystemSettingsSwitcherForWindowsSettings.cs" />
     <Compile Include="SetupContextForWindows.cs" />
     <Compile Include="SystemSettingsForWindows.cs" />
+    <Compile Include="AutoConfigWebProxy.cs" />
     <Compile Include="SystemSettingsSwitcherForWindows.cs" />
   </ItemGroup>
   <ItemGroup>
