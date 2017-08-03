@@ -243,6 +243,55 @@ namespace MAPE.Server {
 			return;
 		}
 
+		public void EnsureConnect(IReadOnlyCollection<DnsEndPoint> endPoints) {
+			// argument checks
+			if (endPoints == null) {
+				throw new ArgumentNullException(nameof(endPoints));
+			}
+
+			lock (this) {
+				// state checks
+				if (this.tcpClient != null) {
+					// connecting now
+					foreach (DnsEndPoint endPoint in endPoints) {
+						if (endPoint.Port == this.port && AreSameHostNames(endPoint.Host, this.host)) {
+							// the current connection is usable
+							return;
+						}
+					}
+
+					// disconnect to re-connect the connection
+					DisconnectInternal();
+				}
+				if (this.reconnectable == false) {
+					throw new InvalidOperationException("This object is not reconnectable currently.");
+				}
+
+				// connect
+				Exception error = null;
+				foreach (DnsEndPoint endPoint in endPoints) {
+					try {
+						// keep host and port
+						this.host = endPoint.Host;
+						this.port = endPoint.Port;
+
+						// connect to the end point
+						ConnectInternal();
+						// ToDo: log remote endpoint
+						error = null;
+						break;
+					} catch (Exception exception) {
+						error = exception;
+					}					
+				}
+				if (error != null) {
+					throw error;
+				}
+			}
+
+			return;
+		}
+
 		public void EnsureConnect() {
 			lock (this) {
 				// state checks

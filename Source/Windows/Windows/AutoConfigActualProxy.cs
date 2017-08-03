@@ -1,17 +1,22 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.Win32.SafeHandles;
 using MAPE.Utils;
+using MAPE.Server;
 
 
 namespace MAPE.Windows {
-	public class AutoConfigWebProxy: IDisposable, IWebProxy {
+	public class AutoConfigActualProxy: IActualProxy {
 		#region constants
 
 		public const int DefaultTimeout = 60000;    // 60 seconds, same to the .NET framework implementation
+
+		protected const char ProxySeparator = ';';
 
 		#endregion
 
@@ -29,7 +34,7 @@ namespace MAPE.Windows {
 
 		#region creation & disposal
 
-		public AutoConfigWebProxy(bool useAutoDetection, string autoConfigUrl, int timeout = DefaultTimeout) {
+		public AutoConfigActualProxy(bool useAutoDetection, string autoConfigUrl, int timeout = DefaultTimeout) {
 			// argument checks
 			// autoConfigUrl can be null
 			if (useAutoDetection == false && string.IsNullOrEmpty(autoConfigUrl)) {
@@ -72,44 +77,70 @@ namespace MAPE.Windows {
 		#endregion
 
 
-		#region IWebProxy
+		#region IActualProxy
 
-		public ICredentials Credentials {
+		public string Description {
 			get {
-				throw new NotImplementedException();
-			}
-			set {
-				throw new NotImplementedException();
+				string autoDetect = string.Empty;
+				if (this.useAutoDetection) {
+					autoDetect = "auto detection";
+				}
+
+				string autoConfig = string.Empty;
+				if (string.IsNullOrEmpty(this.autoConfigUrl) == false) {
+					autoConfig = $"auto config file '{this.autoConfigUrl}'";
+				}
+
+				string separator = string.Empty;
+				if (0 < autoDetect.Length && 0 < autoConfig.Length) {
+					separator = " or ";
+				}
+
+				return string.Concat(autoDetect, separator, autoConfig);
 			}
 		}
 
-		public Uri GetProxy(Uri destination) {
+		public IReadOnlyCollection<DnsEndPoint> GetProxyEndPoints(DnsEndPoint targetEndPoint) {
 			// argument checks
-			if (destination == null) {
-				throw new ArgumentNullException(nameof(destination));
+			if (targetEndPoint == null) {
+				throw new ArgumentNullException(nameof(targetEndPoint));
 			}
 
-			// get the first found proxy
-			Uri proxy;
-			string proxies;
-			int win32Error = GetProxiesForUrl(destination.ToString(), out proxies);
-			if (win32Error == ERROR_SUCCESS && string.IsNullOrEmpty(proxies) == false) {
-				proxy = new Uri($"http://{GetFirstProxy(proxies)}/");
-			} else {
-				proxy = destination;	// not use proxy
-			}
-
-			return proxy;
+			// get the found proxie end points
+			// the target url is assumed as a https url
+			return GetProxiesForUrl($"https://{targetEndPoint.Host}:{targetEndPoint.Port}/");
 		}
 
-		public bool IsBypassed(Uri host) {
-			return false;	// ToDo:
+		public IReadOnlyCollection<DnsEndPoint> GetProxyEndPoints(Uri targetUri) {
+			// argument checks
+			if (targetUri == null) {
+				throw new ArgumentNullException(nameof(targetUri));
+			}
+
+			// get the found proxy end points
+			return GetProxiesForUrl(targetUri.ToString());
 		}
 
 		#endregion
 
 
 		#region privates
+
+		private DnsEndPoint[] GetProxiesForUrl(string targetUrl) {
+			// get proxies
+			string proxies;
+			int win32Error = GetProxiesForUrl(targetUrl, out proxies);
+			if (win32Error != ERROR_SUCCESS || string.IsNullOrEmpty(proxies)) {
+				return null;
+			}
+			Debug.Assert(proxies != null);
+
+			// convert proxies to DnsEndPoint[]
+			return (
+				from proxy in proxies.Split(ProxySeparator)
+				select Util.ParseEndPoint(proxy.Trim())
+			).ToArray();
+		}
 
 		private int GetProxiesForUrl(string targetUrl, out string proxies) {
 			// argument checks

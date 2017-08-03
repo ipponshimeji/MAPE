@@ -36,6 +36,8 @@ namespace MAPE.Server {
 
 		private ReconnectableTcpClient server = null;
 
+		private bool usingProxy = false;
+
 		private Proxy.BasicCredential proxyCredential = null;
 
 		#endregion
@@ -294,12 +296,18 @@ namespace MAPE.Server {
 			}
 		}
 
+		bool ICommunicationOwner.UsingProxy {
+			get {
+				return this.usingProxy;
+			}
+		}
+
 		IEnumerable<MessageBuffer.Modification> ICommunicationOwner.OnCommunicate(int repeatCount, Request request, Response response) {
 			// argument checks
 			if (request == null) {
 				throw new ArgumentNullException(nameof(request));
 			}
-			if (string.IsNullOrEmpty(request.Host)) {
+			if (request.HostEndPoint == null) {
 				throw new HttpException(HttpStatusCode.BadRequest);
 			}
 			if (response == null && repeatCount != 0) {
@@ -321,22 +329,30 @@ namespace MAPE.Server {
 			if (response == null) {
 				// the start of a request
 				// connect to the server
-				Uri uri = null;
-				try {
-					uri = new Uri($"http://{request.Host}");
-					IWebProxy actualProxy = this.Proxy.ActualProxy;
-					if (actualProxy != null) {
-						uri = actualProxy.GetProxy(uri);
+				IActualProxy actualProxy = this.Proxy.ActualProxy;
+				IReadOnlyCollection<DnsEndPoint> remoteEndPoints = null;
+				if (actualProxy != null) {
+					if (request.Uri != null) {
+						remoteEndPoints = actualProxy.GetProxyEndPoints(request.Uri);
+					} else {
+						remoteEndPoints = actualProxy.GetProxyEndPoints(request.HostEndPoint);
 					}
-					if (logVerbose) {
-						LogVerbose($"The remote end point is {uri.Host}:{uri.Port}");
-					}
+				}
+				if (remoteEndPoints != null) {
+					this.usingProxy = true;
+				} else {
+					remoteEndPoints = new DnsEndPoint[] {
+						request.HostEndPoint
+					};
+					this.usingProxy = false;
+				}
 
-					// Note that the server may be already connected in Keep-Alive mode 
-					server.EnsureConnect(uri.Host, uri.Port);
+				try {
+					server.EnsureConnect(remoteEndPoints);
 				} catch (Exception exception) {
 					// the case that server connection is not available
-					onConnectionError(uri?.Host, uri?.Port ?? 0, exception);
+					this.usingProxy = false;
+					onConnectionError(null, 0, exception);
 				}
 			}
 

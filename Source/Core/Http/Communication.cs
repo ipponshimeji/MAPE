@@ -41,20 +41,27 @@ namespace MAPE.Http {
 					while (request.Read()) {
 						// send the request to the server
 						// The request is resent while the owner instructs modifications.
+						bool connectRequest = (request.Method == "CONNECT");
 						int repeatCount = 0;
 						IEnumerable<MessageBuffer.Modification> modifications = owner.OnCommunicate(repeatCount, request, null);
-						do {
-							request.Write(modifications);
-							response.Read(request);
-							++repeatCount;
-							modifications = owner.OnCommunicate(repeatCount, request, response);
-						} while (modifications != null);
-
-						// send the final response to the client
-						response.Write();
-						if (request.Method == "CONNECT" && response.StatusCode == 200) {
-							// move to tunneling mode
+						if (connectRequest && owner.UsingProxy == false) {
+							// handling CONNECT message for the actual server
+							response.RespondSimpleError(200, "OK");
 							tunnelingMode = true;
+						} else {
+							do {
+								request.Write(modifications);
+								response.Read(request);
+								++repeatCount;
+								modifications = owner.OnCommunicate(repeatCount, request, response);
+							} while (modifications != null);
+							// send the final response to the client
+							response.Write();
+							tunnelingMode = (connectRequest && response.StatusCode == 200);
+						}
+
+						if (tunnelingMode) {
+							// move to tunneling mode
 							break;
 						} else if (response.KeepAliveEnabled == false) {
 							// the client connection is not reuseable

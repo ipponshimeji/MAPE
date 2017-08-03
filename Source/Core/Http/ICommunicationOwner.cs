@@ -14,6 +14,8 @@ namespace MAPE.Http {
 
 		IHttpComponentFactory ComponentFactory { get; }
 
+		bool UsingProxy { get; }
+
 		IEnumerable<MessageBuffer.Modification> OnCommunicate(int repeatCount, Request request, Response response);
 
 		HttpException OnError(Request request, Exception exception);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Reflection;
 using System.Threading.Tasks;
 
@@ -83,6 +84,23 @@ namespace MAPE.Utils {
 
 		public static string NormalizeNullToEmpty(string value) {
 			return value ?? string.Empty;
+		}
+
+		public static DnsEndPoint ParseEndPoint(string s) {
+			// ToDo: can simplify?
+			Uri uri = new Uri($"https://{s}", UriKind.Absolute);
+			if (uri.Port == 443) {
+				uri = new Uri($"http://{s}", UriKind.Absolute);
+				if (uri.Port == 80) {
+					throw new FormatException("The port number is indispensable.");
+				}
+			}
+
+			if (string.IsNullOrEmpty(uri.PathAndQuery) == false || string.IsNullOrEmpty(uri.Fragment) == false) {
+				throw new FormatException("Other part than host or port is specified.");
+			}
+
+			return new DnsEndPoint(uri.Host, uri.Port);
 		}
 
 		public static void BackupAndSave(string filePath, Action<string> saveTo, int backupHistory) {

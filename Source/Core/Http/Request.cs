@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using MAPE.Utils;
 
 
 namespace MAPE.Http {
@@ -16,7 +17,12 @@ namespace MAPE.Http {
 			protected set;
 		}
 
-		public string Host {
+		public DnsEndPoint HostEndPoint {
+			get;
+			protected set;
+		}
+
+		public Uri Uri {
 			get;
 			protected set;
 		}
@@ -24,6 +30,18 @@ namespace MAPE.Http {
 		public MessageBuffer.Span ProxyAuthorizationSpan {
 			get;
 			protected set;
+		}
+
+		#endregion
+
+
+		#region properties
+
+		public string Host {
+			get {
+				DnsEndPoint endPoint = this.HostEndPoint;
+				return (endPoint == null) ? string.Empty : $"{endPoint.Host}:{endPoint.Port}";
+			}
 		}
 
 		#endregion
@@ -72,17 +90,34 @@ namespace MAPE.Http {
 			// set message properties
 			this.Method = method;
 			this.Version = HeaderBuffer.ParseVersion(httpVersion);
-			if (string.IsNullOrEmpty(target) == false &&  target[0] != '/') {
-				// adjust target
-				// ToDo: is this secure?
-				if (target.StartsWith("http://", StringComparison.OrdinalIgnoreCase) == false && target.StartsWith("https://", StringComparison.OrdinalIgnoreCase) == false) {
-					target = $"http://{target}";
-				}
-				try {
-					Uri uri = new Uri(target);
-					this.Host = $"{uri.Host}:{uri.Port}";
-				} catch {
-					// continue
+			if (string.IsNullOrEmpty(target) == false) {
+				char firstChar = target[0];
+				if (firstChar != '/' && firstChar != '*') {
+					// absolute-form or authority-form
+					Uri uri = null;
+					DnsEndPoint hostEndPoint = null;
+
+					if (target.Contains("://")) {
+						// maybe absolute-form 
+						try {
+							uri = new Uri(target);
+							hostEndPoint = new DnsEndPoint(uri.Host, uri.Port);
+						} catch {
+							// continue
+						}
+					} else {
+						// maybe authority-form 
+						try {
+							// assume https scheme
+							uri = new Uri($"https://{target}");
+							hostEndPoint = new DnsEndPoint(uri.Host, uri.Port);
+							uri = null; // this.Uri is not set in case of authority-form 
+						} catch {
+							// continue
+						}
+					}
+					this.HostEndPoint = hostEndPoint;
+					this.Uri = uri;
 				}
 			}
 
@@ -104,8 +139,9 @@ namespace MAPE.Http {
 			switch (decapitalizedFieldName) {
 				case "host":
 					// save its value, but its span is unnecessary
-					if (string.IsNullOrEmpty(this.Host)) {
-						this.Host = HeaderBuffer.TrimHeaderFieldValue(headerBuffer.ReadFieldASCIIValue(false));
+					if (this.HostEndPoint == null) {
+						string hostValue = HeaderBuffer.TrimHeaderFieldValue(headerBuffer.ReadFieldASCIIValue(false));
+						this.HostEndPoint = Util.ParseEndPoint(hostValue);
 					} else {
 						headerBuffer.SkipField();
 					}
@@ -129,7 +165,8 @@ namespace MAPE.Http {
 		private void ResetThisClassLevelMessageProperties() {
 			// reset message properties of this class level
 			this.Method = null;
-			this.Host = null;
+			this.HostEndPoint = null;
+			this.Uri = null;
 			this.ProxyAuthorizationSpan = MessageBuffer.Span.ZeroToZero;
 
 			return;

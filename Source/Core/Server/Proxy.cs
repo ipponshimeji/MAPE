@@ -68,7 +68,7 @@ namespace MAPE.Server {
 
 		private List<Listener> listeners = new List<Listener>();
 
-		private IWebProxy actualProxy;
+		private IActualProxy actualProxy;
 
 		private int retryCount;
 
@@ -120,7 +120,7 @@ namespace MAPE.Server {
 			}
 		}
 
-		public IWebProxy ActualProxy {
+		public IActualProxy ActualProxy {
 			get {
 				return this.actualProxy;
 			}
