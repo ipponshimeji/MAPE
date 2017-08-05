@@ -241,22 +241,6 @@ namespace MAPE.Windows {
 			return;
 		}
 
-		private string GetFirstProxy(string proxies) {
-			// argument checks
-			Debug.Assert(string.IsNullOrEmpty(proxies) == false);
-
-			// split and return the first proxy
-			string proxy;
-			int index = proxies.IndexOf(';');
-			if (index < 0) {
-				proxy = proxies;
-			} else {
-				proxy = proxies.Substring(0, index);
-			}
-
-			return proxy.Trim();
-		}
-
 		#endregion
 
 
