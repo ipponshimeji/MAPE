@@ -129,8 +129,9 @@
   <data name="Setup_AuthenticationProxy_Description_NeedToChange" xml:space="preserve">
     <value>この環境では接続先プロキシを自動検出できませんでした。プロキシの情報を手動で設定する必要があります。</value>
   </data>
-  <data name="Setup_SystemSettingsSwitch_Description_NeedToChange" xml:space="preserve">
-    <value>この環境では自動構成スクリプト等によってプロキシが自動設定されています。この場合、「認証プロキシ爆発しろ！」はプロキシ設定書き換え時に適用すべき「ローカルアドレスにはプロキシサーバーを使用しない」と「次で始まるアドレスにはプロキシを使用しない」の設定を自動的に検出することができません。これらの設定を手動で指定する必要があります。</value>
+  <data name="Setup_SystemSettingsSwitch_Description_NeedToReset" xml:space="preserve">
+    <value>version 1.0.17.0以降、自動構成スクリプトに対応しました。その結果として「ローカルアドレスにはプロキシサーバーを使用しない」と「次で始まるアドレスにはプロキシを使用しない」の推奨値が変更されています。
+推奨値を適用しますか？（推奨）</value>
   </data>
   <data name="Setup_Test_Description" xml:space="preserve">
     <value>外部URLに対して接続テストを行います。接続を試みる際に認証プロキシに対する認証情報を要求される場合があります。

@@ -96,18 +96,12 @@ namespace MAPE.Windows.GUI {
 				this.actualProxy.AutoDetectEnabled = setupContext.ProxyDetected;
 			}
 
-			// System Settings Switc tab
+			// System Settings Switch tab
 			this.systemSettingsSwitcher.SystemSettingsSwitcherSettings = settings.SystemSettingsSwitcher;
 			if (setupContext.NeedProxyOverride) {
-				StringBuilder buf = new StringBuilder(Windows.Properties.Resources.Setup_SystemSettingsSwitch_Description_NeedToChange);
-				if (string.IsNullOrEmpty(setupContext.DefaultProxyOverride) == false) {
-					buf.AppendLine();
-					buf.AppendLine();
-					buf.Append(Windows.Properties.Resources.Setup_Description_DefaultValueProvided);
-				}
-				this.systemSettingsSwitcherDescriptionTextBlock.Text = buf.ToString();
-			} else {
 				this.systemSettingsSwitcherDescriptionTextBlock.Text = Windows.Properties.Resources.Setup_Description_Confirm;
+			} else {
+				this.systemSettingsSwitcherDescriptionTextBlock.Text = Windows.Properties.Resources.Setup_Description_NoNeedToChange;
 			}
 
 			// Test tab
@@ -197,6 +191,28 @@ namespace MAPE.Windows.GUI {
 			control.IsEnabled = ((flags & enabledFlag) != 0);
 		}
 
+		private void MoveNextTabItem() {
+			int currentIndex = this.setupTab.SelectedIndex;
+			Debug.Assert(currentIndex < this.setupTab.Items.Count - 1);
+
+			// check state
+			if (CanMoveNext(currentIndex) == false) {
+				return;
+			}
+
+			if (currentIndex == this.doneIndex) {
+				// enable the next tab item
+				++this.doneIndex;
+				UpdateUIState();
+			}
+
+			// move to the next tab item
+			this.setupTab.SelectedIndex = ++currentIndex;
+			UpdateUIState();
+
+			return;
+		}
+
 		private Control HasError(int currentIndex) {
 			switch (currentIndex) {
 				case 0:
@@ -251,23 +267,7 @@ namespace MAPE.Windows.GUI {
 
 		private void nextButton_Click(object sender, RoutedEventArgs e) {
 			try {
-				int currentIndex = this.setupTab.SelectedIndex;
-				Debug.Assert(currentIndex < this.setupTab.Items.Count - 1);
-
-				// check state
-				if (CanMoveNext(currentIndex) == false) {
-					return;
-				}
-
-				if (currentIndex == this.doneIndex) {
-					// enable the next tab item
-					++this.doneIndex;
-					UpdateUIState();
-				}
-
-				// move to the next tab item
-				this.setupTab.SelectedIndex = ++currentIndex;
-				UpdateUIState();
+				MoveNextTabItem();
 			} catch (Exception exception) {
 				ShowErrorDialog(exception.Message);
 			}
@@ -315,6 +315,50 @@ namespace MAPE.Windows.GUI {
 			}
 
 			return;
+		}
+
+		private void Window_ContentRendered(object sender, EventArgs e) {
+			if (this.SetupContext.ShouldResetProxyOverride && this.SetupContext.NeedActualProxy == false) {
+				// resetting ProxyOverride value
+				// no interest on Authentication Proxy tab
+				try {
+					MoveNextTabItem();
+				} catch {
+					// continue
+				}
+			}
+		}
+
+		private async void setupTab_SelectionChanged(object sender, SelectionChangedEventArgs e) {
+			if (this.setupTab.SelectedIndex == 1) {
+				// System Settings Switch tab
+				if (this.SetupContext.ShouldResetProxyOverride) {
+					// the case new MAPE recommends to reset the ProxyOverride
+					string defaultProxyOverride = this.SetupContext.DefaultProxyOverride;
+					if (string.CompareOrdinal(this.systemSettingsSwitcher.ProxyOverride, defaultProxyOverride) != 0) {
+						// wait a moment
+						// Otherwise, rendering of the selected tab item would not complete
+						// and the contents of the old tab item would remain during opening the message box.
+						this.setupTab.IsEnabled = false;
+						try {
+							await Task.Delay(700);
+						} finally {
+							this.setupTab.IsEnabled = true;
+						}
+
+						// the case the current setting is not the recommended setting
+						MessageBoxResult result = MessageBox.Show(
+							this,
+							Windows.Properties.Resources.Setup_SystemSettingsSwitch_Description_NeedToReset,
+							Properties.Resources.SetupWindow_UpdateMessageBox_Title,
+							MessageBoxButton.YesNo
+						);
+						if (result == MessageBoxResult.Yes) {
+							this.systemSettingsSwitcher.ProxyOverride = defaultProxyOverride;
+						}
+					}
+				}
+			}
 		}
 
 		#endregion

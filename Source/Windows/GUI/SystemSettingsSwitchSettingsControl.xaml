@@ -24,7 +24,7 @@
                         </Grid.RowDefinitions>
                         <CheckBox x:Name="bypassLocalCheckBox" Grid.Row="0" Content="{x:Static properties:Resources.SettingsWindow_bypassProxyCheckBox_Content}" Margin="2" Checked="bypassLocalCheckBox_Checked" Unchecked="bypassLocalCheckBox_Unchecked" />
                         <Label Grid.Row="1" Content="{x:Static properties:Resources.SettingsWindow_exclusionLabel_Content}" Margin="2,4,0,0" Padding="0" Target="{Binding ElementName=exclusionTextBox}" />
-                        <TextBox x:Name="exclusionTextBox" Grid.Row="2" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="2,0,0,0" Text="{Binding ProxyOverride, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
+                        <TextBox x:Name="exclusionTextBox" Grid.Row="2" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto" Margin="2,0,0,0" Text="{Binding FilteredProxyOverride, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
                     </Grid>
                 </GroupBox>
             </Grid>

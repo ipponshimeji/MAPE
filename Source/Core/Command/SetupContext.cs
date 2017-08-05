@@ -9,7 +9,11 @@ namespace MAPE.Command {
 	public class SetupContext {
 		#region constants
 
-		public const int LatestInitialSetupLevel = 1;
+		// SetupLevels
+		// 0:          - 0.1.10.0
+		// 1: 1.0.11.0 - 1.0.16.0
+		// 2: 1.0.17.0 -
+		public const int LatestInitialSetupLevel = 2;
 
 		#endregion
 

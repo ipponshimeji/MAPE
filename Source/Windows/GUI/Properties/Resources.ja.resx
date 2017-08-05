@@ -397,4 +397,7 @@
   <data name="SetupWindow_Message_NotTested" xml:space="preserve">
     <value>現在の設定でテストを行っていません。このまま進みますか？</value>
   </data>
+  <data name="SetupWindow_UpdateMessageBox_Title" xml:space="preserve">
+    <value>設定変更のおすすめ</value>
+  </data>
 </root>

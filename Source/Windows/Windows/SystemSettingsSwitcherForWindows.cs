@@ -96,7 +96,12 @@ namespace MAPE.Windows {
 		}
 		
 		public static string GetDefaultProxyOverride() {
-			return GetAppSettings(ConfigNames.DefaultProxyOverride);
+			string value = GetAppSettings(ConfigNames.DefaultProxyOverride);
+			if (value == null) {
+				value = "<local>";
+			}
+
+			return Util.Trim(value);
 		}
 
 		#endregion

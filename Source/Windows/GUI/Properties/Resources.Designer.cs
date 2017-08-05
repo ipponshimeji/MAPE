@@ -927,5 +927,14 @@ namespace MAPE.Windows.GUI.Properties {
                 return ResourceManager.GetString("SetupWindow_Title", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Recommendation to update settings に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string SetupWindow_UpdateMessageBox_Title {
+            get {
+                return ResourceManager.GetString("SetupWindow_UpdateMessageBox_Title", resourceCulture);
+            }
+        }
     }
 }

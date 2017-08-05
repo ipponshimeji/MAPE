@@ -12,6 +12,8 @@ namespace MAPE.Windows {
 
 		public string DefaultProxyOverride { get; private set; }
 
+		public bool ShouldResetProxyOverride { get; private set; } = false;
+
 		#endregion
 
 
@@ -37,21 +39,34 @@ namespace MAPE.Windows {
 		public SetupContextForWindows(CommandForWindowsSettings settings, SystemSettingsSwitcherForWindows switcher): base(settings, switcher) {
 			// argument checks
 			Debug.Assert(settings != null);
+			SystemSettingsSwitcherForWindowsSettings switcherSettings = settings.SystemSettingsSwitcher;
+			Debug.Assert(switcherSettings != null);
 			Debug.Assert(switcher != null);
 
 			// ProxyOverride
 			this.DefaultProxyOverride = SystemSettingsSwitcherForWindows.GetDefaultProxyOverride();
-			SystemSettingsForWindows current = switcher.GetCurrentSystemSettings();
-			if (
-				(current.AutoDetect || string.IsNullOrEmpty(current.AutoConfigURL) == false) &&
-				string.IsNullOrEmpty(settings.SystemSettingsSwitcher.ProxyOverride)
-			) {
-				// User must set ProxyOverride if the proxy information is set automatically.
+			if (base.NeedActualProxy) {
+				// User must set ProxyOverride
 				this.NeedProxyOverride = true;
 
-				// give default value
-				// DefaultProxyOverride may be set in config file
-				settings.SystemSettingsSwitcher.ProxyOverride = this.DefaultProxyOverride;
+				if (string.IsNullOrEmpty(switcherSettings.ProxyOverride)) {
+					// give default value
+					// DefaultProxyOverride may be set in config file
+					switcherSettings.ProxyOverride = this.DefaultProxyOverride;
+				}
+			}
+			if (settings.InitialSetupLevel == 1) {
+				// After MAPE supports auto detect and auto config script,
+				// ProxyOverride should be reviewed because only overrides which
+				// are not handled by auto config should be specified.
+				SystemSettingsForWindows current = switcher.GetCurrentSystemSettings();
+				if (
+					(current.AutoDetect || string.IsNullOrEmpty(current.AutoConfigURL) == false) &&
+					string.CompareOrdinal(switcherSettings.ProxyOverride, this.DefaultProxyOverride) != 0
+				) {
+					this.NeedProxyOverride = true;
+					this.ShouldResetProxyOverride = true;
+				}
 			}
 
 			return;

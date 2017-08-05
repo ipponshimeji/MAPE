@@ -6,14 +6,14 @@
         xmlns:local="clr-namespace:MAPE.Windows.GUI"
         xmlns:properties="clr-namespace:MAPE.Windows.GUI.Properties"
         mc:Ignorable="d"
-        Title="{x:Static properties:Resources.SetupWindow_Title}" Height="400" Width="600">
+        Title="{x:Static properties:Resources.SetupWindow_Title}" Height="400" Width="600" ContentRendered="Window_ContentRendered">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <TabControl x:Name="setupTab" Grid.Row="0" >
+        <TabControl x:Name="setupTab" Grid.Row="0" SelectionChanged="setupTab_SelectionChanged" >
             <TabItem x:Name="authenticationProxyTabItem" Header="{x:Static properties:Resources.SetupWindow_authenticationProxyTabItem_Header}">
                 <Grid>
                     <Grid.RowDefinitions>

@@ -33,6 +33,21 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
+		public string ProxyOverride {
+			get {
+				SystemSettingsSwitcherForWindowsSettings settings = this.SystemSettingsSwitcherSettings;
+				return (settings == null) ? string.Empty : settings.ProxyOverride;
+			}
+			set {
+				SystemSettingsSwitcherForWindowsSettings settings = this.SystemSettingsSwitcherSettings;
+				if (settings != null) {
+					settings.ProxyOverride = value;
+					this.exclusionTextBox.GetBindingExpression(TextBox.TextProperty).UpdateTarget();
+					SetBypassLocalSuppressingUpdatingSource(settings.BypassLocal);
+				}
+			}
+		}
+
 		#endregion
 
 
@@ -51,10 +66,10 @@ namespace MAPE.Windows.GUI {
 			}
 		}
 
-		public string ProxyOverride {
+		public string FilteredProxyOverride {
 			get {
 				SystemSettingsSwitcherForWindowsSettings settings = this.SystemSettingsSwitcherSettings;
-				return (settings == null)? string.Empty: settings.FilteredProxyOverride;
+				return (settings == null) ? string.Empty : settings.FilteredProxyOverride;
 			}
 			set {
 				SystemSettingsSwitcherForWindowsSettings settings = this.SystemSettingsSwitcherSettings;

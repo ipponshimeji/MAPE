@@ -86,6 +86,10 @@ namespace MAPE.Utils {
 			return value ?? string.Empty;
 		}
 
+		public static string Trim(string value) {
+			return (value == null) ? null : value.Trim();
+		}
+
 		public static DnsEndPoint ParseEndPoint(string s) {
 			// ToDo: can simplify?
 			Uri uri = new Uri($"https://{s}", UriKind.Absolute);

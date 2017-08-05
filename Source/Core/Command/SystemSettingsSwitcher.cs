@@ -183,23 +183,23 @@ namespace MAPE.Command {
 			return GetSystemActualProxy(systemSettings);
 		}
 
-		protected static string GetAppSettings(string key) {
+		protected static string GetAppSettings(string key, string defaultValue = null) {
 			string value = ConfigurationManager.AppSettings[key];
-			if (string.IsNullOrWhiteSpace(value)) {
-				value = null;
+			if (value == null) {
+				value = defaultValue;
 			}
 
 			return value;
 		}
 
 		public static string GetDefaultActualProxyHostName() {
-			return GetAppSettings(ConfigNames.DefaultActualProxyHostName);
+			return Util.Trim(GetAppSettings(ConfigNames.DefaultActualProxyHostName));
 		}
 
 		public static int? GetDefaultActualProxyPort() {
 			int? value = null;
 			try {
-				string configValue = ConfigurationManager.AppSettings[ConfigNames.DefaultActualProxyPort];
+				string configValue = GetAppSettings(ConfigNames.DefaultActualProxyPort);
 				if (string.IsNullOrEmpty(configValue) == false) {
 					value = int.Parse(configValue);
 				}
@@ -213,20 +213,20 @@ namespace MAPE.Command {
 
 		public static string GetTestUrl() {
 			string value = GetAppSettings(ConfigNames.TestUrl);
-			if (value == null) {
+			if (string.IsNullOrWhiteSpace(value)) {
                 value = GetDefaultTestUrl();
 			}
 
-			return value;
+			return Util.Trim(value);
 		}
 
         public static string GetProxyTestUrl() {
             string value = GetAppSettings(ConfigNames.ProxyTestUrl);
-            if (value == null) {
+            if (string.IsNullOrWhiteSpace(value)) {
                 value = GetDefaultTestUrl();
             }
 
-            return value;
+            return Util.Trim(value);
         }
 
         private static string GetDefaultTestUrl() {
