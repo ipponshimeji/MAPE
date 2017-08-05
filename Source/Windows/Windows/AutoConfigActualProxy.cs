@@ -88,7 +88,7 @@ namespace MAPE.Windows {
 
 				string autoConfig = string.Empty;
 				if (string.IsNullOrEmpty(this.autoConfigUrl) == false) {
-					autoConfig = $"auto config file '{this.autoConfigUrl}'";
+					autoConfig = $"auto config file \"{this.autoConfigUrl}\"";
 				}
 
 				string separator = string.Empty;

@@ -340,11 +340,13 @@ namespace MAPE.Server {
 				}
 				if (remoteEndPoints != null) {
 					this.usingProxy = true;
+					LogVerbose($"Connecting to proxy '{actualProxy.Description}'");
 				} else {
 					remoteEndPoints = new DnsEndPoint[] {
 						request.HostEndPoint
 					};
 					this.usingProxy = false;
+					LogVerbose($"Connecting directly to '{request.Host}'");
 				}
 
 				try {
@@ -354,6 +356,7 @@ namespace MAPE.Server {
 					this.usingProxy = false;
 					onConnectionError(null, 0, exception);
 				}
+				LogVerbose($"Connected to '{server.EndPoint}'");
 			}
 
 			// retry checks and get modifications
@@ -361,6 +364,10 @@ namespace MAPE.Server {
 			if (repeatCount <= this.retryCount) {
 				// get actual modifications
 				modifications = GetModifications(request, response);
+				if (modifications == null && this.usingProxy == false && request.IsConnectMethod) {
+					// ToDo: can be more smart?
+					LogDirectTunnelingResult(request);
+				}
 			} else {
 				LogWarning("Overruns the retry count. Responding the current response.");
 			}
@@ -585,16 +592,44 @@ namespace MAPE.Server {
 				string heading = retrying ? "Retrying" : "Respond";
 				string message = $"{heading}: {request.Method} -> {statusCode}, {request.Host}";
 
-				if (statusCode < 400) {
-					LogInformation(message);
-				} else if (statusCode == 407) {
-					LogWarning(message);
-				} else {
-					LogError(message);
-				}
+				LogResult(statusCode, message);
 			} catch {
 				// continue
 				// this method should not throw any exception
+			}
+
+			return;
+		}
+
+		private void LogDirectTunnelingResult(Request request) {
+			// argument checks
+			Debug.Assert(request != null);
+
+			// log the result of direct tunneling 
+			try {
+				int statusCode = 200;
+				string message = $"Respond: {request.Method} -> {statusCode}, {request.Host}";
+
+				LogResult(statusCode, message);
+			} catch {
+				// continue
+				// this method should not throw any exception
+			}
+
+			return;
+		}
+
+		private void LogResult(int statusCode, string message) {
+			// argument checks
+			Debug.Assert(message != null);
+
+			// log
+			if (statusCode < 400) {
+				LogInformation(message);
+			} else if (statusCode == 407) {
+				LogWarning(message);
+			} else {
+				LogError(message);
 			}
 
 			return;

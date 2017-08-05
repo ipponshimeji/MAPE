@@ -104,6 +104,34 @@ namespace MAPE.Windows {
 
 		#region overridables
 
+		protected override IActualProxy GetSystemActualProxy(SystemSettings systemSettings) {
+			// argument checks
+			Debug.Assert(systemSettings != null);
+			SystemSettingsForWindows actualSystemSettings = systemSettings as SystemSettingsForWindows;
+			if (actualSystemSettings == null) {
+				return base.GetSystemActualProxy(systemSettings);
+			}
+
+			// detect actual proxy
+			IActualProxy actualProxy = null;
+			if ((actualSystemSettings.ProxyEnable ?? 0) == 0) {
+				// proxy is not explicitly specified
+				bool autoDetect = actualSystemSettings.AutoDetect;
+				string autoConfigURL = actualSystemSettings.AutoConfigURL;
+				if (autoDetect || string.IsNullOrEmpty(autoConfigURL) == false) {
+					actualProxy = new AutoConfigActualProxy(autoDetect, autoConfigURL);
+				}
+			} else {
+				// proxy is explicitly specified
+				// detect actually effective proxy by the base class implementation
+				// Note that the explicitly specified proxy setting is not used
+				// in some case such as dialup or VPN connection.  
+				;
+			}
+
+			return (actualProxy != null) ? actualProxy : base.GetSystemActualProxy(systemSettings);
+		}
+
 		protected override SystemSettings CreateSystemSettings(IObjectData data) {
 			return new SystemSettingsForWindows(data);
 		}

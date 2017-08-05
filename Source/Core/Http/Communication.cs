@@ -41,10 +41,9 @@ namespace MAPE.Http {
 					while (request.Read()) {
 						// send the request to the server
 						// The request is resent while the owner instructs modifications.
-						bool connectRequest = (request.Method == "CONNECT");
 						int repeatCount = 0;
 						IEnumerable<MessageBuffer.Modification> modifications = owner.OnCommunicate(repeatCount, request, null);
-						if (connectRequest && owner.UsingProxy == false) {
+						if (request.IsConnectMethod && owner.UsingProxy == false) {
 							// handling CONNECT message for the actual server
 							response.RespondSimpleError(200, "OK");
 							tunnelingMode = true;
@@ -57,7 +56,7 @@ namespace MAPE.Http {
 							} while (modifications != null);
 							// send the final response to the client
 							response.Write();
-							tunnelingMode = (connectRequest && response.StatusCode == 200);
+							tunnelingMode = (request.IsConnectMethod && response.StatusCode == 200);
 						}
 
 						if (tunnelingMode) {

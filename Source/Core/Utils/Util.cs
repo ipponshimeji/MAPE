@@ -96,7 +96,7 @@ namespace MAPE.Utils {
 				}
 			}
 
-			if (string.IsNullOrEmpty(uri.PathAndQuery) == false || string.IsNullOrEmpty(uri.Fragment) == false) {
+			if (string.CompareOrdinal(uri.PathAndQuery, "/") != 0 || string.IsNullOrEmpty(uri.Fragment) == false) {
 				throw new FormatException("Other part than host or port is specified.");
 			}
 

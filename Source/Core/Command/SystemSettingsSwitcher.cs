@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Diagnostics;
 using System.Net;
@@ -35,23 +36,7 @@ namespace MAPE.Command {
 
 		public bool Enabled { get; protected set; } = true;
 
-		public IActualProxy ActualProxy { get; protected set; } = null;
-
-		#endregion
-
-
-		#region properties
-
-		/// <summary>
-		/// Returns the end point of the actual proxy if it has a static end point.
-		/// </summary>
-		public DnsEndPoint ActualProxyEndPoint {
-			get {
-				// ToDo: can improve?
-				WebProxy webProxy = this.ActualProxy as WebProxy;
-				return (webProxy == null) ? null : new DnsEndPoint(webProxy.Address.Host, webProxy.Address.Port);
-			}
-		}
+		public DnsEndPoint ActualProxyEndPoint { get; protected set; } = null;
 
 		#endregion
 
@@ -74,30 +59,24 @@ namespace MAPE.Command {
 			this.Owner = owner;
 
 			bool enabled;
-			IActualProxy actualProxy;
+			DnsEndPoint actualProxyEndPoint;
 			if (settings == null) {
-				// simple initialization (ex. to restore)
+				// simple initialization (ex. to restore only)
 				enabled = true;
-				actualProxy = null;
+				actualProxyEndPoint = null;
 			} else {
 				// usual initialization
 				enabled = settings.EnableSystemSettingsSwitch;
-				if (settings.ActualProxy != null) {
-					actualProxy = CreateWebProxy(settings.ActualProxy);
+				ActualProxySettings actualProxySettings = settings.ActualProxy;
+				if (actualProxySettings != null) {
+					actualProxyEndPoint = new DnsEndPoint(actualProxySettings.Host, actualProxySettings.Port);
 				} else {
-					actualProxy = DetectSystemProxy();
-					// Note that actualProxy may be null
+					actualProxyEndPoint = null;
 				}
-                if (actualProxy != null) {
-                    if (TestWebProxy(actualProxy) == false) {
-                        string message = string.Format(Resources.SystemSettingsSwitcher_Message_ProxyIsNotConnectable, actualProxy.Description);
-                        throw new Exception(message);
-                    }
-                }
             }
 
             this.Enabled = enabled;
-			this.ActualProxy = actualProxy;
+			this.ActualProxyEndPoint = actualProxyEndPoint;
 
 			return;
 		}
@@ -179,38 +158,29 @@ namespace MAPE.Command {
 			return settings;
 		}
 
-		public IActualProxy DetectSystemProxy() {
-			// detect the system web proxy by try to give external urls
-			// ToDo: return IWebProxy which can emulate the *.pac file currently effective.
-			// Note this implementation simply detect a possible typical proxy.
-			// Actual system logic to select proxy may be complicated,
-			// for example, it may be scripted by an auto configuration script (*.pac).
-			// If WebRequest.GetSystemWebProxy() returns IWebProxy of fixed logic at this point,
-			// it can be returned simply here.
-			// But this IWebProxy instance will reflect upcoming system proxy switch.
-			// So this implementation returns fixed address IWebProxy.
-			IWebProxy proxy = WebRequest.GetSystemWebProxy();
-			Func<string, IActualProxy> detect = (sampleExternalUrl) => {
-				Uri sampleUri = new Uri(sampleExternalUrl);
-				IActualProxy value = null;
-				if (proxy.IsBypassed(sampleUri) == false) {
-					Uri uri = proxy.GetProxy(sampleUri);
-					if (uri != sampleUri) {
-						// uri seems to be a proxy
-						value = new StaticActualProxy(new DnsEndPoint(uri.Host, uri.Port));
-					}
-				}
-				return value;
-			};
+		public IActualProxy GetActualProxy(SystemSettings systemSettings = null) {
+			// argument checks
+			// systemSettings can be null
 
-			// try with google's URL
-			IActualProxy systemProxy = detect("http://www.google.com/");
-			if (systemProxy == null) {
-				// try with Microsoft's URL
-				systemProxy = detect("http://www.microsoft.com/");
+			if (this.ActualProxyEndPoint != null) {
+				// actual proxy is explicitly specified by the settings 
+				return new StaticActualProxy(this.ActualProxyEndPoint);
+			} else {
+				// detect system settings
+				if (systemSettings == null) {
+					systemSettings = GetCurrentSystemSettings();
+				}
+				return GetSystemActualProxy(systemSettings);
+			}
+		}
+
+		public IActualProxy DetectSystemActualProxy(SystemSettings systemSettings = null) {
+			// argument checks
+			if (systemSettings == null) {
+				systemSettings = GetCurrentSystemSettings();
 			}
 
-			return systemProxy; // may be null
+			return GetSystemActualProxy(systemSettings);
 		}
 
 		protected static string GetAppSettings(string key) {
@@ -266,21 +236,42 @@ namespace MAPE.Command {
             return "http://www.msftncsi.com/ncsi.txt";
         }
 
-        #endregion
+		#endregion
 
 
-        #region overridables
+		#region overridables
 
-        protected virtual IActualProxy CreateWebProxy(ActualProxySettings settings) {
+		protected virtual IActualProxy GetSystemActualProxy(SystemSettings systemSettings) {
 			// argument checks
-			Debug.Assert(settings != null);
-			Debug.Assert(string.IsNullOrEmpty(settings.Host) == false);
+			Debug.Assert(systemSettings != null);
 
-			// create a WebProxy object
-			return new StaticActualProxy(new DnsEndPoint(settings.Host, settings.Port));
+			// detect the system web proxy by try to give external urls
+			// Note this implementation simply detect a possible typical proxy.
+			IWebProxy systemProxy = WebRequest.GetSystemWebProxy();
+			Func<string, IActualProxy> detect = (sampleExternalUrl) => {
+				Uri sampleUri = new Uri(sampleExternalUrl);
+				IActualProxy value = null;
+				if (systemProxy.IsBypassed(sampleUri) == false) {
+					Uri uri = systemProxy.GetProxy(sampleUri);
+					if (uri != sampleUri) {
+						// uri seems to be a proxy
+						value = new StaticActualProxy(new DnsEndPoint(uri.Host, uri.Port));
+					}
+				}
+				return value;
+			};
+
+			// try with google's URL
+			IActualProxy actualProxy = detect("http://www.google.com/");
+			if (actualProxy == null) {
+				// try with Microsoft's URL
+				actualProxy = detect("http://www.microsoft.com/");
+			}
+
+			return actualProxy; // note that it may be null
 		}
 
-		protected virtual bool TestWebProxy(IActualProxy actualProxy) {
+		public virtual bool TestWebProxy(IActualProxy actualProxy) {
 			// get test url specified in application config file
 			// (not in the settings file because this information is supposed to be set for site)
 			string targetUrl = SystemSettingsSwitcher.GetProxyTestUrl();
@@ -291,35 +282,36 @@ namespace MAPE.Command {
 			WebClientForTest webClient = new WebClientForTest();
             webClient.Timeout = 10 * 1000;      // 10 seconds
 
-			bool result = true;
-			foreach (DnsEndPoint endPoint in actualProxy.GetProxyEndPoints(target)) {
-				if (endPoint == targetEndPoint) {
-					// direct access
-					continue;
-				}
-				this.Owner.LogVerbose($"ActualProxy check: to {endPoint.Host}:{endPoint.Port}");
-				try {
-					webClient.Proxy = new WebProxy(endPoint.Host, endPoint.Port);
-					webClient.DownloadData(targetUrl);  // an exception is thrown on error
-					result = true;
-				} catch (WebException exception) {
-					if (exception.Status != WebExceptionStatus.ProtocolError) {
-						result = false;
+			// test each proxy candidate
+			CommandBase owner = this.Owner;
+			bool result = false;
+			IReadOnlyCollection<DnsEndPoint> endPoints = actualProxy.GetProxyEndPoints(target);
+			if (endPoints != null) {
+				foreach (DnsEndPoint endPoint in endPoints) {
+					owner.LogVerbose($"ActualProxy check: to {endPoint.Host}:{endPoint.Port}");
+					try {
+						webClient.Proxy = new WebProxy(endPoint.Host, endPoint.Port);
+						webClient.DownloadData(targetUrl);  // an exception is thrown on error
+						result = true;
+					} catch (WebException exception) {
+						// Note that a protocol error indicates that the end point exists
+						result = (exception.Status == WebExceptionStatus.ProtocolError);
+						if (result) {
+							owner.LogVerbose($"ActualProxy check: {exception.Status} -> OK");
+						} else {
+							owner.LogError($"ActualProxy check: {exception.Status} -> NG");
+						}
 					}
 					if (result) {
-						this.Owner.LogVerbose($"ActualProxy check: {exception.Status} -> OK");
-					} else {
-						this.Owner.LogError($"ActualProxy check: {exception.Status} -> NG");
+						// a valid proxy is found
+						break;
 					}
-				}
-				if (result) {
-					break;
 				}
 			}
 			if (result) {
-				this.Owner.LogVerbose("ActualProxy check: OK");
+				owner.LogVerbose("ActualProxy check: OK - there is a valid actual proxy.");
 			} else {
-				this.Owner.LogError("ActualProxy check: NG");
+				owner.LogError("ActualProxy check: NG - no valid proxy.");
 			}
 
 			return result;

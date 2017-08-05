@@ -155,25 +155,7 @@ namespace MAPE.Command {
 
 					// create a system settings swither
 					SystemSettingsSwitcher switcher = componentFactory.CreateSystemSettingsSwitcher(this.Owner, systemSettingsSwitcherSettings);
-					if (switcher.ActualProxy == null) {
-						// no actual proxy to which it connects
-						throw new Exception(Resources.CommandBase_Message_NoActualProxy);
-					}
 					this.switcher = switcher;
-
-					// log
-					CommandBase owner = this.Owner;
-					if (owner.ShouldLog(TraceEventType.Verbose)) {
-						// log the actual proxy if it is static
-						DnsEndPoint actualProxyEndPoint = switcher.ActualProxyEndPoint;
-						if (actualProxyEndPoint != null) {
-							owner.LogVerbose($"ActualProxy is {actualProxyEndPoint.Host}:{actualProxyEndPoint.Port}");
-						}
-
-						// log whether system settings is being switched
-						string label = switcher.Enabled ? "enabled" : "disabled";
-						owner.LogVerbose($"SystemSettingsSwitch: {label}");
-					}
 
 					// setup credential dictionary
 					lock (this.credentialsLocker) {
@@ -182,21 +164,52 @@ namespace MAPE.Command {
 						this.isCredentialsDirty = false;
 					}
 
-					// start the proxy
+					// create a proxy
 					Proxy proxy = componentFactory.CreateProxy(proxySettings);
-					proxy.ActualProxy = switcher.ActualProxy;
-					proxy.Start(this);
 					this.proxy = proxy;
-					this.saveCredentials = saveCredentials;
 
-					// switch system settings
-					this.backup = switcher.Switch(proxy);
-					if (this.backup != null) {
-						// save backup settings
-						owner.SaveSystemSettingsBackup(this.backup);
+					// detect the current proxy
+					IActualProxy actualProxy = switcher.GetActualProxy();
+					if (actualProxy == null) {
+						// no actual proxy to which it connects
+						throw new Exception(Resources.CommandBase_Message_NoActualProxy);
 					}
+					try {
+						// log
+						CommandBase owner = this.Owner;
+						if (owner.ShouldLog(TraceEventType.Verbose)) {
+							// log the actual proxy
+							owner.LogVerbose($"ActualProxy is '{actualProxy.Description}'");
 
-					this.commandSettings = commandSettings;
+							// log whether system settings is being switched
+							string label = switcher.Enabled ? "enabled" : "disabled";
+							owner.LogVerbose($"SystemSettingsSwitch: {label}");
+						}
+
+						// test actual proxy
+						if (switcher.TestWebProxy(actualProxy) == false) {
+							string message = string.Format(Resources.SystemSettingsSwitcher_Message_ProxyIsNotConnectable, actualProxy.Description);
+							throw new Exception(message);
+						}
+
+						// start the proxy
+						proxy.ActualProxy = actualProxy;
+						actualProxy = null;	// its ownership has been moved to the proxy object.
+						proxy.Start(this);
+						this.saveCredentials = saveCredentials;
+
+						// switch system settings
+						this.backup = switcher.Switch(proxy);
+						if (this.backup != null) {
+							// save backup settings
+							owner.SaveSystemSettingsBackup(this.backup);
+						}
+
+						this.commandSettings = commandSettings;
+					} catch {
+						Util.DisposeWithoutFail(ref actualProxy);
+						throw;
+					}
 				} catch {
 					Stop(systemSessionEnding: false);
 					throw;

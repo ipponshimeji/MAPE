@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
+using MAPE.Utils;
 using MAPE.ComponentBase;
 using MAPE.Command;
 using MAPE.Command.Settings;
@@ -132,7 +133,9 @@ namespace MAPE.Server {
 					// state checks
 					EnsureNotListening();
 
+					IActualProxy oldValue = this.actualProxy;
 					this.actualProxy = value;
+					Util.DisposeWithoutFail(oldValue);
 				}
 			}
 		}
@@ -211,7 +214,7 @@ namespace MAPE.Server {
 				this.serverBasicCredentialCache = null;
 				Debug.Assert(this.Runner == null);
 				Debug.Assert(this.connections == null);
-				this.actualProxy = null;
+				Util.DisposeWithoutFail(ref this.actualProxy);
 				List<Listener> temp = this.listeners;
 				this.listeners = null;
 				if (temp != null) {

@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
+using MAPE.Utils;
+using MAPE.Server;
 using MAPE.Command.Settings;
 
 
@@ -61,8 +63,10 @@ namespace MAPE.Command {
 			// ActualProxy
 			this.DefaultActualProxyHostName = SystemSettingsSwitcher.GetDefaultActualProxyHostName();
 			this.DefaultActualProxyPort = SystemSettingsSwitcher.GetDefaultActualProxyPort();
-			if (switcher.DetectSystemProxy() != null) {
+			IActualProxy actualProxy = switcher.DetectSystemActualProxy();
+			if (actualProxy != null) {
 				this.ProxyDetected = true;
+				Util.DisposeWithoutFail(ref actualProxy);
 			}
 			if (this.ProxyDetected == false && settings.SystemSettingsSwitcher.ActualProxy == null) {
 				// The authentication proxy cannot be detected automatically.

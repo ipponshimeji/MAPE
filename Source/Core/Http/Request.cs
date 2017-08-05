@@ -12,10 +12,9 @@ namespace MAPE.Http {
 	public class Request: Message {
 		#region data
 
-		public string Method {
-			get;
-			protected set;
-		}
+		private string method = null;
+
+		private bool isConnectMethod = false;
 
 		public DnsEndPoint HostEndPoint {
 			get;
@@ -36,6 +35,22 @@ namespace MAPE.Http {
 
 
 		#region properties
+
+		public string Method {
+			get {
+				return this.method;
+			}
+			protected set {
+				this.method = value;
+				this.isConnectMethod = (value == "CONNECT");
+			}
+		}
+
+		public bool IsConnectMethod {
+			get {
+				return this.isConnectMethod;
+			}
+		}
 
 		public string Host {
 			get {

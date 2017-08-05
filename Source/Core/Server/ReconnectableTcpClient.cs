@@ -207,42 +207,6 @@ namespace MAPE.Server {
 
 		#region methods
 
-		public void EnsureConnect(string host, int port) {
-			// argument checks
-			if (string.IsNullOrEmpty(host)) {
-				throw new ArgumentNullException(nameof(host));
-			}
-			if (port < IPEndPoint.MinPort || IPEndPoint.MaxPort < port) {
-				throw new ArgumentOutOfRangeException(nameof(port));
-			}
-
-			lock (this) {
-				// state checks
-				if (this.tcpClient != null) {
-					// connecting now
-					if (port == this.port && AreSameHostNames(host, this.host)) {
-						// the current connection is usable
-						return;
-					}
-
-					// disconnect to re-connect the connection
-					DisconnectInternal();
-				}
-				if (this.reconnectable == false) {
-					throw new InvalidOperationException("This object is not reconnectable currently.");
-				}
-
-				// keep host and port
-				this.host = host;
-				this.port = port;
-
-				// connect to the end point
-				ConnectInternal();
-			}
-
-			return;
-		}
-
 		public void EnsureConnect(IReadOnlyCollection<DnsEndPoint> endPoints) {
 			// argument checks
 			if (endPoints == null) {
