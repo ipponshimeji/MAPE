@@ -77,7 +77,11 @@ namespace MAPE.Http {
 		#region methods
 
 		public new bool Read() {
-			return base.Read();
+			try {
+				return base.Read();
+			} catch {
+				throw new HttpException(HttpStatusCode.BadRequest);
+			}
 		}
 
 		#endregion

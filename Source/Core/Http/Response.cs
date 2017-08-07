@@ -100,6 +100,8 @@ namespace MAPE.Http {
 			this.Request = request;
 			try {
 				return base.Read();
+			} catch {
+				throw new HttpException(HttpStatusCode.BadGateway);
 			} finally {
 				this.Request = null;
 			}

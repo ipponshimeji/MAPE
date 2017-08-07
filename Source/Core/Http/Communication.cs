@@ -45,12 +45,15 @@ namespace MAPE.Http {
 						IEnumerable<MessageBuffer.Modification> modifications = owner.OnCommunicate(repeatCount, request, null);
 						if (request.IsConnectMethod && owner.UsingProxy == false) {
 							// handling CONNECT message for the actual server
-							response.RespondSimpleError(200, "OK");
+							response.RespondSimpleError(200, "Connection established");
 							tunnelingMode = true;
 						} else {
 							do {
 								request.Write(modifications);
-								response.Read(request);
+								if (response.Read(request) == false) {
+									// no response from the server
+									throw new HttpException(HttpStatusCode.BadGateway);
+								}
 								++repeatCount;
 								modifications = owner.OnCommunicate(repeatCount, request, response);
 							} while (modifications != null);
