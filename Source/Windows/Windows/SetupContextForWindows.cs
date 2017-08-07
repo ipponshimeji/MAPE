@@ -45,7 +45,7 @@ namespace MAPE.Windows {
 
 			// ProxyOverride
 			this.DefaultProxyOverride = SystemSettingsSwitcherForWindows.GetDefaultProxyOverride();
-			if (base.NeedActualProxy) {
+			if (settings.InitialSetupLevel == 0 || base.NeedActualProxy) {
 				// User must set ProxyOverride
 				this.NeedProxyOverride = true;
 
@@ -55,6 +55,7 @@ namespace MAPE.Windows {
 					switcherSettings.ProxyOverride = this.DefaultProxyOverride;
 				}
 			}
+
 			if (settings.InitialSetupLevel == 1) {
 				// After MAPE supports auto detect and auto config script,
 				// ProxyOverride should be reviewed because only overrides which

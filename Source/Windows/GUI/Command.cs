@@ -249,9 +249,10 @@ namespace MAPE.Windows.GUI {
 
 			// create context
 			SetupContextForWindows setupContext = new SetupContextForWindows(actualSettings, this);
+			bool needSetup = (settings.InitialSetupLevel == 0) || setupContext.NeedSetup;
 
 			// Note that it returns the latest level if no need to setup, it sets 'InitialSetupLevel' settings up-to-date 
-			return setupContext.NeedSetup? this.app.ShowSetupWindow(setupContext): SetupContext.LatestInitialSetupLevel;
+			return needSetup? this.app.ShowSetupWindow(setupContext): SetupContext.LatestInitialSetupLevel;
 		}
 
 		#endregion
