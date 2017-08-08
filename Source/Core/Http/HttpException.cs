@@ -33,15 +33,20 @@ namespace MAPE.Http {
 
 		#region creation and disposal
 
-		public HttpException(HttpStatusCode httpStatusCode, string message): base(message) {
+		public HttpException(Exception innerException, HttpStatusCode httpStatusCode, string message): base(message, innerException) {
 			this.httpStatusCode = httpStatusCode;
 		}
 
-		public HttpException(HttpStatusCode httpStatusCode): this(httpStatusCode, GetDefaultMessage(httpStatusCode)) {
+		public HttpException(Exception innerException, HttpStatusCode httpStatusCode) : this(innerException, httpStatusCode, GetDefaultMessage(httpStatusCode)) {
 		}
 
-		public HttpException(Exception innerException): base(GetDefaultMessage(HttpStatusCode.InternalServerError), innerException) {
-			this.httpStatusCode = HttpStatusCode.InternalServerError;
+		public HttpException(Exception innerException) : this(innerException, HttpStatusCode.InternalServerError) {
+		}
+
+		public HttpException(HttpStatusCode httpStatusCode, string message): this(null, httpStatusCode, message) {
+		}
+
+		public HttpException(HttpStatusCode httpStatusCode): this(null, httpStatusCode) {
 		}
 
 		protected HttpException(SerializationInfo info, StreamingContext context): base(info, context) {

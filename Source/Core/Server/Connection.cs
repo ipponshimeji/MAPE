@@ -378,7 +378,7 @@ namespace MAPE.Server {
 				LogRoundTripResult(request, response, modifications != null);
 
 				// manage the connection for non-Keep-Alive mode
-				if (response.KeepAliveEnabled == false && !(response.StatusCode == 200 && request.Method == "CONNECT")) {
+				if (response.KeepAliveEnabled == false && !(request.IsConnectMethod && response.StatusCode == 200)) {
 					// disconnect the server connection
 					server.Disconnect();
 
@@ -410,18 +410,22 @@ namespace MAPE.Server {
 					// an EndOfStreamException means disconnection at an appropriate timing.
 					LogVerbose($"The communication ends normally.");
 				} else {
+					string detail = null;
 					if (exception != null && request != null && request.MessageRead) {
 						httpException = exception as HttpException;
 						if (httpException == null) {
 							httpException = new HttpException(exception);
 							Debug.Assert(httpException.HttpStatusCode == HttpStatusCode.InternalServerError);
+							detail = exception.Message;
+						} else {
+							detail = httpException.InnerException?.Message;
 						}
 					}
 
 					// log the state
-					if (exception != null) {
+					if (detail != null) {
 						// report the original exception message (not httpException's)
-						LogError($"Error: {exception.Message}");
+						LogError($"Error: {detail}");
 					}
 					if (httpException != null) {
 						string method = request?.Method;

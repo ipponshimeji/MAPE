@@ -52,7 +52,8 @@ namespace MAPE.Http {
 								request.Write(modifications);
 								if (response.Read(request) == false) {
 									// no response from the server
-									throw new HttpException(HttpStatusCode.BadGateway);
+									Exception innerException = new Exception("No response from the server.");
+									throw new HttpException(innerException, HttpStatusCode.BadGateway);
 								}
 								++repeatCount;
 								modifications = owner.OnCommunicate(repeatCount, request, response);
