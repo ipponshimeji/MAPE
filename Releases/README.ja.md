@@ -1,5 +1,14 @@
 # リリースノート
 
+### 2017/08/07 [1.0.17.0 (beta)](MAPE_1.0.17.0_Windows.zip) 
+
+sha256ハッシュ: 9790AB3ADE4314D794A6C8E2A5C88EE97EA8BE293A04FE73D187173F5A3EF08B
+
+* 自動構成スクリプト（.PACファイル）対応。
+  設定の変更が必要になる場合があります。
+  詳細は、ブログ『[「認証プロキシ爆発しろ！」が自動構成スクリプトに対応しました](http://ipponshimeji.cocolog-nifty.com/blog/2017/08/post-86b8.html)』を参照してください。
+
+
 ### 2017/06/14 [1.0.16.0 (beta)](MAPE_1.0.16.0_Windows.zip) 
 
 sha256ハッシュ: 443BA7CC3370C6370EEA2BACF7098448F1CA51D2D6DB27BC78F7572B9519DD19
