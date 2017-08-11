@@ -130,9 +130,20 @@ namespace MAPE.Utils {
 			return;
 		}
 
-		public static bool RemoveLogMonitor(ILogMonitor monitor) {
+		public static bool RemoveLogMonitor(ILogMonitor monitor, int flushingQueueTimeout = 0) {
 			// argument checks
 			// monitor can be null (but may not be found in the monitor list)
+
+			// wait for flushing queue
+			if (0 < flushingQueueTimeout) {
+				Task task;
+				lock (Logger.deliveringLocker) {
+					task = Logger.deliveringTask;
+				}
+				if (task != null) {
+					task.Wait(flushingQueueTimeout);
+				}
+			}
 
 			// remove the monitor from the monitor list
 			lock (Logger.monitorsLocker) {

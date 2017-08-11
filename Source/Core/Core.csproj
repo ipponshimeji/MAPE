@@ -102,6 +102,7 @@
     <Compile Include="Server\Settings\ListenerSettings.cs" />
     <Compile Include="Utils\ColorConsoleLogMonitor.cs" />
     <Compile Include="Utils\ConsoleLogMonitor.cs" />
+    <Compile Include="Utils\DisposableUtil.cs" />
     <Compile Include="Utils\IObjectDataValue.cs" />
     <Compile Include="Utils\ISavableToObjectData.cs" />
     <Compile Include="Utils\IObjectDataValueFactory.cs" />
