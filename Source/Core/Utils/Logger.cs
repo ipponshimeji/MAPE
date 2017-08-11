@@ -13,8 +13,6 @@ namespace MAPE.Utils {
 
 		public const string SourceSwitchName = "MAPESwitch";
 
-		public const int NoComponent = -1;
-
 		#endregion
 
 
@@ -53,7 +51,7 @@ namespace MAPE.Utils {
 
 		private static readonly object deliveringLocker = new object();
 
-		private static readonly Queue<Log> logQueue = new Queue<Log>();
+		private static readonly Queue<LogEntry> logQueue = new Queue<LogEntry>();
 
 		private static Task deliveringTask = null;
 
@@ -180,48 +178,48 @@ namespace MAPE.Utils {
 			return ((int)Logger.sourceLevels & (int)eventType) != 0;
 		}
 
-		public static void Log(Log log) {
-			if (ShouldLog(log.EventType)) {
-				EnqueueLog(log);
+		public static void Log(LogEntry entry) {
+			if (ShouldLog(entry.EventType)) {
+				EnqueueLog(entry);
 			}
 		}
 
-		public static void Log(int parentComponentId, int componentId, string componentName, TraceEventType eventType, string message, int eventId) {
+		public static void Log(int parentComponentId, int componentId, string componentName, TraceEventType eventType, string message, int eventId = LogEntry.DefaultEventId) {
 			if (ShouldLog(eventType)) {
-				EnqueueLog(new Log(parentComponentId, componentId, componentName, eventType, message, eventId));
+				EnqueueLog(new LogEntry(parentComponentId, componentId, componentName, eventType, message, eventId));
 			}
 		}
 
 
 		// general logging
 
-		public static void LogCritical(string componentName, string message, int eventId = 0) {
+		public static void LogCritical(string componentName, string message, int eventId = LogEntry.DefaultEventId) {
 			if (ShouldLog(TraceEventType.Critical)) {
-				EnqueueLog(new Log(NoComponent, NoComponent, componentName, TraceEventType.Critical, message, eventId));
+				EnqueueLog(new LogEntry(componentName, TraceEventType.Critical, message, eventId));
 			}
 		}
 
-		public static void LogError(string componentName, string message, int eventId = 0) {
+		public static void LogError(string componentName, string message, int eventId = LogEntry.DefaultEventId) {
 			if (ShouldLog(TraceEventType.Error)) {
-				EnqueueLog(new Log(NoComponent, NoComponent, componentName, TraceEventType.Error, message, eventId));
+				EnqueueLog(new LogEntry(componentName, TraceEventType.Error, message, eventId));
 			}
 		}
 
-		public static void LogWarning(string componentName, string message, int eventId = 0) {
+		public static void LogWarning(string componentName, string message, int eventId = LogEntry.DefaultEventId) {
 			if (ShouldLog(TraceEventType.Warning)) {
-				EnqueueLog(new Log(NoComponent, NoComponent, componentName, TraceEventType.Warning, message, eventId));
+				EnqueueLog(new LogEntry(componentName, TraceEventType.Warning, message, eventId));
 			}
 		}
 
-		public static void LogInformation(string componentName, string message, int eventId = 0) {
+		public static void LogInformation(string componentName, string message, int eventId = LogEntry.DefaultEventId) {
 			if (ShouldLog(TraceEventType.Information)) {
-				EnqueueLog(new Log(NoComponent, NoComponent, componentName, TraceEventType.Information, message, eventId));
+				EnqueueLog(new LogEntry(componentName, TraceEventType.Information, message, eventId));
 			}
 		}
 
-		public static void LogVerbose(string componentName, string message, int eventId = 0) {
+		public static void LogVerbose(string componentName, string message, int eventId = LogEntry.DefaultEventId) {
 			if (ShouldLog(TraceEventType.Verbose)) {
-				EnqueueLog(new Log(NoComponent, NoComponent, componentName, TraceEventType.Verbose, message, eventId));
+				EnqueueLog(new LogEntry(componentName, TraceEventType.Verbose, message, eventId));
 			}
 		}
 
@@ -288,14 +286,14 @@ namespace MAPE.Utils {
 		}
 
 
-		private static void EnqueueLog(Log log) {
+		private static void EnqueueLog(LogEntry entry) {
 			// argument checks
-			Debug.Assert(ShouldLog(log.EventType));
+			Debug.Assert(ShouldLog(entry.EventType));
 
-			// queue the log
+			// queue the entry
 			lock (Logger.deliveringLocker) {
-				// queue the log
-				Logger.logQueue.Enqueue(log);
+				// queue the entry
+				Logger.logQueue.Enqueue(entry);
 
 				// if the delivering task is not working, create it
 				if (Logger.deliveringTask == null) {
@@ -307,10 +305,10 @@ namespace MAPE.Utils {
 		}
 
 		private static void DeliverLogs() {
-			// deliver logs
+			// deliver entries
 			int count = 0;
 			do {
-				Log log;
+				LogEntry entry;
 
 				// get a log from the queue
 				lock (Logger.deliveringLocker) {
@@ -319,12 +317,12 @@ namespace MAPE.Utils {
 						break;
 					}
 
-					log = Logger.logQueue.Dequeue();
+					entry = Logger.logQueue.Dequeue();
 				}
 
-				// process the log
-				DeliverToTraceListeners(log);
-				DeliverToLogMonitors(log);
+				// process the entry
+				DeliverToTraceListeners(entry);
+				DeliverToLogMonitors(entry);
 				++count;
 			} while (true);
 
@@ -336,32 +334,32 @@ namespace MAPE.Utils {
 			return;
 		}
 
-		private static void DeliverToTraceListeners(Log log) {
+		private static void DeliverToTraceListeners(LogEntry entry) {
 			try {
 				// adjust message
 				string message;
-				string componentName = log.ComponentName;
+				string componentName = entry.ComponentName;
 				if (string.IsNullOrEmpty(componentName)) {
-					message = $"{log.Time} {log.Message}";
+					message = $"{entry.Time} {entry.Message}";
 				} else {
-					message = $"{log.Time} [{componentName}] {log.Message}";
+					message = $"{entry.Time} [{componentName}] {entry.Message}";
 				}
 
-				// trace the log
-				Logger.Source.TraceEvent(log.EventType, log.EventId, message);
+				// trace the entry
+				Logger.Source.TraceEvent(entry.EventType, entry.EventId, message);
 			} catch (Exception exception) {
 				TraceInternalError(null, $"An exception on calling TraceSource.TraceEvent(): {exception.Message}");
 				// continue
 			}
 		}
 
-		private static void DeliverToLogMonitors(Log log) {
+		private static void DeliverToLogMonitors(LogEntry entry) {
 			lock (Logger.monitorsLocker) {
 				if (0 < Logger.monitors.Count) {
 					Logger.monitors.ForEach(
 						(monitor) => {
 							try {
-								monitor.OnLog(log);
+								monitor.OnLog(entry);
 							} catch (Exception exception) {
 								TraceInternalError(null, $"An exception on calling ILogMonitor.OnLog(): {exception.Message}");
 								// continue
@@ -373,7 +371,7 @@ namespace MAPE.Utils {
 		}
 
 
-		private static void TraceInternal(TraceEventType eventType, string methodName, string message, int eventId = 0) {
+		private static void TraceInternal(TraceEventType eventType, string methodName, string message, int eventId = LogEntry.DefaultEventId) {
 			// argument checks
 			if (string.IsNullOrEmpty(methodName) == false) {
 				message = $"Logger: at {methodName}(), {message}";
@@ -385,11 +383,11 @@ namespace MAPE.Utils {
 			Logger.Source.TraceEvent(eventType, 0, message);
 		}
 
-		private static void TraceInternalError(string methodName, string message, int eventId = 0) {
+		private static void TraceInternalError(string methodName, string message, int eventId = LogEntry.DefaultEventId) {
 			TraceInternal(TraceEventType.Error, methodName, message, eventId);
 		}
 
-		private static void TraceInternalVerbose(string methodName, string message, int eventId = 0) {
+		private static void TraceInternalVerbose(string methodName, string message, int eventId = LogEntry.DefaultEventId) {
 			TraceInternal(TraceEventType.Verbose, methodName, message, eventId);
 		}
 

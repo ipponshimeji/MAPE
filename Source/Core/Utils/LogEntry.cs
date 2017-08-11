@@ -3,7 +3,16 @@ using System.Diagnostics;
 
 
 namespace MAPE.Utils {
-	public struct Log {
+	public struct LogEntry {
+		#region constants
+
+		public const int NoComponent = -1;
+
+		public const int DefaultEventId = 0;
+
+		#endregion
+
+
 		#region data
 
 		public readonly DateTime Time;
@@ -25,7 +34,7 @@ namespace MAPE.Utils {
 
 		#region creation and disposal
 
-		public Log(DateTime time, int parentComponentId, int componentId, string componentName, TraceEventType eventType, string message, int eventId) {
+		public LogEntry(DateTime time, int parentComponentId, int componentId, string componentName, TraceEventType eventType, string message, int eventId = DefaultEventId) {
 			// argument checks
 			if (parentComponentId < -1) {
 				throw new ArgumentOutOfRangeException(nameof(parentComponentId));
@@ -50,7 +59,10 @@ namespace MAPE.Utils {
 			return;
 		}
 
-		public Log(int parentComponentId, int componentId, string componentName, TraceEventType eventType, string message, int eventId): this(DateTime.Now, parentComponentId, componentId, componentName, eventType, message, eventId) {
+		public LogEntry(int parentComponentId, int componentId, string componentName, TraceEventType eventType, string message, int eventId): this(DateTime.Now, parentComponentId, componentId, componentName, eventType, message, eventId = DefaultEventId) {
+		}
+
+		public LogEntry(string componentName, TraceEventType eventType, string message, int eventId = DefaultEventId) : this(DateTime.Now, NoComponent, NoComponent, componentName, eventType, message, eventId) {
 		}
 
 		#endregion

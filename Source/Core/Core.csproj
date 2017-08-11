@@ -109,7 +109,7 @@
     <Compile Include="Utils\ObjectDataExtension.cs" />
     <Compile Include="Utils\JsonObjectData.cs" />
     <Compile Include="Utils\IObjectData.cs" />
-    <Compile Include="Utils\Log.cs" />
+    <Compile Include="Utils\LogEntry.cs" />
     <Compile Include="Utils\ILogMonitor.cs" />
     <Compile Include="Utils\Settings.cs" />
     <Compile Include="Utils\WebClientForTest.cs">

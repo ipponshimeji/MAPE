@@ -25,9 +25,9 @@ namespace MAPE.Windows.GUI {
 
 		#region privates
 
-		private Brush GetForeground(LogAdapter log) {
-			if (log != null) {
-				switch (log.EventType) {
+		private Brush GetForeground(LogAdapter entry) {
+			if (entry != null) {
+				switch (entry.EventType) {
 					case TraceEventType.Critical:
 						return Brushes.Red;
 					case TraceEventType.Error:

@@ -14,11 +14,11 @@ namespace MAPE.Utils {
 
 		#region ILogMonitor
 
-		public override void OnLog(Log log) {
+		public override void OnLog(LogEntry entry) {
 			// decide color
 			ConsoleColor currentColor = Console.ForegroundColor;
 			ConsoleColor color;
-			switch (log.EventType) {
+			switch (entry.EventType) {
 				case TraceEventType.Critical:
 					color = ConsoleColor.Red;
 					break;
@@ -43,13 +43,13 @@ namespace MAPE.Utils {
 					break;
 			}
 
-			// output the log
+			// output the entry
 			if (color == currentColor) {
-				base.OnLog(log);
+				base.OnLog(entry);
 			} else {
 				Console.ForegroundColor = color;
 				try {
-					base.OnLog(log);
+					base.OnLog(entry);
 				} finally {
 					Console.ForegroundColor = currentColor;
 				}

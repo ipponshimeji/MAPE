@@ -4,6 +4,6 @@ using System.Diagnostics;
 
 namespace MAPE.Utils {
 	public interface ILogMonitor {
-		void OnLog(Log log);
+		void OnLog(LogEntry entry);
 	}
 }

@@ -7,7 +7,7 @@ namespace MAPE.Windows.GUI {
 	public class LogAdapter {
 		#region data
 
-		private readonly Log log;
+		private readonly LogEntry entry;
 
 		#endregion
 
@@ -16,32 +16,32 @@ namespace MAPE.Windows.GUI {
 
 		public string Time {
 			get {
-				return this.log.Time.ToString("T");
+				return this.entry.Time.ToString("T");
 			}
 		}
 
 		public string ComponentName {
 			get {
-				return this.log.ComponentName;
+				return this.entry.ComponentName;
 			}
 		}
 
 		public TraceEventType EventType {
 			get {
-				return this.log.EventType;
+				return this.entry.EventType;
 			}
 		}
 
 		public string EventTypeName {
 			get {
-				TraceEventType eventType = this.log.EventType;
+				TraceEventType eventType = this.entry.EventType;
 				return (eventType == TraceEventType.Information) ? "Info" : eventType.ToString();
 			}
 		}
 
 		public string Message {
 			get {
-				return this.log.Message;
+				return this.entry.Message;
 			}
 		}
 
@@ -50,9 +50,9 @@ namespace MAPE.Windows.GUI {
 
 		#region creation and disposal
 
-		public LogAdapter(Log log) {
+		public LogAdapter(LogEntry entry) {
 			// initialize members
-			this.log = log;
+			this.entry = entry;
 
 			return;
 		}

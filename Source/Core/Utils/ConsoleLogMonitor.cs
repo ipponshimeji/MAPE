@@ -14,8 +14,8 @@ namespace MAPE.Utils {
 
 		#region ILogMonitor
 
-		public virtual void OnLog(Log log) {
-			Console.WriteLine(GetLogMessage(log));
+		public virtual void OnLog(LogEntry entry) {
+			Console.WriteLine(GetLogMessage(entry));
 		}
 
 		#endregion
@@ -23,8 +23,8 @@ namespace MAPE.Utils {
 
 		#region overrides
 
-		protected virtual string GetLogMessage(Log log) {
-			return $"{log.Time.ToString("T")}, {GetEventTypeName(log)}, {log.ComponentName}: {log.Message}";
+		protected virtual string GetLogMessage(LogEntry entry) {
+			return $"{entry.Time.ToString("T")}, {GetEventTypeName(entry)}, {entry.ComponentName}: {entry.Message}";
 		}
 
 		#endregion
@@ -32,8 +32,8 @@ namespace MAPE.Utils {
 
 		#region privates
 
-		private string GetEventTypeName(Log log) {
-			TraceEventType eventType = log.EventType;
+		private string GetEventTypeName(LogEntry entry) {
+			TraceEventType eventType = entry.EventType;
 			return (eventType == TraceEventType.Information) ? "Info" : eventType.ToString();
 		}
 

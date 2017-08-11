@@ -10,12 +10,12 @@ namespace MAPE.ComponentBase {
 		public int ParentComponentId {
 			get;
 			protected set;
-		} = Logger.NoComponent;
+		} = LogEntry.NoComponent;
 
 		public int ComponentId {
 			get;
 			protected set;
-		} = Logger.NoComponent;
+		} = LogEntry.NoComponent;
 
 		/// <summary>
 		/// 
@@ -53,8 +53,12 @@ namespace MAPE.ComponentBase {
 			return Logger.ShouldLog(eventType);
 		}
 
-		public void Log(TraceEventType eventType, string message, int eventId = 0) {
+		public void Log(TraceEventType eventType, string message, int eventId) {
 			Logger.Log(this.ParentComponentId, this.ComponentId, this.ComponentName, eventType, message, eventId);
+		}
+
+		public void Log(TraceEventType eventType, string message) {
+			Logger.Log(this.ParentComponentId, this.ComponentId, this.ComponentName, eventType, message);
 		}
 
 		#endregion
@@ -62,39 +66,39 @@ namespace MAPE.ComponentBase {
 
 		#region methods - logging
 
-		public void LogCritical(string message, int eventId = 0) {
+		public void LogCritical(string message, int eventId = LogEntry.DefaultEventId) {
 			Log(TraceEventType.Critical, message, eventId);
 		}
 
-		public void LogError(string message, int eventId = 0) {
+		public void LogError(string message, int eventId = LogEntry.DefaultEventId) {
 			Log(TraceEventType.Error, message, eventId);
 		}
 
-		public void LogWarning(string message, int eventId = 0) {
+		public void LogWarning(string message, int eventId = LogEntry.DefaultEventId) {
 			Log(TraceEventType.Warning, message, eventId);
 		}
 
-		public void LogInformation(string message, int eventId = 0) {
+		public void LogInformation(string message, int eventId = LogEntry.DefaultEventId) {
 			Log(TraceEventType.Information, message, eventId);
 		}
 
-		public void LogVerbose(string message, int eventId = 0) {
+		public void LogVerbose(string message, int eventId = LogEntry.DefaultEventId) {
 			Log(TraceEventType.Verbose, message, eventId);
 		}
 
-		public void LogStart(string message, int eventId = 0) {
+		public void LogStart(string message, int eventId = LogEntry.DefaultEventId) {
 			Log(TraceEventType.Start, message, eventId);
 		}
 
-		public void LogStop(string message, int eventId = 0) {
+		public void LogStop(string message, int eventId = LogEntry.DefaultEventId) {
 			Log(TraceEventType.Stop, message, eventId);
 		}
 
-		public void LogResume(string message, int eventId = 0) {
+		public void LogResume(string message, int eventId = LogEntry.DefaultEventId) {
 			Log(TraceEventType.Resume, message, eventId);
 		}
 
-		public void LogSuspend(string message, int eventId = 0) {
+		public void LogSuspend(string message, int eventId = LogEntry.DefaultEventId) {
 			Log(TraceEventType.Suspend, message, eventId);
 		}
 

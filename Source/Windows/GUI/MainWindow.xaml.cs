@@ -67,8 +67,8 @@ namespace MAPE.Windows.GUI {
 
 			#region ILogMonitor
 
-			public void OnLog(Log log) {
-				this.owner.QueueLog(log);
+			public void OnLog(LogEntry entry) {
+				this.owner.QueueLog(entry);
 			}
 
 			#endregion
@@ -109,7 +109,7 @@ namespace MAPE.Windows.GUI {
 
 		private object logQueueLocker = new object();
 
-		private Queue<Log> logQueue = new Queue<Log>();
+		private Queue<LogEntry> logQueue = new Queue<LogEntry>();
 
 		private bool processing = false;
 
@@ -536,10 +536,10 @@ namespace MAPE.Windows.GUI {
 
 		private void ProcessLog() {
 			ItemCollection items = this.logListView.Items;
-			Log log;
+			LogEntry entry;
 			LogAdapter item = null; 
 			do {
-				// get a log from the log queue
+				// get a log entry from the log queue
 				lock (this.logQueueLocker) {
 					if (this.logQueue.Count <= 0) {
 						if (item != null && this.chaseLastLogMenuItem.IsChecked) {
@@ -549,7 +549,7 @@ namespace MAPE.Windows.GUI {
 						this.processing = false;
 						break;
 					}
-					log = logQueue.Dequeue();
+					entry = logQueue.Dequeue();
 				}
 
 				// remove some items if the count reaches the limit
@@ -561,7 +561,7 @@ namespace MAPE.Windows.GUI {
 				}
 
 				// add to the list view
-				item = new LogAdapter(log);
+				item = new LogAdapter(entry);
 				items.Add(item);
 			} while (true);
 
@@ -573,9 +573,9 @@ namespace MAPE.Windows.GUI {
 
 		#region private - called from outside UI thread
 
-		private void QueueLog(Log log) {
+		private void QueueLog(LogEntry entry) {
 			lock (this.logQueueLocker) {
-				this.logQueue.Enqueue(log);
+				this.logQueue.Enqueue(entry);
 				if (this.processing == false) {
 					this.processing = true;
 					this.Dispatcher.InvokeAsync(ProcessLog);
