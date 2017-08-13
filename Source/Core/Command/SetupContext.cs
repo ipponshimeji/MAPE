@@ -70,7 +70,7 @@ namespace MAPE.Command {
 			IActualProxy actualProxy = switcher.DetectSystemActualProxy();
 			if (actualProxy != null) {
 				this.ProxyDetected = true;
-				Util.DisposeWithoutFail(ref actualProxy);
+				DisposableUtil.ClearDisposableObject(ref actualProxy);
 			}
 			if (this.ProxyDetected == false && settings.SystemSettingsSwitcher.ActualProxy == null) {
 				// The authentication proxy cannot be detected automatically.

@@ -135,7 +135,7 @@ namespace MAPE.Server {
 
 					IActualProxy oldValue = this.actualProxy;
 					this.actualProxy = value;
-					Util.DisposeWithoutFail(oldValue);
+					DisposableUtil.DisposeSuppressingErrors(oldValue);
 				}
 			}
 		}
@@ -214,7 +214,7 @@ namespace MAPE.Server {
 				this.serverBasicCredentialCache = null;
 				Debug.Assert(this.Runner == null);
 				Debug.Assert(this.connections == null);
-				Util.DisposeWithoutFail(ref this.actualProxy);
+				DisposableUtil.ClearDisposableObject(ref this.actualProxy);
 				List<Listener> temp = this.listeners;
 				this.listeners = null;
 				if (temp != null) {

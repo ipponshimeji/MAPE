@@ -218,7 +218,7 @@ namespace MAPE.Windows.GUI {
 			// process this class level tasks
 			StopProxy();
 			this.Command.ProxyStateChanged -= command_ProxyStateChanged;
-			Util.DisposeWithoutFail(ref this.notifyIcon);
+			DisposableUtil.ClearDisposableObject(ref this.notifyIcon);
 
 			// process the base class level tasks
 			base.OnExit(e);

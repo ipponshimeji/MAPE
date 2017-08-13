@@ -302,7 +302,7 @@ namespace MAPE.Server {
 
 		private void DisposeStream() {
 			lock (this) {
-				Util.DisposeWithoutFail(ref this.networkStream);
+				DisposableUtil.ClearDisposableObject(ref this.networkStream);
 			}
 		}
 
@@ -328,8 +328,8 @@ namespace MAPE.Server {
 				tcpClient.Connect(this.host, this.port);
 				networkStream = tcpClient.GetStream();
 			} catch {
-				Util.DisposeWithoutFail(networkStream);
-				Util.DisposeWithoutFail(tcpClient);
+				DisposableUtil.DisposeSuppressingErrors(networkStream);
+				DisposableUtil.DisposeSuppressingErrors(tcpClient);
 				throw;
 			}
 
@@ -345,8 +345,8 @@ namespace MAPE.Server {
 			Debug.Assert(this.tcpClient != null);
 
 			// dispose connection resources
-			Util.DisposeWithoutFail(ref this.networkStream);
-			Util.DisposeWithoutFail(ref this.tcpClient);
+			DisposableUtil.ClearDisposableObject(ref this.networkStream);
+			DisposableUtil.ClearDisposableObject(ref this.tcpClient);
 
 			return;
 		}

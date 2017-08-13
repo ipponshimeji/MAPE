@@ -275,7 +275,7 @@ namespace MAPE.Command {
 				}
 
 				completed = this.runningProxyState.Stop(systemSessionEnding, millisecondsTimeout);
-				Util.DisposeWithoutFail(ref this.runningProxyState);
+				DisposableUtil.ClearDisposableObject(ref this.runningProxyState);
 			}
 
 			// notify

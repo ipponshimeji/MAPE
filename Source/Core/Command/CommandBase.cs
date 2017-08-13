@@ -207,7 +207,7 @@ namespace MAPE.Command {
 
 						this.commandSettings = commandSettings;
 					} catch {
-						Util.DisposeWithoutFail(ref actualProxy);
+						DisposableUtil.ClearDisposableObject(ref actualProxy);
 						throw;
 					}
 				} catch {
@@ -246,7 +246,7 @@ namespace MAPE.Command {
 					try {
 						stopConfirmed = proxy.Stop(millisecondsTimeout);
 					} finally {
-						Util.DisposeWithoutFail(proxy);
+						DisposableUtil.DisposeSuppressingErrors(proxy);
 					}
 				}
 

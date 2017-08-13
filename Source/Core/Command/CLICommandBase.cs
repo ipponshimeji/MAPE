@@ -66,7 +66,7 @@ namespace MAPE.Command {
 
 			public void Dispose() {
 				// dispose members
-				Util.DisposeWithoutFail(ref this.syncEvent);
+				DisposableUtil.ClearDisposableObject(ref this.syncEvent);
 
 				return;
 			}
