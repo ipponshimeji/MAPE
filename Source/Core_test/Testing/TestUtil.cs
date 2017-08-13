@@ -7,6 +7,7 @@ namespace MAPE.Test.Testing {
 	public static class TestUtil {
 		#region methods
 
+		// ToDo: necessary?
 		public static void AssertEqualLog(LogEntry expected, DateTime expectedBegin, DateTime expectedEnd, LogEntry actual) {
 			Assert.True(
 				expectedBegin <= actual.Time && actual.Time <= expectedEnd,

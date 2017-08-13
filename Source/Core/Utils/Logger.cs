@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 
@@ -30,6 +31,10 @@ namespace MAPE.Utils {
 		private static SourceLevels sourceLevels;
 
 		private static TraceLevel logLevel;
+
+		private static TraceLevel backupedLogLevel;
+
+		private static int testModeCount = 0;
 
 		private static int nextComponentId = 0;
 
@@ -72,9 +77,17 @@ namespace MAPE.Utils {
 			}
 			set {
 				lock (Logger.classLocker) {
-					if (Logger.logLevel != value && Logger.loggingStopped == false) {
-						Logger.logLevel = value;
-						Logger.sourceLevels = FromTraceLevel(Logger.sourceLevels, value);
+					// state checks
+					if (Logger.loggingStopped) {
+						return;
+					}
+
+					if (0 < Logger.testModeCount) {
+						// test mode (LogLevel is set to Verbose temporarily)
+						Logger.backupedLogLevel = value;
+					} else {
+						// normal mode
+						SetLogLevelInternal(value);
 					}
 				}
 			}
@@ -133,9 +146,12 @@ namespace MAPE.Utils {
 		public static bool RemoveLogMonitor(ILogMonitor monitor, int flushingQueueTimeout = 0) {
 			// argument checks
 			// monitor can be null (but may not be found in the monitor list)
+			if (flushingQueueTimeout < 0 && flushingQueueTimeout != Timeout.Infinite) {
+				throw new ArgumentOutOfRangeException(nameof(flushingQueueTimeout));
+			}
 
 			// wait for flushing queue
-			if (0 < flushingQueueTimeout) {
+			if (0 < flushingQueueTimeout || flushingQueueTimeout == Timeout.Infinite) {
 				Task task;
 				lock (Logger.deliveringLocker) {
 					task = Logger.deliveringTask;
@@ -161,6 +177,7 @@ namespace MAPE.Utils {
 			try {
 				// stop logging
 				lock (Logger.classLocker) {
+					Logger.testModeCount = 0;
 					Logger.LogLevel = TraceLevel.Off;
 					Logger.loggingStopped = true;
 				}
@@ -181,6 +198,52 @@ namespace MAPE.Utils {
 			}
 
 			return stopConfirmed;
+		}
+
+		public static int EnterTestMode() {
+			int count = 0;
+			lock (Logger.classLocker) {
+				// state checks
+				if (Logger.loggingStopped) {
+					Debug.Assert(Logger.testModeCount == 0);
+					return count;
+				}
+				if (Logger.testModeCount == int.MaxValue) {
+					throw new InvalidOperationException("The test mode counter is overflowed.");
+				}
+
+				// enter test mode
+				count = ++Logger.testModeCount;
+				if (count == 1) {
+					Logger.backupedLogLevel = Logger.logLevel;
+					SetLogLevelInternal(TraceLevel.Verbose);
+				}
+				Debug.Assert(Logger.logLevel == TraceLevel.Verbose);
+			}
+
+			return count;
+		}
+
+		public static int LeaveTestMode() {
+			int count = 0;
+			lock (Logger.classLocker) {
+				// state checks
+				if (Logger.loggingStopped) {
+					Debug.Assert(Logger.testModeCount == 0);
+					return count;
+				}
+				if (Logger.testModeCount <= 0) {
+					throw new InvalidOperationException("invalid state.");
+				}
+
+				// leave test mode
+				count = --Logger.testModeCount;
+				if (count == 0) {
+					SetLogLevelInternal(Logger.backupedLogLevel);
+				}
+			}
+
+			return count;
 		}
 
 
@@ -296,6 +359,12 @@ namespace MAPE.Utils {
 			return newSourceLevels;
 		}
 
+		private static void SetLogLevelInternal(TraceLevel value) {
+			if (Logger.logLevel != value) {
+				Logger.logLevel = value;
+				Logger.sourceLevels = FromTraceLevel(Logger.sourceLevels, value);
+			}
+		}
 
 		private static void EnqueueLog(LogEntry entry) {
 			// argument checks
