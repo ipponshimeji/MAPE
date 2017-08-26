@@ -59,7 +59,7 @@ namespace MAPE.Http {
 								modifications = owner.OnCommunicate(repeatCount, request, response);
 							} while (modifications != null);
 							// send the final response to the client
-							response.Write();
+							response.Write((IEnumerable<MessageBuffer.Modification>)null);
 							tunnelingMode = (request.IsConnectMethod && response.StatusCode == 200);
 						}
 

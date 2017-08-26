@@ -26,16 +26,30 @@ namespace MAPE.Utils {
 			return (value == null) ? null : value.Trim();
 		}
 
-		public static DnsEndPoint ParseEndPoint(string s) {
-			// ToDo: can simplify?
-			Uri uri = new Uri($"https://{s}", UriKind.Absolute);
-			if (uri.Port == 443) {
-				uri = new Uri($"http://{s}", UriKind.Absolute);
-				if (uri.Port == 80) {
-					throw new FormatException("The port number is indispensable.");
-				}
-			}
+		public static DnsEndPoint ParseEndPoint(string s, bool canOmitPort = false) {
+			// argument checks
+//			if (string.IsNullOrEmpty(s)) {
+//				throw new ArgumentNullException(nameof(s));
+//			}
 
+			// ToDo: can simplify?
+			Uri uri;
+			try {
+				if (canOmitPort) {
+					// give 80 for port if it is omitted
+					uri = new Uri($"http://{s}", UriKind.Absolute);
+				} else {
+					uri = new Uri($"https://{s}", UriKind.Absolute);
+					if (uri.Port == 443) {
+						uri = new Uri($"http://{s}", UriKind.Absolute);
+						if (uri.Port == 80) {
+							throw new FormatException("The port number is indispensable.");
+						}
+					}
+				}
+			} catch (UriFormatException exception) {
+				throw new FormatException(exception.Message);
+			}
 			if (string.CompareOrdinal(uri.PathAndQuery, "/") != 0 || string.IsNullOrEmpty(uri.Fragment) == false) {
 				throw new FormatException("Other part than host or port is specified.");
 			}

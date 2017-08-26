@@ -59,9 +59,13 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Http\Test\MessageTest.cs" />
+    <Compile Include="Http\Test\ResponseTest.cs" />
+    <Compile Include="Http\Test\RequestTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Testing\TestLogMonitor.cs" />
     <Compile Include="Testing\TestUtil.cs" />
+    <Compile Include="Utils\Test\UtilTest.cs" />
     <Compile Include="Utils\Test\DisposableUtilTest.cs" />
     <Compile Include="Utils\Test\JsonObjectDataTest.cs" />
     <Compile Include="Utils\Test\ObjectDataExtensionTestBase.cs" />

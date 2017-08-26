@@ -26,7 +26,7 @@ namespace MAPE.Http {
 			protected set;
 		}
 
-		public MessageBuffer.Span ProxyAuthorizationSpan {
+		public Span ProxyAuthorizationSpan {
 			get;
 			protected set;
 		}
@@ -79,8 +79,8 @@ namespace MAPE.Http {
 		public new bool Read() {
 			try {
 				return base.Read();
-			} catch {
-				throw new HttpException(HttpStatusCode.BadRequest);
+			} catch (Exception exception) {
+				throw new HttpException(exception, HttpStatusCode.BadRequest);
 			}
 		}
 
@@ -160,7 +160,7 @@ namespace MAPE.Http {
 					// save its value, but its span is unnecessary
 					if (this.HostEndPoint == null) {
 						string hostValue = HeaderBuffer.TrimHeaderFieldValue(headerBuffer.ReadFieldASCIIValue(false));
-						this.HostEndPoint = Util.ParseEndPoint(hostValue);
+						this.HostEndPoint = Util.ParseEndPoint(hostValue, canOmitPort: true);
 					} else {
 						headerBuffer.SkipField();
 					}
@@ -168,7 +168,7 @@ namespace MAPE.Http {
 				case "proxy-authorization":
 					// save its span, but its value is unnecessary
 					headerBuffer.SkipField();
-					this.ProxyAuthorizationSpan = new MessageBuffer.Span(startOffset, headerBuffer.CurrentOffset);
+					this.ProxyAuthorizationSpan = new Span(startOffset, headerBuffer.CurrentOffset);
 					break;
 				default:
 					base.ScanHeaderFieldValue(headerBuffer, decapitalizedFieldName, startOffset);
@@ -186,7 +186,7 @@ namespace MAPE.Http {
 			this.Method = null;
 			this.HostEndPoint = null;
 			this.Uri = null;
-			this.ProxyAuthorizationSpan = MessageBuffer.Span.ZeroToZero;
+			this.ProxyAuthorizationSpan = Span.ZeroToZero;
 
 			return;
 		}

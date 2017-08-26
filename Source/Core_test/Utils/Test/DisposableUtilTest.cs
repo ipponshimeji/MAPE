@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using Xunit;
-using MAPE.Test.Testing;
+using MAPE.Testing;
 
 
 namespace MAPE.Utils.Test {

@@ -116,36 +116,58 @@ namespace MAPE.Http {
 		#region methods - parse
 
 		public static Version ParseVersion(string value) {
+			// ToDo: in VS2017, convert it to a local method
+			Func<string, FormatException> createInvalidHTTPVersionException = (string reason) => {
+				// argument checks
+				Debug.Assert(reason != null);
+
+				return new FormatException("Invalid HTTP-version: {reason}.");
+			};
+
 			// argument checks
 			if (value == null) {
 				throw new ArgumentNullException(nameof(value));
 			}
 			if (value.StartsWith(VersionPrefix) == false) {
 				// invalid syntax
-				throw CreateBadRequestException();
+				throw createInvalidHTTPVersionException("invalid prefix");
 			}
 
 			// parse HTTP version
 			// This parsing does not check strict syntax, but enough here.
 			Version version;
 			if (Version.TryParse(value.Substring(VersionPrefix.Length), out version) == false) {
-				throw CreateBadRequestException();
+				throw createInvalidHTTPVersionException("invalid version format");
+			}
+			if (version.Build != -1 || version.Revision != -1) {
+				throw createInvalidHTTPVersionException("invalid version digits");
 			}
 
 			return version;
 		}
 
 		public static int ParseStatusCode(string value) {
+			// ToDo: in VS2017, convert it to a local method
+			Func<string, FormatException> createInvalidStatusCodeException = (string reason) => {
+				// argument checks
+				Debug.Assert(reason != null);
+
+				return new FormatException("Invalid status-code: {reason}.");
+			};
+
 			// argument checks
 			if (value == null) {
 				throw new ArgumentNullException(nameof(value));
+			}
+			if (value.Length != 3) {
+				throw createInvalidStatusCodeException("not 3 digits");
 			}
 
 			// parse status-code
 			// This parsing does not check strict syntax, but enough here.
 			int statusCode;
 			if (int.TryParse(value, out statusCode) == false) {
-				throw CreateBadRequestException();
+				throw createInvalidStatusCodeException("not integer");
 			}
 
 			return statusCode;
@@ -461,8 +483,8 @@ namespace MAPE.Http {
 					try {
 						ComponentFactory.FreeMemoryBlock(memoryBlock);
 					} catch {
-							// continue
-						}
+						// continue
+					}
 				}
 			);
 			this.memoryBlocks.Clear();

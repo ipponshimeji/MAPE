@@ -16,6 +16,8 @@ namespace MAPE.Http {
 
 		private BodyBuffer bodyBuffer;
 
+		private List<MessageBuffer.Modification> modifications;
+
 		private Stream output;
 
 		public bool MessageRead {
@@ -33,7 +35,7 @@ namespace MAPE.Http {
 			protected set;
 		}
 
-		public MessageBuffer.Span EndOfHeaderFields {
+		public Span EndOfHeaderFields {
 			get;
 			protected set;
 		}
@@ -60,16 +62,19 @@ namespace MAPE.Http {
 
 		#region creation and disposal
 
-		public Message() {
+		protected Message() {
 			// initialize members
 			this.headerBuffer = new HeaderBuffer();
 			this.bodyBuffer = new BodyBuffer();
+			this.modifications = new List<MessageBuffer.Modification>();
 			ResetThisClassLevelMessageProperties();
 
 			return;
 		}
 
 		public void Dispose() {
+			this.modifications.Clear();
+			this.modifications = null;
 			this.bodyBuffer.Dispose();
 			this.headerBuffer.Dispose();
 
@@ -153,7 +158,7 @@ namespace MAPE.Http {
 					emptyLine = ScanHeaderField(headerBuffer);
 				} while (emptyLine == false);
 				int endOfHeaderOffset = headerBuffer.CurrentOffset - 2;    // subtract empty line bytes
-				this.EndOfHeaderFields = new HeaderBuffer.Span(endOfHeaderOffset, endOfHeaderOffset);
+				this.EndOfHeaderFields = new Span(endOfHeaderOffset, endOfHeaderOffset);
 
 				// body
 				ScanBody(this.bodyBuffer);
@@ -169,7 +174,35 @@ namespace MAPE.Http {
 			return read;
 		}
 
-		public void Write(Stream output, IEnumerable<MessageBuffer.Modification> modifications = null) {
+		public void Write(Stream output) {
+			// argument checks
+			if (output == null) {
+				throw new ArgumentNullException(nameof(output));
+			}
+			if (output.CanWrite == false) {
+				throw new ArgumentException("It is not writable", nameof(output));
+			}
+
+			// write a message
+			IEnumerable<MessageBuffer.Modification> modifications = (0 < this.modifications.Count) ? this.modifications : null;
+			WriteHeader(output, this.headerBuffer, modifications);
+			WriteBody(output, this.bodyBuffer);
+
+			return;
+		}
+
+		public void Write() {
+			// state checks
+			Stream output = this.output;
+			if (output == null) {
+				throw new InvalidOperationException();
+			}
+
+			Write(output);
+		}
+
+		// ToDo: remove
+		public void Write(Stream output, IEnumerable<MessageBuffer.Modification> modifications) {
 			// argument checks
 			if (output == null) {
 				throw new ArgumentNullException(nameof(output));
@@ -186,7 +219,8 @@ namespace MAPE.Http {
 			return;
 		}
 
-		public void Write(IEnumerable<MessageBuffer.Modification> modifications = null) {
+		// ToDo: remove
+		public void Write(IEnumerable<MessageBuffer.Modification> modifications) {
 			// state checks
 			Stream output = this.output;
 			if (output == null) {
@@ -195,6 +229,34 @@ namespace MAPE.Http {
 			// modifications can be null
 
 			Write(output, modifications);
+		}
+
+		public void AppendModification(Span span, Func<Modifier, bool> handler) {
+			// argument checks
+			Debug.Assert(0 <= span.Start);
+			Debug.Assert(span.Start <= span.End);
+
+			// state checks
+			List<MessageBuffer.Modification> modifications = this.modifications;
+			Debug.Assert(modifications != null);
+
+			// find the insertion point
+			int index = modifications.Count;
+			for (int i = 0; i < modifications.Count; ++i) {
+				MessageBuffer.Modification modification = modifications[i];
+				if (span.End <= modification.Start) {
+					index = i;
+					break;
+				} else if (span.Start < modification.End) {
+					// overlapped
+					throw new ArgumentException("It conflicts with an existing span.", nameof(span));
+				}
+			}
+
+			// insert a modification
+			modifications.Insert(index, new MessageBuffer.Modification(span, handler));
+
+			return;
 		}
 
 		#endregion
@@ -319,10 +381,11 @@ namespace MAPE.Http {
 
 		private void ResetThisClassLevelMessageProperties() {
 			// reset message properties of this class level
+			this.modifications.Clear();
 			this.MessageRead = false;
 			this.Version = null;
 			this.ContentLength = 0;
-			this.EndOfHeaderFields = HeaderBuffer.Span.ZeroToZero;
+			this.EndOfHeaderFields = Span.ZeroToZero;
 
 			return;
 		}

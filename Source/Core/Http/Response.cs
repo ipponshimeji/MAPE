@@ -30,7 +30,7 @@ namespace MAPE.Http {
 			protected set;
 		}
 
-		public MessageBuffer.Span ProxyAuthenticateSpan {
+		public Span ProxyAuthenticateSpan {
 			get;
 			protected set;
 		}
@@ -174,7 +174,7 @@ namespace MAPE.Http {
 				case "proxy-authenticate":
 					// save its span and value
 					this.ProxyAuthenticateValue = headerBuffer.ReadFieldASCIIValue(false);
-					this.ProxyAuthenticateSpan = new MessageBuffer.Span(startOffset, headerBuffer.CurrentOffset);
+					this.ProxyAuthenticateSpan = new Span(startOffset, headerBuffer.CurrentOffset);
 					break;
 				default:
 					base.ScanHeaderFieldValue(headerBuffer, decapitalizedFieldName, startOffset);
@@ -191,7 +191,7 @@ namespace MAPE.Http {
 			// reset message properties of this class level
 			this.StatusCode = 0;
 			this.KeepAliveEnabled = true;
-			this.ProxyAuthenticateSpan = MessageBuffer.Span.ZeroToZero;
+			this.ProxyAuthenticateSpan = Span.ZeroToZero;
 			this.ProxyAuthenticateValue = null;
 
 			// Note that this.Request is not message property.

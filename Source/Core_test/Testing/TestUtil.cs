@@ -1,26 +1,22 @@
 ﻿using System;
+using System.Diagnostics;
+using System.IO;
 using Xunit;
-using MAPE.Utils;
 
 
-namespace MAPE.Test.Testing {
+namespace MAPE.Testing {
 	public static class TestUtil {
 		#region methods
 
-		// ToDo: necessary?
-		public static void AssertEqualLog(LogEntry expected, DateTime expectedBegin, DateTime expectedEnd, LogEntry actual) {
-			Assert.True(
-				expectedBegin <= actual.Time && actual.Time <= expectedEnd,
-				$"Expected: between {expectedBegin} and {expectedEnd}{Environment.NewLine}Actual: {actual.Time}"
-			);
-			Assert.Equal(expected.ParentComponentId, actual.ParentComponentId);
-			Assert.Equal(expected.ComponentId, actual.ComponentId);
-			Assert.Equal(expected.ComponentName, actual.ComponentName);
-			Assert.Equal(expected.EventType, actual.EventType);
-			Assert.Equal(expected.Message, actual.Message);
-			Assert.Equal(expected.EventId, actual.EventId);
-
-			return;
+		public static FileStream CreateTempFileStream() {
+			const int defaultBufferSize = 4096;     // same to the .NET Framework implementation
+			string path = Path.GetTempFileName();
+			try {
+				return new FileStream(path, FileMode.Truncate, FileAccess.ReadWrite, FileShare.None, defaultBufferSize, FileOptions.DeleteOnClose);
+			} catch {
+				File.Delete(path);
+				throw;
+			}
 		}
 
 		#endregion

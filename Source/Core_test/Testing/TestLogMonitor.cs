@@ -6,7 +6,7 @@ using Xunit;
 using MAPE.Utils;
 
 
-namespace MAPE.Test.Testing {
+namespace MAPE.Testing {
 	public class TestLogMonitor: ILogMonitor {
 		#region data - synchronized by StateLocker 
 

@@ -82,6 +82,8 @@
     <Compile Include="Http\IHttpComponentFactory.cs" />
     <Compile Include="Http\ICommunicationOwner.cs" />
     <Compile Include="Http\Communication.cs" />
+    <Compile Include="Http\Modifier.cs" />
+    <Compile Include="Http\Span.cs" />
     <Compile Include="Http\MessageBuffer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <AutoGen>True</AutoGen>

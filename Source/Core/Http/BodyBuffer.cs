@@ -298,7 +298,7 @@ namespace MAPE.Http {
 					Debug.Assert(this.Limit == bodyLengthInInt);
 					WriteTo(output, 0, bodyLengthInInt);
 				} else {
-					// the body was stored in the rest of the header buffer (very small body)
+					// the body was stored in the rest of the header buffer (tiny body)
 					HeaderBuffer headerBuffer = this.headerBuffer;
 					Debug.Assert(headerBuffer.Limit - headerBuffer.Next == bodyLengthInInt);
 					WriteTo(headerBuffer, output, headerBuffer.Next, bodyLengthInInt);
