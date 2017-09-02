@@ -592,12 +592,13 @@ namespace MAPE.Http.Test {
 					"",
 					EmptyBody
 				);
-				// Note that the order is X-Test-2, X-Test-1.
+				// keep the order of X-Test-1, X-Test-2 and X-Test-3.
 				string expectedOutput = CreateMessageString(
 					"GET / HTTP/1.1",
 					"Host: www.example.org",
-					"X-Test-2: dummy",
 					"X-Test-1: dummy",
+					"X-Test-2: dummy",
+					"X-Test-3: dummy",
 					"",
 					EmptyBody
 				);
@@ -609,11 +610,20 @@ namespace MAPE.Http.Test {
 					modifier.WriteASCIIString("X-Test-2: dummy", appendCRLF: true);
 					return true;
 				};
+				Func<Modifier, bool> handler3 = (modifier) => {
+					modifier.WriteASCIIString("X-Test-3: dummy", appendCRLF: true);
+					return true;
+				};
 
 				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
-					request.AddModification(request.EndOfHeaderFields, handler1);
-					request.AddModification(request.EndOfHeaderFields, handler2);
+					Span span = request.EndOfHeaderFields;
+					Debug.Assert(span.Length == 0);
+
+					// add at the same point
+					request.AddModification(span, handler1);
+					request.AddModification(span, handler2);
+					request.AddModification(span, handler3);
 				});
 			}
 
@@ -635,10 +645,13 @@ namespace MAPE.Http.Test {
 
 				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
-					request.AddModification(request.RequestTargetSpan, (modifier) => {
-						modifier.WriteASCIIString(request.TargetUri.PathAndQuery);	
-						return true;
-					});
+					request.AddModification(
+						request.RequestTargetSpan,
+						(modifier) => {
+							modifier.WriteASCIIString(request.TargetUri.PathAndQuery);	
+							return true;
+						}
+					);
 				});
 			}
 

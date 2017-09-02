@@ -321,9 +321,9 @@ namespace MAPE.Http.Test {
 		#endregion
 
 
-		#region AppendModification
+		#region AddModification
 
-		public class AppendModification {
+		public class AddModification {
 			#region types
 
 			public class Sample: Message {
@@ -463,6 +463,27 @@ namespace MAPE.Http.Test {
 				});
 			}
 
+			[Fact(DisplayName = "insert: middle, discrete")]
+			public void Insert_Middle_Discrete() {
+				// ARRANGE
+				Sample sample = new Sample();
+				sample.AddModification(new Span(10, 20), null);
+				sample.AddModification(new Span(30, 40), null);
+
+				// ACT
+				sample.AddModification(new Span(24, 26), null);
+
+				// ASSERT
+				sample.Test((modifications) => {
+					Span[] spans = ExtractSpans(modifications);
+
+					Assert.Equal(3, spans.Length);
+					Assert.Equal(new Span(10, 20), spans[0]);
+					Assert.Equal(new Span(24, 26), spans[1]);
+					Assert.Equal(new Span(30, 40), spans[2]);
+				});
+			}
+
 			[Fact(DisplayName = "overlapped")]
 			public void Overlapped() {
 				// ARRANGE
@@ -486,6 +507,32 @@ namespace MAPE.Http.Test {
 				// ACT & ASSERT
 				Assert.Throws<ArgumentException>(() => {
 					sample.AddModification(new Span(15, 18), null);
+				});
+			}
+
+			[Fact(DisplayName = "insert at the sampe point")]
+			public void InsertAtSamePoint() {
+				// ARRANGE
+				Sample sample = new Sample();
+				sample.AddModification(new Span(10, 10), null);
+				sample.AddModification(new Span(10, 10), null);
+				Func<Modifier, bool> handler = (modifier) => false;
+
+				// ACT
+				sample.AddModification(new Span(10, 10), handler);
+
+				// ASSERT
+				sample.Test((modifications) => {
+					MessageBuffer.Modification[] actual = modifications.ToArray();
+
+					// Note that the added modification is appended at the last
+					Assert.Equal(3, actual.Length);
+					Assert.Equal(new Span(10, 10), actual[0].Span);
+					Assert.Equal(null, actual[0].Handler);
+					Assert.Equal(new Span(10, 10), actual[1].Span);
+					Assert.Equal(null, actual[1].Handler);
+					Assert.Equal(new Span(10, 10), actual[2].Span);
+					Assert.Equal(handler, actual[2].Handler);
 				});
 			}
 

@@ -209,6 +209,7 @@ namespace MAPE.Http {
 			// argument checks
 			Debug.Assert(0 <= span.Start);
 			Debug.Assert(span.Start <= span.End);
+			// handler can be null
 
 			// state checks
 			List<MessageBuffer.Modification> modifications = this.modifications;
@@ -218,9 +219,16 @@ namespace MAPE.Http {
 			int index = modifications.Count;
 			for (int i = 0; i < modifications.Count; ++i) {
 				MessageBuffer.Modification modification = modifications[i];
-				if (span.End <= modification.Start) {
+				if (span.End < modification.Start) {
 					index = i;
 					break;
+				} else if (span.End == modification.Start) {
+					if (0 < modification.Length || 0 < span.Length) {
+						index = i;
+						break;
+					}
+					// continue
+					// keep order of the inserting (0-length) modifications on the same point 
 				} else if (span.Start < modification.End) {
 					// overlapped
 					throw new ArgumentException("It conflicts with an existing span.", nameof(span));

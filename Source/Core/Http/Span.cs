@@ -22,6 +22,12 @@ namespace MAPE.Http {
 			}
 		}
 
+		public int Length {
+			get {
+				return this.End - this.Start;
+			}
+		}
+
 		#endregion
 
 
