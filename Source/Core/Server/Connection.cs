@@ -221,7 +221,7 @@ namespace MAPE.Server {
 
 		#region overridables
 
-		protected virtual IEnumerable<MessageBuffer.Modification> GetModifications(Request request, Response response) {
+		protected virtual bool SetModifications(Request request, Response response) {
 			// argument checks
 			if (request == null) {
 				throw new ArgumentNullException(nameof(request));
@@ -231,30 +231,28 @@ namespace MAPE.Server {
 			// Currently only basic authorization for the proxy is handled.
 
 			// ToDo: thread protection if pipe line mode is supported.
-			IReadOnlyCollection<byte> overridingProxyAuthorization;
+			bool retry = false;
+			IReadOnlyCollection<byte> overridingProxyAuthorization = null;
 			if (response == null) {
-				// first request
-				if (request.ProxyAuthorizationSpan.IsZeroToZero == false) {
-					// the client specified Proxy-Authorization
-					overridingProxyAuthorization = null;
-				} else {
+				// before requesting firstly
+				if (request.ProxyAuthorizationSpan.IsZeroToZero) {
+					// set the cached proxy credential 
 					Proxy.BasicCredential proxyCredential = this.proxyCredential;
 					if (proxyCredential == null) {
 						string endPoint = this.server.EndPoint;
 						string realm = null;
 						proxyCredential = this.Proxy.GetServerBasicCredentials(endPoint, realm, firstRequest: true, oldBasicCredentials: null);
-						this.proxyCredential = proxyCredential;	// may be null
+						this.proxyCredential = proxyCredential; // may be null
 					}
-
 					overridingProxyAuthorization = proxyCredential?.Bytes;
 				}
 			} else {
-				// re-sending request
+				// after responded from the server
 				if (response.StatusCode == 407) {
 					// 407: Proxy Authentication Required
 					// the current credential seems to be invalid (or null)
 					string endPoint = this.server.EndPoint;
-					string realm = "Proxy";	// ToDo: extract realm from the field
+					string realm = "Proxy"; // ToDo: extract realm from the field
 					Proxy.BasicCredential proxyCredential = this.Proxy.GetServerBasicCredentials(endPoint, realm, firstRequest: false, oldBasicCredentials: this.proxyCredential);
 					this.proxyCredential = proxyCredential;
 					overridingProxyAuthorization = proxyCredential?.Bytes;
@@ -264,19 +262,21 @@ namespace MAPE.Server {
 				}
 			}
 
-			MessageBuffer.Modification[] modifications;
-			if (overridingProxyAuthorization == null) {
-				modifications = null;
-			} else {
-				modifications = new MessageBuffer.Modification[] {
-					new MessageBuffer.Modification(
-						request.ProxyAuthorizationSpan.IsZeroToZero? request.EndOfHeaderFields: request.ProxyAuthorizationSpan,
-						(mb) => { mb.Write(overridingProxyAuthorization); return true; }	
-					)
-				};
+			// set modifications if necessary 
+			if (overridingProxyAuthorization != null) {
+				// set or overwrite the Proxy-Authorization field.
+				Span span = request.ProxyAuthorizationSpan;
+				if (span.IsZeroToZero) {
+					span = request.EndOfHeaderFields;
+				}
+				request.AddModification(
+					span,
+					(modifier) => { modifier.Write(overridingProxyAuthorization); return true; }
+				);
+				retry = true;
 			}
 
-			return modifications;
+			return retry;
 		}
 
 		#endregion
@@ -302,7 +302,7 @@ namespace MAPE.Server {
 			}
 		}
 
-		IEnumerable<MessageBuffer.Modification> ICommunicationOwner.OnCommunicate(int repeatCount, Request request, Response response) {
+		bool ICommunicationOwner.OnCommunicate(int repeatCount, Request request, Response response) {
 			// argument checks
 			if (request == null) {
 				throw new ArgumentNullException(nameof(request));
@@ -319,21 +319,24 @@ namespace MAPE.Server {
 			if (server == null) {
 				throw new InvalidOperationException("The server connection has been closed.");
 			}
+			// ToDo: convert to an inner function in VS2017
 			Action<string, int, Exception> onConnectionError = (h, p, e) => {
 				LogError($"Cannot connect to the actual proxy '{h}:{p}': {e.Message}");
 				throw new HttpException(HttpStatusCode.InternalServerError, "Not Connected to Actual Proxy");
 			};
 			bool logVerbose = ShouldLog(TraceEventType.Verbose);
+			bool retry = false;
 
 			// start connection
 			if (response == null) {
-				// the start of a request
+				// on before requesting to the server firstly
+
 				// connect to the server
 				IActualProxy actualProxy = this.Proxy.ActualProxy;
 				IReadOnlyCollection<DnsEndPoint> remoteEndPoints = null;
 				if (actualProxy != null) {
-					if (request.Uri != null) {
-						remoteEndPoints = actualProxy.GetProxyEndPoints(request.Uri);
+					if (request.TargetUri != null) {
+						remoteEndPoints = actualProxy.GetProxyEndPoints(request.TargetUri);
 					} else {
 						remoteEndPoints = actualProxy.GetProxyEndPoints(request.HostEndPoint);
 					}
@@ -360,11 +363,10 @@ namespace MAPE.Server {
 			}
 
 			// retry checks and get modifications
-			IEnumerable<MessageBuffer.Modification> modifications = null;
 			if (repeatCount <= this.retryCount) {
-				// get actual modifications
-				modifications = GetModifications(request, response);
-				if (modifications == null && this.usingProxy == false && request.IsConnectMethod) {
+				// set modifications on the request
+				retry = SetModifications(request, response);
+				if (retry == false && this.usingProxy == false && request.IsConnectMethod) {
 					// ToDo: can be more smart?
 					LogDirectTunnelingResult(request);
 				}
@@ -374,16 +376,18 @@ namespace MAPE.Server {
 
 			// log and Keep-Alive check
 			if (response != null) {
+				// on after responded from the server
+
 				// log the round trip result
-				LogRoundTripResult(request, response, modifications != null);
+				LogRoundTripResult(request, response, retry);
 
 				// manage the connection for non-Keep-Alive mode
 				if (response.KeepAliveEnabled == false && !(request.IsConnectMethod && response.StatusCode == 200)) {
 					// disconnect the server connection
 					server.Disconnect();
 
-					// re-connect the server connection if the request is going to be re-sent
-					if (modifications != null) {
+					// re-connect the server connection if the request is going to be re-rent
+					if (retry) {
 						try {
 							server.EnsureConnect();
 						} catch (Exception exception) {
@@ -394,7 +398,7 @@ namespace MAPE.Server {
 				}
 			}
 
-			return modifications;
+			return retry;
 		}
 
 		HttpException ICommunicationOwner.OnError(Request request, Exception exception) {

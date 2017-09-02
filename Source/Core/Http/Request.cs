@@ -21,12 +21,24 @@ namespace MAPE.Http {
 			protected set;
 		}
 
-		public Uri Uri {
+		/// <summary>
+		/// 
+		/// </summary>
+		/// <remarks>
+		/// When the TargetUri property is not null,
+		/// it means that the target-request in the request line in the request is absolute-form.
+		/// </remarks>
+		public Uri TargetUri {
 			get;
 			protected set;
 		}
 
 		public Span RequestTargetSpan {
+			get;
+			protected set;
+		}
+
+		public Span HostSpan {
 			get;
 			protected set;
 		}
@@ -145,7 +157,7 @@ namespace MAPE.Http {
 						}
 					}
 					this.HostEndPoint = hostEndPoint;
-					this.Uri = uri;
+					this.TargetUri = uri;
 				}
 			}
 
@@ -173,6 +185,7 @@ namespace MAPE.Http {
 					} else {
 						headerBuffer.SkipField();
 					}
+					this.HostSpan = new Span(startOffset, headerBuffer.CurrentOffset);
 					break;
 				case "proxy-authorization":
 					// save its span, but its value is unnecessary
@@ -194,8 +207,9 @@ namespace MAPE.Http {
 			// reset message properties of this class level
 			this.Method = null;
 			this.HostEndPoint = null;
-			this.Uri = null;
+			this.TargetUri = null;
 			this.RequestTargetSpan = Span.ZeroToZero;
+			this.HostSpan = Span.ZeroToZero;
 			this.ProxyAuthorizationSpan = Span.ZeroToZero;
 
 			return;

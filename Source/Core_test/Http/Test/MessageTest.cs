@@ -404,11 +404,11 @@ namespace MAPE.Http.Test {
 			public void Insert_First() {
 				// ARRANGE
 				Sample sample = new Sample();
-				sample.AppendModification(new Span(10, 20), null);
-				sample.AppendModification(new Span(30, 40), null);
+				sample.AddModification(new Span(10, 20), null);
+				sample.AddModification(new Span(30, 40), null);
 
 				// ACT
-				sample.AppendModification(new Span(0, 10), null);
+				sample.AddModification(new Span(0, 10), null);
 
 				// ASSERT
 				sample.Test((modifications) => {
@@ -425,11 +425,11 @@ namespace MAPE.Http.Test {
 			public void Insert_Last() {
 				// ARRANGE
 				Sample sample = new Sample();
-				sample.AppendModification(new Span(10, 20), null);
-				sample.AppendModification(new Span(30, 40), null);
+				sample.AddModification(new Span(10, 20), null);
+				sample.AddModification(new Span(30, 40), null);
 
 				// ACT
-				sample.AppendModification(new Span(40, 50), null);
+				sample.AddModification(new Span(40, 50), null);
 
 				// ASSERT
 				sample.Test((modifications) => {
@@ -446,11 +446,11 @@ namespace MAPE.Http.Test {
 			public void Insert_Middle() {
 				// ARRANGE
 				Sample sample = new Sample();
-				sample.AppendModification(new Span(10, 20), null);
-				sample.AppendModification(new Span(30, 40), null);
+				sample.AddModification(new Span(10, 20), null);
+				sample.AddModification(new Span(30, 40), null);
 
 				// ACT
-				sample.AppendModification(new Span(20, 30), null);
+				sample.AddModification(new Span(20, 30), null);
 
 				// ASSERT
 				sample.Test((modifications) => {
@@ -467,12 +467,12 @@ namespace MAPE.Http.Test {
 			public void Overlapped() {
 				// ARRANGE
 				Sample sample = new Sample();
-				sample.AppendModification(new Span(10, 20), null);
-				sample.AppendModification(new Span(30, 40), null);
+				sample.AddModification(new Span(10, 20), null);
+				sample.AddModification(new Span(30, 40), null);
 
 				// ACT & ASSERT
 				Assert.Throws<ArgumentException>(() => {
-					sample.AppendModification(new Span(38, 45), null);
+					sample.AddModification(new Span(38, 45), null);
 				});
 			}
 
@@ -480,12 +480,12 @@ namespace MAPE.Http.Test {
 			public void Contained() {
 				// ARRANGE
 				Sample sample = new Sample();
-				sample.AppendModification(new Span(10, 20), null);
-				sample.AppendModification(new Span(30, 40), null);
+				sample.AddModification(new Span(10, 20), null);
+				sample.AddModification(new Span(30, 40), null);
 
 				// ACT & ASSERT
 				Assert.Throws<ArgumentException>(() => {
-					sample.AppendModification(new Span(15, 18), null);
+					sample.AddModification(new Span(15, 18), null);
 				});
 			}
 

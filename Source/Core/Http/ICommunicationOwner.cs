@@ -16,7 +16,7 @@ namespace MAPE.Http {
 
 		bool UsingProxy { get; }
 
-		IEnumerable<MessageBuffer.Modification> OnCommunicate(int repeatCount, Request request, Response response);
+		bool OnCommunicate(int repeatCount, Request request, Response response);
 
 		HttpException OnError(Request request, Exception exception);
 

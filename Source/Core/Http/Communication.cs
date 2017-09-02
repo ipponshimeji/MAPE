@@ -42,24 +42,24 @@ namespace MAPE.Http {
 						// send the request to the server
 						// The request is resent while the owner instructs modifications.
 						int repeatCount = 0;
-						IEnumerable<MessageBuffer.Modification> modifications = owner.OnCommunicate(repeatCount, request, null);
+						bool retry = OnCommunicate(owner, repeatCount, request, null);
 						if (request.IsConnectMethod && owner.UsingProxy == false) {
-							// handling CONNECT message for the actual server
+							// connecting to the actual server directly
 							response.RespondSimpleError(200, "Connection established");
 							tunnelingMode = true;
 						} else {
 							do {
-								request.Write(modifications);
+								request.Write();
 								if (response.Read(request) == false) {
 									// no response from the server
 									Exception innerException = new Exception("No response from the server.");
 									throw new HttpException(innerException, HttpStatusCode.BadGateway);
 								}
 								++repeatCount;
-								modifications = owner.OnCommunicate(repeatCount, request, response);
-							} while (modifications != null);
+								retry = OnCommunicate(owner, repeatCount, request, response);
+							} while (retry);
 							// send the final response to the client
-							response.Write((IEnumerable<MessageBuffer.Modification>)null);
+							response.Write();
 							tunnelingMode = (request.IsConnectMethod && response.StatusCode == 200);
 						}
 
@@ -115,6 +115,67 @@ namespace MAPE.Http {
 
 
 		#region privates
+
+		private static bool OnCommunicate(ICommunicationOwner owner, int repeatCount, Request request, Response response) {
+			// argument checks
+			Debug.Assert(owner != null);
+			Debug.Assert(request != null);
+			Debug.Assert((repeatCount == 0 && response == null) || (0 < repeatCount && response != null));
+
+			// preparation
+			if (response != null) {
+				// on responded from the server
+
+				// clear the modifications for the previous sending
+				request.ClearModifications();
+			}
+
+			// ask owner to process
+			bool needRetry = owner.OnCommunicate(repeatCount, request, response);
+			if (needRetry || response == null) {
+				// the case that the request will be sent to the server right after this
+
+				if (owner.UsingProxy == false && request.TargetUri != null) {
+					// The case that MAPE is connecting to the server directly and
+					// its request-target in request-line is absolute-form
+					// (non-null TargetUri means its request-target is absolute-form)
+
+					// convert the request-target from absolute-form to origin-form,
+					// because absolute-form is the form to be sent to proxies 
+					ModifyForDirectConnecting(request);
+				}
+			}
+
+			return needRetry;
+		}
+
+		private static void ModifyForDirectConnecting(Request request) {
+			// argument checks
+			Debug.Assert(request != null);
+			// non-null TargetUri means its request-target is absolute-form
+			Uri targetUri = request.TargetUri;
+			Debug.Assert(targetUri != null);
+
+			// convert its request-target from absolute-form to origin-form
+			Debug.Assert(request.RequestTargetSpan != Span.ZeroToZero);
+			request.AddModification(
+				request.RequestTargetSpan,
+				(modifier) => { modifier.WriteASCIIString(targetUri.PathAndQuery); return true; }
+			);
+
+			// overwrite Host field by the contents of the TargetUri
+			Span span = request.HostSpan;
+			if (span.IsZeroToZero) {
+				span = request.EndOfHeaderFields;
+			}
+			string modifiedHostField = $"Host: {targetUri.Host}:{targetUri.Port}";
+			request.AddModification(
+				request.RequestTargetSpan,
+				(modifier) => { modifier.WriteASCIIString(modifiedHostField, appendCRLF: true); return true; }
+			);
+
+			return;
+		}
 
 		private static void Tunnel(ICommunicationOwner owner, Stream requestInput, Stream requestOutput, Stream responseInput, Stream responseOutput) {
 			// argument checks

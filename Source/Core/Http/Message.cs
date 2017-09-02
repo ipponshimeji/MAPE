@@ -201,37 +201,11 @@ namespace MAPE.Http {
 			Write(output);
 		}
 
-		// ToDo: remove
-		public void Write(Stream output, IEnumerable<MessageBuffer.Modification> modifications) {
-			// argument checks
-			if (output == null) {
-				throw new ArgumentNullException(nameof(output));
-			}
-			if (output.CanWrite == false) {
-				throw new ArgumentException("It is not writable", nameof(output));
-			}
-			// modifications can be null
-
-			// write a message
-			WriteHeader(output, this.headerBuffer, modifications);
-			WriteBody(output, this.bodyBuffer);
-
-			return;
+		public void ClearModifications() {
+			this.modifications.Clear();
 		}
 
-		// ToDo: remove
-		public void Write(IEnumerable<MessageBuffer.Modification> modifications) {
-			// state checks
-			Stream output = this.output;
-			if (output == null) {
-				throw new InvalidOperationException();
-			}
-			// modifications can be null
-
-			Write(output, modifications);
-		}
-
-		public void AppendModification(Span span, Func<Modifier, bool> handler) {
+		public void AddModification(Span span, Func<Modifier, bool> handler) {
 			// argument checks
 			Debug.Assert(0 <= span.Start);
 			Debug.Assert(span.Start <= span.End);
