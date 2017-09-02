@@ -146,7 +146,8 @@ namespace MAPE.Http.Test {
 						using (TMessage message = adapter.Create()) {
 							message.AttachStreams(inputStream, outputStream);
 							try {
-								adapter.Read(message, request);
+								bool actualRead = adapter.Read(message, request);
+								Assert.Equal(true, actualRead);
 								action?.Invoke(message);
 								adapter.Write(message);
 							} finally {
@@ -286,6 +287,32 @@ namespace MAPE.Http.Test {
 					// Test
 					TestReadWrite(input, expectedOutput, action, request);
 				}
+			}
+
+			#endregion
+
+
+			#region tests
+
+			[Fact(DisplayName = "empty input")]
+			public void Empty() {
+				// ARRANGE & ACT
+				bool actual;
+				using (Stream stream = new MemoryStream()) {
+					IAdapter adapter = this.Adapter;
+					using (TMessage message = adapter.Create()) {
+						message.AttachStreams(stream, stream);
+						try {
+							// act
+							actual = adapter.Read(message, null);
+						} finally {
+							message.DetachStreams();
+						}
+					}
+				}
+
+				// ASSERT
+				Assert.Equal(false, actual);
 			}
 
 			#endregion
