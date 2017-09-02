@@ -45,7 +45,7 @@ namespace MAPE.Http.Test {
 				);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
 					Assert.Equal("GET", request.Method);
 					Assert.Equal(new Version(1, 1), request.Version);
@@ -65,7 +65,7 @@ namespace MAPE.Http.Test {
 				);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
 					Assert.Equal("POST", request.Method);
 					Assert.Equal("www.example.org:80", request.Host);
@@ -84,7 +84,7 @@ namespace MAPE.Http.Test {
 				);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
 					Assert.Equal("GET", request.Method);
 					Assert.Equal(new Version(1, 0), request.Version);
@@ -103,7 +103,7 @@ namespace MAPE.Http.Test {
 				);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				HttpException exception = Assert.Throws<HttpException>(
 					() => TestReadWrite(input, expectedOutput)
 				);
@@ -121,7 +121,7 @@ namespace MAPE.Http.Test {
 				);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				HttpException exception = Assert.Throws<HttpException>(
 					() => TestReadWrite(input, expectedOutput)
 				);
@@ -139,7 +139,7 @@ namespace MAPE.Http.Test {
 				);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				HttpException exception = Assert.Throws<HttpException>(
 					() => TestReadWrite(input, expectedOutput)
 				);
@@ -157,7 +157,7 @@ namespace MAPE.Http.Test {
 				);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
 					Assert.Equal("www.example.org:80", request.Host);
 					// ToDo: check?
@@ -175,7 +175,7 @@ namespace MAPE.Http.Test {
 				);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
 					Assert.Equal("www.example.org:80", request.Host);
 					// ToDo: check?
@@ -193,7 +193,7 @@ namespace MAPE.Http.Test {
 				);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
 					Assert.Equal("www.example.org:80", request.Host);
 					Assert.Equal(new Uri("http://www.example.org/abc/def?ghij=kl"), request.Uri);
@@ -211,7 +211,7 @@ namespace MAPE.Http.Test {
 				);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
 					Assert.Equal("CONNECT", request.Method);
 					Assert.Equal(new DnsEndPoint("www.example.org", 443), request.HostEndPoint);
@@ -230,7 +230,7 @@ namespace MAPE.Http.Test {
 				);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
 					Assert.Equal("OPTIONS", request.Method);
 				});
@@ -253,7 +253,7 @@ namespace MAPE.Http.Test {
 				Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < input.Length);
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
 					Assert.Equal("www.example.org:80", request.Host);
 				});
@@ -276,7 +276,7 @@ namespace MAPE.Http.Test {
 				Debug.Assert(input.Length < ComponentFactory.MemoryBlockCache.MemoryBlockSize); 
 				string expectedOutput = input;
 
-				// Test
+				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
 					Assert.Equal("PUT", request.Method);
 					Assert.Equal("www.example.org:80", request.Host);
@@ -302,7 +302,7 @@ namespace MAPE.Http.Test {
 				Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < header.Length + 2 + bodyLength);
 				Debug.Assert(bodyLength <= ComponentFactory.MemoryBlockCache.MemoryBlockSize);
 
-				// Test
+				// TEST
 				TestReadWriteSimpleBody(header, bodyLength, (request) => {
 					Assert.Equal("PUT", request.Method);
 					Assert.Equal("www.example.org:80", request.Host);
@@ -328,7 +328,7 @@ namespace MAPE.Http.Test {
 				Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < bodyLength);
 				Debug.Assert(bodyLength <= BodyBuffer.BodyStreamThreshold);
 
-				// Test
+				// TEST
 				TestReadWriteSimpleBody(header, bodyLength, (request) => {
 					Assert.Equal("PUT", request.Method);
 					Assert.Equal("www.example.org:80", request.Host);
@@ -352,7 +352,7 @@ namespace MAPE.Http.Test {
 				// In a Request object, 'large' length body is stored in a FileStream.
 				Debug.Assert(BodyBuffer.BodyStreamThreshold < bodyLength);
 
-				// Test
+				// TEST
 				TestReadWriteSimpleBody(header, bodyLength, (request) => {
 					Assert.Equal("PUT", request.Method);
 					Assert.Equal("www.example.org:80", request.Host);
@@ -437,6 +437,92 @@ namespace MAPE.Http.Test {
 			// ToDo: body
 			//  with chunk-ext 
 			//  multi transfer-coding in Transfer-Encoding
+
+			[Fact(DisplayName = "modification: append")]
+			public void Modification_append() {
+				// ARRANGE
+				string input = CreateMessageString(
+					"GET / HTTP/1.1",
+					"Host: www.example.org",
+					"",
+					EmptyBody
+				);
+				string expectedOutput = CreateMessageString(
+					"GET / HTTP/1.1",
+					"Host: www.example.org",
+					"X-Test: dummy",
+					"",
+					EmptyBody
+				);
+				Func<Modifier, bool> handler = (modifier) => {
+					modifier.WriteASCIIString("X-Test: dummy", appendCRLF: true);
+					return true;
+				};
+
+				// TEST
+				TestReadWrite(input, expectedOutput, (request) => {
+					request.AppendModification(request.EndOfHeaderFields, handler);
+				});
+			}
+
+			[Fact(DisplayName = "modification: append at the same point")]
+			public void Modification_append_samepoint() {
+				// ARRANGE
+				string input = CreateMessageString(
+					"GET / HTTP/1.1",
+					"Host: www.example.org",
+					"",
+					EmptyBody
+				);
+				// Note that the order is X-Test-2, X-Test-1.
+				string expectedOutput = CreateMessageString(
+					"GET / HTTP/1.1",
+					"Host: www.example.org",
+					"X-Test-2: dummy",
+					"X-Test-1: dummy",
+					"",
+					EmptyBody
+				);
+				Func<Modifier, bool> handler1 = (modifier) => {
+					modifier.WriteASCIIString("X-Test-1: dummy", appendCRLF: true);
+					return true;
+				};
+				Func<Modifier, bool> handler2 = (modifier) => {
+					modifier.WriteASCIIString("X-Test-2: dummy", appendCRLF: true);
+					return true;
+				};
+
+				// TEST
+				TestReadWrite(input, expectedOutput, (request) => {
+					request.AppendModification(request.EndOfHeaderFields, handler1);
+					request.AppendModification(request.EndOfHeaderFields, handler2);
+				});
+			}
+
+			[Fact(DisplayName = "modification: change")]
+			public void Modification_change() {
+				// ARRANGE
+				string input = CreateMessageString(
+					"GET http://www.example.org/test/index.html?abc=def HTTP/1.1",
+					"Host: www.example.org",
+					"",
+					EmptyBody
+				);
+				string expectedOutput = CreateMessageString(
+					"GET /test/index.html?abc=def HTTP/1.1",
+					"Host: www.example.org",
+					"",
+					EmptyBody
+				);
+
+				// TEST
+				TestReadWrite(input, expectedOutput, (request) => {
+					request.AppendModification(request.RequestTargetSpan, (modifier) => {
+						modifier.WriteASCIIString(request.Uri.PathAndQuery);	
+						return true;
+					});
+				});
+			}
 
 			#endregion
 		}

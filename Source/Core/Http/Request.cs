@@ -26,6 +26,11 @@ namespace MAPE.Http {
 			protected set;
 		}
 
+		public Span RequestTargetSpan {
+			get;
+			protected set;
+		}
+
 		public Span ProxyAuthorizationSpan {
 			get;
 			protected set;
@@ -103,7 +108,11 @@ namespace MAPE.Http {
 
 			// read items
 			string method = headerBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
+
+			int targetStart = headerBuffer.CurrentOffset;
 			string target = headerBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: false);
+			this.RequestTargetSpan = new Span(targetStart, headerBuffer.CurrentOffset - 1);
+			
 			string httpVersion = headerBuffer.ReadSpaceSeparatedItem(skipItem: false, decapitalize: false, lastItem: true);
 
 			// set message properties
@@ -186,6 +195,7 @@ namespace MAPE.Http {
 			this.Method = null;
 			this.HostEndPoint = null;
 			this.Uri = null;
+			this.RequestTargetSpan = Span.ZeroToZero;
 			this.ProxyAuthorizationSpan = Span.ZeroToZero;
 
 			return;
