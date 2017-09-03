@@ -87,8 +87,9 @@ namespace MAPE.Http {
 			RespondSimpleError(this.Output, statusCode, reasonPhrase);
 		}
 
-		public bool Read(Request request) {
-			// argument
+		public bool Read(Stream input, Request request) {
+			// argument checks
+			Debug.Assert(input != null);
 			// request can be null
 
 			// state checks
@@ -99,9 +100,30 @@ namespace MAPE.Http {
 			// set this.Request during reading message.
 			this.Request = request;
 			try {
-				return base.Read();
-			} catch {
-				throw new HttpException(HttpStatusCode.BadGateway);
+				return base.Read(input);
+			} catch (Exception exception) {
+				throw new HttpException(exception, HttpStatusCode.BadGateway);
+			} finally {
+				this.Request = null;
+			}
+		}
+
+		public bool ReadHeader(Stream input, Request request) {
+			// argument checks
+			Debug.Assert(input != null);
+			// request can be null
+
+			// state checks
+			if (this.Request != null) {
+				throw new InvalidOperationException("This object is reading now.");
+			}
+
+			// set this.Request during reading message.
+			this.Request = request;
+			try {
+				return base.ReadHeader(input);
+			} catch (Exception exception) {
+				throw new HttpException(exception, HttpStatusCode.BadGateway);
 			} finally {
 				this.Request = null;
 			}

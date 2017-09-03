@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -93,9 +94,17 @@ namespace MAPE.Http {
 
 		#region methods
 
-		public new bool Read() {
+		public new bool Read(Stream input) {
 			try {
-				return base.Read();
+				return base.Read(input);
+			} catch (Exception exception) {
+				throw new HttpException(exception, HttpStatusCode.BadRequest);
+			}
+		}
+
+		public new bool ReadHeader(Stream input) {
+			try {
+				return base.ReadHeader(input);
 			} catch (Exception exception) {
 				throw new HttpException(exception, HttpStatusCode.BadRequest);
 			}

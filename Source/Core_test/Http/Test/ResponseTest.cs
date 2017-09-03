@@ -239,7 +239,7 @@ namespace MAPE.Http.Test {
 
 				// Test
 				TestReadWrite(input, expectedOutput, (response) => {
-					Assert.Equal(200, response.StatusCode);
+					Assert.Equal(1, response.ContentLength);
 				});
 			}
 
@@ -263,7 +263,7 @@ namespace MAPE.Http.Test {
 
 				// Test
 				TestReadWriteSimpleBody(header, bodyLength, (response) => {
-					Assert.Equal(200, response.StatusCode);
+					Assert.Equal(bodyLength, response.ContentLength);
 				});
 			}
 
@@ -287,7 +287,7 @@ namespace MAPE.Http.Test {
 
 				// Test
 				TestReadWriteSimpleBody(header, bodyLength, (response) => {
-					Assert.Equal(200, response.StatusCode);
+					Assert.Equal(bodyLength, response.ContentLength);
 				});
 			}
 
@@ -309,7 +309,7 @@ namespace MAPE.Http.Test {
 
 				// Test
 				TestReadWriteSimpleBody(header, bodyLength, (response) => {
-					Assert.Equal(200, response.StatusCode);
+					Assert.Equal(bodyLength, response.ContentLength);
 				});
 			}
 
@@ -345,7 +345,7 @@ namespace MAPE.Http.Test {
 
 					// Test
 					TestReadWrite(input, expectedOutput, (response) => {
-						Assert.Equal(200, response.StatusCode);
+						Assert.Equal(-1, response.ContentLength);
 					});
 				}
 			}
@@ -386,7 +386,128 @@ namespace MAPE.Http.Test {
 
 					// Test
 					TestReadWrite(input, expectedOutput, (response) => {
-						Assert.Equal(200, response.StatusCode);
+						Assert.Equal(-1, response.ContentLength);
+					});
+				}
+			}
+
+			[Fact(DisplayName = "body: chunked large")]
+			public void Body_Chunked_Large() {
+				using (MemoryStream input = new MemoryStream()) {
+					// ToDo: in VS2017, convert it to a local method
+					Action<string> writeLine = (string line) => {
+						WriteLinesTo(input, line);
+					};
+					Action<long> writeChunkData = (long size) => {
+						WriteRandomBody(size, input, appendCRLF: true);
+					};
+
+					// write header
+					WriteLinesTo(
+						input,
+						"HTTP/1.1 200 OK",
+						$"Transfer-Encoding: chunked",
+						""
+					);
+
+					// write chunked body
+					for (int i = 0; i < 100; ++i) {
+						writeLine("100");		// chunk-size, in upper case
+						writeChunkData(0x100);  // chunk-data
+					}
+					writeLine("0");				// last-chunk
+					writeLine("");				// end of chunked-body
+
+					input.Position = 0;
+					Stream expectedOutput = input;  // same to the input
+
+					// Test
+					TestReadWrite(input, expectedOutput, (response) => {
+						Assert.Equal(-1, response.ContentLength);
+					});
+				}
+			}
+
+			[Fact(DisplayName = "redirect: tiny")]
+			public void Redirect_Tiny() {
+				// ARRANGE
+				string input = CreateMessageString(
+					"HTTP/1.1 200 OK",
+					"Content-Length: 10",
+					"",
+					"0123456789"
+				);
+
+				// The body length should be in range of 'tiny' length.
+				// That is, the whole message must be stored in one memory block.
+				// In a Response object, 'tiny' length body is stored in the rest of header's memory block.
+				// Note that the length of the string is equal to the count of message octets in this sample.  
+				Debug.Assert(input.Length < ComponentFactory.MemoryBlockCache.MemoryBlockSize);
+				string expectedOutput = input;
+
+				// TEST
+				TestReadHeaderRedirect(input, expectedOutput, (response) => {
+					Assert.Equal(10, response.ContentLength);
+				});
+			}
+
+			[Fact(DisplayName = "redirect: medium")]
+			public void Redirect_Medium() {
+				// ARRANGE
+				const int bodyLength = 10 * 1024;   // 10k
+				string header = CreateMessageString(
+					"HTTP/1.1 200 OK",
+					$"Content-Length: {bodyLength}",
+					""
+				);
+
+				// The body length should be in range of 'medium' length.
+				// That is, 
+				// * It must be larger than the memory block size, and
+				// * It must be smaller than or equal to BodyBuffer.BodyStreamThreshold.
+				// In a Response object, 'medium' length body is stored in a MemoryStream.
+				Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < bodyLength);
+				Debug.Assert(bodyLength <= BodyBuffer.BodyStreamThreshold);
+
+				// Test
+				TestReadHeaderRedirectSimpleBody(header, bodyLength, (response) => {
+					Assert.Equal(bodyLength, response.ContentLength);
+				});
+			}
+
+			[Fact(DisplayName = "redirect: chunked")]
+			public void Redirect_Chunked() {
+				using (MemoryStream input = new MemoryStream()) {
+					// ToDo: in VS2017, convert it to a local method
+					Action<string> writeLine = (string line) => {
+						WriteLinesTo(input, line);
+					};
+					Action<long> writeChunkData = (long size) => {
+						WriteRandomBody(size, input, appendCRLF: true);
+					};
+
+					// write header
+					WriteLinesTo(
+						input,
+						"HTTP/1.1 200 OK",
+						$"Transfer-Encoding: chunked",
+						""
+					);
+
+					// write chunked body
+					writeLine("D0");        // chunk-size, in upper case
+					writeChunkData(0xD0);   // chunk-data
+					writeLine("8");         // chunk-size, in lower case 
+					writeChunkData(0x08);   // chunk-data
+					writeLine("0");         // last-chunk
+					writeLine("");          // end of chunked-body
+
+					input.Position = 0;
+					Stream expectedOutput = input;  // same to the input
+
+					// Test
+					TestReadHeaderRedirect(input, expectedOutput, (response) => {
+						Assert.Equal(-1, response.ContentLength);
 					});
 				}
 			}
@@ -394,6 +515,9 @@ namespace MAPE.Http.Test {
 			// ToDo: body
 			//  with chunk-ext 
 			//  multi transfer-coding in Transfer-Encoding
+			// ToDo: redirect
+			//  medium
+			// ToDo: request param
 
 			#endregion
 		}
@@ -415,12 +539,20 @@ namespace MAPE.Http.Test {
 					return new Response();
 				}
 
-				public bool Read(Response message, Request request) {
-					return message.Read(request);
+				public bool Read(Response message, Stream input, Request request) {
+					return message.Read(input, request);
 				}
 
-				public void Write(Response message) {
-					message.Write();
+				public void Write(Response message, Stream output, bool suppressModification) {
+					message.Write(output, suppressModification);
+				}
+
+				public bool ReadHeader(Response message, Stream input, Request request) {
+					return message.ReadHeader(input, request);
+				}
+
+				public void Redirect(Response message, Stream output, Stream input, bool suppressModification) {
+					message.Redirect(output, input, suppressModification);
 				}
 
 				#endregion

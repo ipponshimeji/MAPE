@@ -20,7 +20,7 @@ namespace MAPE.Http {
 
 		private Stream output;
 
-		public bool MessageRead {
+		public MessageReadingState ReadingState {
 			get;
 			private set;
 		}
@@ -51,9 +51,21 @@ namespace MAPE.Http {
 			}
 		}
 
+		public bool MessageRead {
+			get {
+				return this.ReadingState == MessageReadingState.Body;
+			}
+		}
+
 		protected Stream Output {
 			get {
 				return this.output;
+			}
+		}
+
+		protected IReadOnlyList<MessageBuffer.Modification> Modifications {
+			get {
+				return this.modifications;
 			}
 		}
 
@@ -134,47 +146,103 @@ namespace MAPE.Http {
 		/// The public version of Read() is provided by derived class, Request class and Response class,
 		/// utilizing this implementation.
 		/// </remarks>
-		protected bool Read() {
-			bool read = false;
+		protected bool Read(Stream input) {
+			// argument checks
+			if (input == null) {
+				throw new ArgumentNullException(nameof(input));
+			}
+
+			// read a message from the input
+			ReadHeader(input);
+			if (this.ReadingState == MessageReadingState.Header) {
+				ReadBody(input);
+			}
+
+			return this.ReadingState == MessageReadingState.Body;
+		}
+
+		protected bool ReadHeader(Stream input) {
+			// argument checks
+			if (input == null) {
+				throw new ArgumentNullException(nameof(input));
+			}
+
+			// read header part from the input
+			HeaderBuffer headerBuffer = this.headerBuffer;
+			// headerBuffer.InputStream = input;
 			try {
 				// state checks
-				HeaderBuffer headerBuffer = this.headerBuffer;
 				Debug.Assert(headerBuffer.CanRead);
-				Debug.Assert(bodyBuffer.CanRead);
 
 				// clear current contents
 				ResetMessageProperties();
 				headerBuffer.ResetBuffer();
 				bodyBuffer.ResetBuffer();
+				Debug.Assert(this.ReadingState == MessageReadingState.None);
 
-				// read a message
-
-				// start line
+				// read start line
 				ScanStartLine(headerBuffer);
 
-				// header fields
+				// read header fields
 				bool emptyLine;
 				do {
 					emptyLine = ScanHeaderField(headerBuffer);
 				} while (emptyLine == false);
-				int endOfHeaderOffset = headerBuffer.CurrentOffset - 2;    // subtract empty line bytes
+
+				// update state
+				int endOfHeaderOffset = headerBuffer.CurrentOffset - 2;  // subtract empty line bytes
 				this.EndOfHeaderFields = new Span(endOfHeaderOffset, endOfHeaderOffset);
-
-				// body
-				ScanBody(this.bodyBuffer);
-
-				// result
-				this.MessageRead = true;
-				read = true;	// completed
+				this.ReadingState = MessageReadingState.Header;
 			} catch (EndOfStreamException) {
-				Debug.Assert(read == false);
+				// no data from input
+				// Note that incomplete data results an exception other than EndOfStreamException.
+				Debug.Assert(this.ReadingState == MessageReadingState.None);
 				// continue
+			} catch {
+				this.ReadingState = MessageReadingState.Error;
+				throw;
+			} finally {
+//				headerBuffer.InputStream = null;
 			}
 
-			return read;
+			return this.ReadingState == MessageReadingState.Header;
 		}
 
-		public void Write(Stream output) {
+		protected void ReadBody(Stream input) {
+			// argument checks
+			if (input == null) {
+				// at this point, input is dummy
+				throw new ArgumentNullException(nameof(input));
+			}
+
+			// state checks
+			if (this.ReadingState != MessageReadingState.Header) {
+				throw new InvalidOperationException("The current position is not the end of the header.");
+			}
+
+			// read body part from the input
+			// Note that the bodyBuffer reads bytes through the headerBuffer.
+			HeaderBuffer headerBuffer = this.headerBuffer;
+			// headerBuffer.InputStream = input;
+			try {
+				// state checks
+				Debug.Assert(headerBuffer.CanRead);
+				Debug.Assert(bodyBuffer.CanRead);
+
+				// read body
+				ScanBody(this.bodyBuffer);
+				this.ReadingState = MessageReadingState.Body;
+			} catch {
+				this.ReadingState = MessageReadingState.Error;
+				throw;
+			} finally {
+				//headerBuffer.InputStream = null;
+			}
+
+			return;
+		}
+
+		public void Write(Stream output, bool suppressModification = false) {
 			// argument checks
 			if (output == null) {
 				throw new ArgumentNullException(nameof(output));
@@ -183,10 +251,40 @@ namespace MAPE.Http {
 				throw new ArgumentException("It is not writable", nameof(output));
 			}
 
+			// state checks
+			if (this.ReadingState != MessageReadingState.Body) {
+				throw new InvalidOperationException("The body part is not read.");
+			}
+
 			// write a message
-			IEnumerable<MessageBuffer.Modification> modifications = (0 < this.modifications.Count) ? this.modifications : null;
+			IEnumerable<MessageBuffer.Modification> modifications = (suppressModification == false && 0 < this.modifications.Count) ? this.modifications : null;
 			WriteHeader(output, this.headerBuffer, modifications);
 			WriteBody(output, this.bodyBuffer);
+
+			return;
+		}
+
+		public void Redirect(Stream output, Stream input, bool suppressModification = false) {
+			// argument checks
+			if (output == null) {
+				throw new ArgumentNullException(nameof(output));
+			}
+			if (output.CanWrite == false) {
+				throw new ArgumentException("It is not writable", nameof(output));
+			}
+
+			// state checks
+			if (this.ReadingState != MessageReadingState.Header) {
+				throw new InvalidOperationException();	// ToDo: message
+			}
+
+			// write/redirect a message
+			IEnumerable<MessageBuffer.Modification> modifications = (0 < this.modifications.Count) ? this.modifications : null;
+			WriteHeader(output, this.headerBuffer, modifications);
+			RedirectBody(output, input, this.bodyBuffer);
+
+			// update state
+			this.ReadingState = MessageReadingState.BodyRedirected;
 
 			return;
 		}
@@ -356,6 +454,16 @@ namespace MAPE.Http {
 			bodyBuffer.WriteBody(output);
 		}
 
+		protected virtual void RedirectBody(Stream output, Stream input, BodyBuffer bodyBuffer) {
+			// argument checks
+			Debug.Assert(output != null);
+			Debug.Assert(input != null);
+			Debug.Assert(bodyBuffer != null);
+
+			// write message body
+			bodyBuffer.RedirectBody(output, input, this.ContentLength);
+		}
+
 		#endregion
 
 
@@ -364,7 +472,7 @@ namespace MAPE.Http {
 		private void ResetThisClassLevelMessageProperties() {
 			// reset message properties of this class level
 			this.modifications.Clear();
-			this.MessageRead = false;
+			this.ReadingState = MessageReadingState.None;
 			this.Version = null;
 			this.ContentLength = 0;
 			this.EndOfHeaderFields = Span.ZeroToZero;

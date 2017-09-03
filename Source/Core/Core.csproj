@@ -76,6 +76,7 @@
     <Compile Include="ComponentBase\ComponentLoggerExtensions.cs" />
     <Compile Include="ComponentBase\IComponentLogger.cs" />
     <Compile Include="Http\BodyBuffer.cs" />
+    <Compile Include="Http\MessageReadingState.cs" />
     <Compile Include="Http\HttpException.cs" />
     <Compile Include="Http\HeaderBuffer.cs" />
     <Compile Include="Http\CommunicationSubType.cs" />

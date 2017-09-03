@@ -26,6 +26,21 @@ namespace MAPE.Utils {
 			return (value == null) ? null : value.Trim();
 		}
 
+		public static FileStream CreateTempFileStream() {
+			string tempFilePath = Path.GetTempFileName();
+			try {
+				int bufferSize = 4096;	// same to the default value of .NET Framework implementation
+				return new FileStream(tempFilePath, FileMode.Create, FileAccess.ReadWrite, FileShare.None, bufferSize, FileOptions.DeleteOnClose);
+			} catch {
+				try {
+					File.Delete(tempFilePath);
+				} catch {
+					// continue
+				}
+				throw;
+			}
+		}
+
 		public static DnsEndPoint ParseEndPoint(string s, bool canOmitPort = false) {
 			// argument checks
 //			if (string.IsNullOrEmpty(s)) {

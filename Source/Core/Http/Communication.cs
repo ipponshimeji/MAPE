@@ -38,7 +38,7 @@ namespace MAPE.Http {
 				Response response = componentFactory.AllocResponse(responseInput, responseOutput);
 				try {
 					// process each client request
-					while (request.Read()) {
+					while (request.Read(requestInput)) {
 						// send the request to the server
 						// The request is resent while the owner instructs modifications.
 						int repeatCount = 0;
@@ -50,7 +50,7 @@ namespace MAPE.Http {
 						} else {
 							do {
 								request.Write();
-								if (response.Read(request) == false) {
+								if (response.Read(responseInput, request) == false) {
 									// no response from the server
 									Exception innerException = new Exception("No response from the server.");
 									throw new HttpException(innerException, HttpStatusCode.BadGateway);
@@ -170,7 +170,7 @@ namespace MAPE.Http {
 			}
 			string modifiedHostField = $"Host: {targetUri.Host}:{targetUri.Port}";
 			request.AddModification(
-				request.RequestTargetSpan,
+				span,
 				(modifier) => { modifier.WriteASCIIString(modifiedHostField, appendCRLF: true); return true; }
 			);
 

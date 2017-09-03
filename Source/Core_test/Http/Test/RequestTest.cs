@@ -8,7 +8,7 @@ using Xunit;
 
 namespace MAPE.Http.Test {
 	public class RequestTest: MessageTest {
-		#region test - Read & Write
+		#region test - Read & Write (ReadHeader & Redirect)
 
 		public new abstract class ReadAndWriteTestBase<TRequest>: MessageTest.ReadAndWriteTestBase<TRequest> where TRequest: Request {
 			#region creation
@@ -16,10 +16,6 @@ namespace MAPE.Http.Test {
 			protected ReadAndWriteTestBase(IAdapter adapter): base(adapter) {
 			}
 
-			#endregion
-
-
-			#region utilities
 			#endregion
 		}
 
@@ -73,6 +69,24 @@ namespace MAPE.Http.Test {
 				});
 			}
 
+			[Fact(DisplayName = "method: CONNECT")]
+			public void Method_CONNECT() {
+				// ARRANGE
+				string input = CreateMessageString(
+					"CONNECT www.example.org:443 HTTP/1.1",
+					"Host: www.example.org:443",
+					"",
+					EmptyBody
+				);
+				string expectedOutput = input;
+
+				// TEST
+				TestReadWrite(input, expectedOutput, (request) => {
+					Assert.Equal("CONNECT", request.Method);
+					Assert.Equal(true, request.IsConnectMethod);
+				});
+			}
+
 			[Fact(DisplayName = "HTTP-version: 1.0")]
 			public void Version_10() {
 				// ARRANGE
@@ -104,10 +118,10 @@ namespace MAPE.Http.Test {
 				string expectedOutput = input;
 
 				// TEST
-				HttpException exception = Assert.Throws<HttpException>(
+				HttpException actual = Assert.Throws<HttpException>(
 					() => TestReadWrite(input, expectedOutput)
 				);
-				Assert.Equal(HttpStatusCode.BadRequest, exception.HttpStatusCode);
+				Assert.Equal(HttpStatusCode.BadRequest, actual.HttpStatusCode);
 			}
 
 			[Fact(DisplayName = "HTTP-version: lower-case HTTP-name")]
@@ -122,10 +136,10 @@ namespace MAPE.Http.Test {
 				string expectedOutput = input;
 
 				// TEST
-				HttpException exception = Assert.Throws<HttpException>(
+				HttpException actual = Assert.Throws<HttpException>(
 					() => TestReadWrite(input, expectedOutput)
 				);
-				Assert.Equal(HttpStatusCode.BadRequest, exception.HttpStatusCode);
+				Assert.Equal(HttpStatusCode.BadRequest, actual.HttpStatusCode);
 			}
 
 			[Fact(DisplayName = "HTTP-version: invalid digits")]
@@ -140,18 +154,18 @@ namespace MAPE.Http.Test {
 				string expectedOutput = input;
 
 				// TEST
-				HttpException exception = Assert.Throws<HttpException>(
+				HttpException actual = Assert.Throws<HttpException>(
 					() => TestReadWrite(input, expectedOutput)
 				);
-				Assert.Equal(HttpStatusCode.BadRequest, exception.HttpStatusCode);
+				Assert.Equal(HttpStatusCode.BadRequest, actual.HttpStatusCode);
 			}
 
-			[Fact(DisplayName = "request-target: origin-form without query")]
-			public void RequestTarget_OriginForm_without_Query() {
+			[Fact(DisplayName = "request-target: origin-form")]
+			public void RequestTarget_OriginForm() {
 				// ARRANGE
 				string input = CreateMessageString(
-					"GET /abc/def HTTP/1.1",
-					"Host: www.example.org:80",
+					"GET /abc/def?ghi=kl HTTP/1.1",
+					"Host: www.example.org:81",
 					"",
 					EmptyBody
 				);
@@ -159,26 +173,12 @@ namespace MAPE.Http.Test {
 
 				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
-					Assert.Equal("www.example.org:80", request.Host);
-					// ToDo: check?
-				});
-			}
+					Assert.Equal(new DnsEndPoint("www.example.org", 81), request.HostEndPoint);
+					Assert.Equal("www.example.org:81", request.Host);
+					Assert.Equal(new Span(30, 56), request.HostSpan);
 
-			[Fact(DisplayName = "request-target: origin-form with query")]
-			public void RequestTarget_OriginForm_with_Query() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"GET /abc/def?ghij=kl HTTP/1.1",
-					"Host: www.example.org:80",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = input;
-
-				// TEST
-				TestReadWrite(input, expectedOutput, (request) => {
-					Assert.Equal("www.example.org:80", request.Host);
-					// ToDo: check?
+					// TargetUri is null for request-target of origin-form
+					Assert.Equal(null, request.TargetUri);
 				});
 			}
 
@@ -187,7 +187,7 @@ namespace MAPE.Http.Test {
 				// ARRANGE
 				string input = CreateMessageString(
 					"GET http://www.example.org/abc/def?ghij=kl HTTP/1.1",
-					"Host: www.example.org:80",
+					"Host: test.example.org:123",       // dare to give different value from request-target for test
 					"",
 					EmptyBody
 				);
@@ -195,17 +195,23 @@ namespace MAPE.Http.Test {
 
 				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
+					// HostEndPoint and Host are derived from the request-target. 
+					Assert.Equal(new DnsEndPoint("www.example.org", 80), request.HostEndPoint);
 					Assert.Equal("www.example.org:80", request.Host);
+
+					// HostSpan is the span of the actual Host field.
+					Assert.Equal(new Span(53, 81), request.HostSpan);
+
 					Assert.Equal(new Uri("http://www.example.org/abc/def?ghij=kl"), request.TargetUri);
 				});
 			}
 
-			[Fact(DisplayName = "request-target: authority-form")]
-			public void RequestTarget_AuthorityForm() {
+			[Fact(DisplayName = "request-target: authority-form with port")]
+			public void RequestTarget_AuthorityForm_with_port() {
 				// ARRANGE
 				string input = CreateMessageString(
 					"CONNECT www.example.org:443 HTTP/1.1",
-					"Host: www.example.org:443",
+					"Host: www.example.org:400",    // dare to give different value from request-target for test
 					"",
 					EmptyBody
 				);
@@ -213,9 +219,40 @@ namespace MAPE.Http.Test {
 
 				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
-					Assert.Equal("CONNECT", request.Method);
+					// HostEndPoint and Host are derived from the request-target. 
 					Assert.Equal(new DnsEndPoint("www.example.org", 443), request.HostEndPoint);
 					Assert.Equal("www.example.org:443", request.Host);
+
+					// HostSpan is the span of the actual Host field.
+					Assert.Equal(new Span(38, 65), request.HostSpan);
+
+					// TargetUri is null for request-target of authority-form
+					Assert.Equal(null, request.TargetUri);
+				});
+			}
+
+			[Fact(DisplayName = "request-target: authority-form without port")]
+			public void RequestTarget_AuthorityForm_without_port() {
+				// ARRANGE
+				string input = CreateMessageString(
+					"CONNECT www.example.org HTTP/1.1",
+					"Host: www.example.org:400",    // dare to give different value from request-target for test
+					"",
+					EmptyBody
+				);
+				string expectedOutput = input;
+
+				// TEST
+				TestReadWrite(input, expectedOutput, (request) => {
+					// HostEndPoint and Host are derived from the request-target. 
+					Assert.Equal(new DnsEndPoint("www.example.org", 443), request.HostEndPoint);
+					Assert.Equal("www.example.org:443", request.Host);
+
+					// HostSpan is the span of the actual Host field.
+					Assert.Equal(new Span(34, 61), request.HostSpan);
+
+					// TargetUri is null for request-target of authority-form
+					Assert.Equal(null, request.TargetUri);
 				});
 			}
 
@@ -232,7 +269,12 @@ namespace MAPE.Http.Test {
 
 				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
-					Assert.Equal("OPTIONS", request.Method);
+					Assert.Equal(new DnsEndPoint("www.example.org", 80), request.HostEndPoint);
+					Assert.Equal("www.example.org:80", request.Host);
+					Assert.Equal(new Span(20, 46), request.HostSpan);
+
+					// TargetUri is null for request-target of asterisk-form
+					Assert.Equal(null, request.TargetUri);
 				});
 			}
 
@@ -278,8 +320,7 @@ namespace MAPE.Http.Test {
 
 				// TEST
 				TestReadWrite(input, expectedOutput, (request) => {
-					Assert.Equal("PUT", request.Method);
-					Assert.Equal("www.example.org:80", request.Host);
+					Assert.Equal(5, request.ContentLength);
 				});
 			}
 
@@ -304,8 +345,7 @@ namespace MAPE.Http.Test {
 
 				// TEST
 				TestReadWriteSimpleBody(header, bodyLength, (request) => {
-					Assert.Equal("PUT", request.Method);
-					Assert.Equal("www.example.org:80", request.Host);
+					Assert.Equal(bodyLength, request.ContentLength);
 				});
 			}
 
@@ -330,8 +370,7 @@ namespace MAPE.Http.Test {
 
 				// TEST
 				TestReadWriteSimpleBody(header, bodyLength, (request) => {
-					Assert.Equal("PUT", request.Method);
-					Assert.Equal("www.example.org:80", request.Host);
+					Assert.Equal(bodyLength, request.ContentLength);
 				});
 			}
 
@@ -354,8 +393,7 @@ namespace MAPE.Http.Test {
 
 				// TEST
 				TestReadWriteSimpleBody(header, bodyLength, (request) => {
-					Assert.Equal("PUT", request.Method);
-					Assert.Equal("www.example.org:80", request.Host);
+					Assert.Equal(bodyLength, request.ContentLength);
 				});
 			}
 
@@ -392,8 +430,7 @@ namespace MAPE.Http.Test {
 
 					// Test
 					TestReadWrite(input, expectedOutput, (request) => {
-						Assert.Equal("PUT", request.Method);
-						Assert.Equal("www.example.org:80", request.Host);
+						Assert.Equal(-1, request.ContentLength);
 					});
 				}
 			}
@@ -428,8 +465,7 @@ namespace MAPE.Http.Test {
 
 					// Test
 					TestReadWrite(input, expectedOutput, (request) => {
-						Assert.Equal("PUT", request.Method);
-						Assert.Equal("www.example.org:80", request.Host);
+						Assert.Equal(-1, request.ContentLength);
 					});
 				}
 			}
@@ -437,124 +473,6 @@ namespace MAPE.Http.Test {
 			// ToDo: body
 			//  with chunk-ext 
 			//  multi transfer-coding in Transfer-Encoding
-
-			[Fact(DisplayName = "HostEndPoint and TargetUri: with request-target of origin-form")]
-			public void HostEndPointAndTargetUri_OriginForm() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"GET /abc/def?ghi=kl HTTP/1.1",
-					"Host: www.example.org:81",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = input;
-
-				// TEST
-				TestReadWrite(input, expectedOutput, (request) => {
-					Assert.Equal(new DnsEndPoint("www.example.org", 81), request.HostEndPoint);
-					Assert.Equal("www.example.org:81", request.Host);
-					Assert.Equal(new Span(30, 56), request.HostSpan);
-
-					// TargetUri is null for request-target of origin-form
-					Assert.Equal(null, request.TargetUri);
-				});
-			}
-
-			[Fact(DisplayName = "HostEndPoint and TargetUri: with request-target of absolute-form")]
-			public void HostEndPointAndTargetUri_AbsoluteForm() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"GET http://www.example.org/abc/def?ghij=kl HTTP/1.1",
-					"Host: test.example.org:123",		// dare to give different value from request-target for test
-					"",
-					EmptyBody
-				);
-				string expectedOutput = input;
-
-				// TEST
-				TestReadWrite(input, expectedOutput, (request) => {
-					// HostEndPoint and Host are derived from the request-target. 
-					Assert.Equal(new DnsEndPoint("www.example.org", 80), request.HostEndPoint);
-					Assert.Equal("www.example.org:80", request.Host);
-
-					// HostSpan is the span of the actual Host field.
-					Assert.Equal(new Span(53, 81), request.HostSpan);
-
-					Assert.Equal(new Uri("http://www.example.org/abc/def?ghij=kl"), request.TargetUri);
-				});
-			}
-
-			[Fact(DisplayName = "HostEndPoint and TargetUri: with request-target of authority-form")]
-			public void HostEndPointAndTargetUri_AuthorityForm() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"CONNECT www.example.org:443 HTTP/1.1",
-					"Host: www.example.org:400",	// dare to give different value from request-target for test
-					"",
-					EmptyBody
-				);
-				string expectedOutput = input;
-
-				// TEST
-				TestReadWrite(input, expectedOutput, (request) => {
-					// HostEndPoint and Host are derived from the request-target. 
-					Assert.Equal(new DnsEndPoint("www.example.org", 443), request.HostEndPoint);
-					Assert.Equal("www.example.org:443", request.Host);
-
-					// HostSpan is the span of the actual Host field.
-					Assert.Equal(new Span(38, 65), request.HostSpan);
-
-					// TargetUri is null for request-target of authority-form
-					Assert.Equal(null, request.TargetUri);
-				});
-			}
-
-			[Fact(DisplayName = "HostEndPoint and TargetUri: with request-target of authority-form without port")]
-			public void HostEndPointAndTargetUri_AuthorityForm_without_Port() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"CONNECT www.example.org HTTP/1.1",
-					"Host: www.example.org:400",    // dare to give different value from request-target for test
-					"",
-					EmptyBody
-				);
-				string expectedOutput = input;
-
-				// TEST
-				TestReadWrite(input, expectedOutput, (request) => {
-					// HostEndPoint and Host are derived from the request-target. 
-					Assert.Equal(new DnsEndPoint("www.example.org", 443), request.HostEndPoint);
-					Assert.Equal("www.example.org:443", request.Host);
-
-					// HostSpan is the span of the actual Host field.
-					Assert.Equal(new Span(34, 61), request.HostSpan);
-
-					// TargetUri is null for request-target of authority-form
-					Assert.Equal(null, request.TargetUri);
-				});
-			}
-
-			[Fact(DisplayName = "HostEndPoint and TargetUri: with request-target of asterisk-form")]
-			public void HostEndPointAndTargetUri_AsteriskForm() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"OPTIONS * HTTP/1.1",
-					"Host: www.example.org:80",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = input;
-
-				// TEST
-				TestReadWrite(input, expectedOutput, (request) => {
-					Assert.Equal(new DnsEndPoint("www.example.org", 80), request.HostEndPoint);
-					Assert.Equal("www.example.org:80", request.Host);
-					Assert.Equal(new Span(20, 46), request.HostSpan);
-
-					// TargetUri is null for request-target of asterisk-form
-					Assert.Equal(null, request.TargetUri);
-				});
-			}
 
 			[Fact(DisplayName = "modification: append")]
 			public void Modification_append() {
@@ -655,6 +573,29 @@ namespace MAPE.Http.Test {
 				});
 			}
 
+			[Fact(DisplayName = "modification: suppressModification")]
+			public void Modification_suppressModification() {
+				// ARRANGE
+				string input = CreateMessageString(
+					"GET http://www.example.org/test/index.html?abc=def HTTP/1.1",
+					"Host: www.example.org",
+					"",
+					EmptyBody
+				);
+				string expectedOutput = input;	// not modified
+
+				// TEST
+				TestReadWrite(input, expectedOutput, (request) => {
+					request.AddModification(
+						request.RequestTargetSpan,
+						(modifier) => {
+							modifier.WriteASCIIString(request.TargetUri.PathAndQuery);
+							return true;
+						}
+					);
+				}, request: null, suppressModification: true);
+			}
+
 			#endregion
 		}
 
@@ -675,12 +616,20 @@ namespace MAPE.Http.Test {
 					return new Request();
 				}
 
-				public bool Read(Request message, Request request) {
-					return message.Read();
+				public bool Read(Request message, Stream input, Request request) {
+					return message.Read(input);
 				}
 
-				public void Write(Request message) {
-					message.Write();
+				public void Write(Request message, Stream output, bool suppressModification) {
+					message.Write(output, suppressModification);
+				}
+
+				public bool ReadHeader(Request message, Stream input, Request request) {
+					return message.ReadHeader(input);
+				}
+
+				public void Redirect(Request message, Stream output, Stream input, bool suppressModification) {
+					message.Redirect(output, input, suppressModification);
 				}
 
 				#endregion

@@ -14,9 +14,26 @@ namespace MAPE.Http.Test {
 
 		public const string CRLF = "\x000D\x000A";    // CRLF
 
+		public static readonly byte[] CRLFBytes = new byte[] { 0x0D, 0x0A };
+
 		public static readonly Encoding MessageEncoding = new ASCIIEncoding();
 
 		public static readonly string EmptyBody = string.Empty;
+
+		#endregion
+
+
+		#region utilities
+
+		private static void WriteCRLFTo(Stream stream) {
+			// argument checks
+			if (stream == null) {
+				throw new ArgumentNullException(nameof(stream));
+			}
+
+			// write CRLF to the stream
+			stream.Write(CRLFBytes, 0, CRLFBytes.Length);
+		}
 
 		#endregion
 
@@ -29,9 +46,13 @@ namespace MAPE.Http.Test {
 			public interface IAdapter {
 				TMessage Create();
 
-				bool Read(TMessage message, Request request);
+				bool Read(TMessage message, Stream input, Request request);
 
-				void Write(TMessage message);
+				void Write(TMessage message, Stream output, bool suppressModification);
+
+				bool ReadHeader(TMessage message, Stream input, Request request);
+
+				void Redirect(TMessage message, Stream output, Stream input, bool suppressModification);
 			}
 
 			#endregion
@@ -64,6 +85,11 @@ namespace MAPE.Http.Test {
 			#region utilities
 
 			public static string CreateMessageString(params string[] lines) {
+				// argument checks
+				if (lines == null) {
+					throw new ArgumentNullException(nameof(lines));
+				}
+
 				// Note that CRLF is not appended after the last line.
 				return string.Join(CRLF, lines);
 			}
@@ -73,12 +99,16 @@ namespace MAPE.Http.Test {
 				if (stream == null) {
 					throw new ArgumentNullException(nameof(stream));
 				}
+				if (lines == null) {
+					throw new ArgumentNullException(nameof(lines));
+				}
 
 				// write each line in ASCII encoding
 				// Note that CRLF is appended at the end of each line.
 				foreach (string line in lines) {
-					byte[] bytes = MessageEncoding.GetBytes(line + CRLF);
+					byte[] bytes = MessageEncoding.GetBytes(line);
 					stream.Write(bytes, 0, bytes.Length);
+					WriteCRLFTo(stream);
 				}
 
 				return;
@@ -101,7 +131,7 @@ namespace MAPE.Http.Test {
 					int writeLen = checked((int)Math.Min(bodyLength, buf.Length));
 					for (int i = 0; i < writeLen; ++i) {
 						// give value in range of [0x30, 0x7F), that is, ['0', '~']
-						// so that readable when displayed
+						// so that the data is readable when it displayed
 						buf[i] = (byte)(random.Next(0x4F) + 0x30);
 					}
 					stream1.Write(buf, 0, writeLen);
@@ -114,11 +144,9 @@ namespace MAPE.Http.Test {
 
 				// append CRLF if necessary
 				if (appendCRLF) {
-					buf[0] = MessageBuffer.CR;
-					buf[1] = MessageBuffer.LF;
-					stream1.Write(buf, 0, 2);
+					WriteCRLFTo(stream1);
 					if (stream2 != null) {
-						stream2.Write(buf, 0, 2);
+						WriteCRLFTo(stream2);
 					}
 				}
 
@@ -129,86 +157,12 @@ namespace MAPE.Http.Test {
 				WriteRandomBody(bodyLength, stream1, null, appendCRLF);
 			}
 
-			protected void TestReadWrite(string input, string expectedOutput, Action<TMessage> action = null, Request request = null) {
-				// argument checks
-				if (input == null) {
-					throw new ArgumentNullException(nameof(input));
-				}
-				// expectedOutput can be null
-				// action can be null
-				// request can be null
-
-				// read and write a message
-				IAdapter adapter = this.Adapter;
-				string actualOutput;
-				using (MemoryStream outputStream = new MemoryStream()) {
-					using (Stream inputStream = new MemoryStream(MessageEncoding.GetBytes(input))) {
-						using (TMessage message = adapter.Create()) {
-							message.AttachStreams(inputStream, outputStream);
-							try {
-								bool actualRead = adapter.Read(message, request);
-								Assert.Equal(true, actualRead);
-								action?.Invoke(message);
-								adapter.Write(message);
-							} finally {
-								message.DetachStreams();
-							}
-						}
-					}
-
-					// get actual output
-					int length = checked((int)outputStream.Length);
-					actualOutput = MessageEncoding.GetString(outputStream.GetBuffer(), 0, length);
-				}
-
-				// assert the output
-				Assert.Equal(expectedOutput, actualOutput);
-			}
-
-			// for large message.
-			protected void TestReadWrite(Stream input, Stream expectedOutput, Action<TMessage> action = null, Request request = null) {
-				// argument checks
-				if (input == null) {
-					throw new ArgumentNullException(nameof(input));
-				}
-				// expectedOutput can be null
-				// action can be null
-				// request can be null
-
-				// read and write a message
-				long startPosition = input.Position;
-				IAdapter adapter = this.Adapter;
-				using (Stream actualOutput = TestUtil.CreateTempFileStream()) {
-					using (TMessage message = adapter.Create()) {
-						message.AttachStreams(input, actualOutput);
-						try {
-							adapter.Read(message, request);
-							action?.Invoke(message);
-							adapter.Write(message);
-						} finally {
-							message.DetachStreams();
-						}
-					}
-
-					// assert the output
-					actualOutput.Position = 0;
-					if (input == expectedOutput) {
-						expectedOutput.Position = startPosition;
-					}
-					int length = checked((int)(expectedOutput.Length - expectedOutput.Position));
-					AssertEqualContents(expectedOutput, actualOutput, length);
-				}
-
-				return;
-			}
-
 			protected static void AssertEqualContents(Stream expected, Stream actual, int length) {
 				// argument checks
-				if (expected == null) {
-					throw new ArgumentNullException(nameof(expected));
-				}
-				if (actual == null) {
-					throw new ArgumentNullException(nameof(actual));
+				if (expected == null || actual == null) {
+					// passes only both expected and actual are null
+					Assert.Equal(expected, actual);
+					return;
 				}
 				if (length == 0) {
 					return;     // no content to be checked
@@ -222,6 +176,7 @@ namespace MAPE.Http.Test {
 					throw new ArgumentException("Its contents are smaller than the length to be checked.", nameof(actual));
 				}
 
+				// preparations
 				const int BufferSize = 256;
 				byte[] expectedBuffer = new byte[BufferSize];
 				byte[] actualBuffer = new byte[BufferSize];
@@ -243,6 +198,7 @@ namespace MAPE.Http.Test {
 					}
 				};
 
+				// compare their contents
 				int baseOffset = 0;
 				while (0 < length) {
 					// assert a block
@@ -268,8 +224,74 @@ namespace MAPE.Http.Test {
 				return;
 			}
 
-			protected void TestReadWriteSimpleBody(string header, long bodyLength, Action<TMessage> action = null, Request request = null) {
+
+			// for small message
+			protected void Test(Action<Stream, Stream, Action<TMessage>, Request, bool> action, string input, string expectedOutput, Action<TMessage> handler, Request request, bool suppressModification) {
 				// argument checks
+				if (action == null) {
+					throw new ArgumentNullException(nameof(action));
+				}
+				if (input == null) {
+					throw new ArgumentNullException(nameof(input));
+				}
+				// expectedOutput can be null
+				// handler can be null
+				// request can be null
+
+				// test
+				string actualOutput;
+				using (MemoryStream outputStream = new MemoryStream()) {
+					using (Stream inputStream = new MemoryStream(MessageEncoding.GetBytes(input))) {
+						// call action
+						action(inputStream, outputStream, handler, request, suppressModification);
+					}
+
+					// get actual output
+					int length = checked((int)outputStream.Length);
+					actualOutput = MessageEncoding.GetString(outputStream.GetBuffer(), 0, length);
+				}
+
+				// assert the output as string
+				Assert.Equal(expectedOutput, actualOutput);
+			}
+
+			// for large message.
+			protected void Test(Action<Stream, Stream, Action<TMessage>, Request, bool> action, Stream input, Stream expectedOutput, Action<TMessage> handler, Request request, bool suppressModification) {
+				// argument checks
+				if (action == null) {
+					throw new ArgumentNullException(nameof(action));
+				}
+				if (input == null) {
+					throw new ArgumentNullException(nameof(input));
+				}
+				// expectedOutput can be null
+				// handler can be null
+				// request can be null
+
+				// read and write a message
+				long startPosition = input.Position;
+				IAdapter adapter = this.Adapter;
+				using (Stream actualOutput = TestUtil.CreateTempFileStream()) {
+					action(input, actualOutput, handler, request, suppressModification);
+
+					// assert the output
+					actualOutput.Position = 0;
+					if (input == expectedOutput) {
+						// input is the expected output
+						expectedOutput.Position = startPosition;
+					}
+					int length = checked((int)(expectedOutput.Length - expectedOutput.Position));
+					AssertEqualContents(expectedOutput, actualOutput, length);
+				}
+
+				return;
+			}
+
+			protected void TestSimpleBody(Action<Stream, Stream, Action<TMessage>, Request, bool> action, string header, long bodyLength, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
+				// argument checks
+				if (action == null) {
+					throw new ArgumentNullException(nameof(action));
+				}
 				if (header == null) {
 					throw new ArgumentNullException(nameof(header));
 				}
@@ -277,6 +299,7 @@ namespace MAPE.Http.Test {
 					throw new ArgumentOutOfRangeException(nameof(bodyLength));
 				}
 
+				// create input with random body and test with it
 				using (Stream input = TestUtil.CreateTempFileStream()) {
 					// ARRANGE
 					WriteLinesTo(input, header);
@@ -285,8 +308,115 @@ namespace MAPE.Http.Test {
 					Stream expectedOutput = input;  // same to the input
 
 					// Test
-					TestReadWrite(input, expectedOutput, action, request);
+					Test(action, input, expectedOutput, handler, request, suppressModification);
 				}
+			}
+
+			#endregion
+
+
+			#region tester for Read and Write methods
+
+			protected void ReadWriteAction(Stream input, Stream output, Action<TMessage> handler, Request request, bool suppressModification) {
+				// argument checks
+				Debug.Assert(input != null);
+				Debug.Assert(output != null);
+				// handler can be null
+				// request can be null
+
+				// state checks
+				IAdapter adapter = this.Adapter;
+				Debug.Assert(adapter != null);
+
+				// create a Message and call Read and Write
+				using (TMessage message = adapter.Create()) {
+					message.AttachStreams(input, output);
+					try {
+						// Read
+						Assert.Equal(MessageReadingState.None, message.ReadingState);
+						bool actualRead = adapter.Read(message, input, request);
+						Assert.Equal(true, actualRead);
+						Assert.Equal(MessageReadingState.Body, message.ReadingState);
+
+						// handle the message
+						handler?.Invoke(message);
+
+						// Write
+						adapter.Write(message, output, suppressModification);
+					} finally {
+						message.DetachStreams();
+					}
+				}
+
+				return;
+			}
+
+			// for small message
+			protected void TestReadWrite(string input, string expectedOutput, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
+				Test(ReadWriteAction, input, expectedOutput, handler, request, suppressModification);
+			}
+
+			// for large message.
+			protected void TestReadWrite(Stream input, Stream expectedOutput, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
+				Test(ReadWriteAction, input, expectedOutput, handler, request, suppressModification);
+			}
+
+			protected void TestReadWriteSimpleBody(string header, long bodyLength, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
+				TestSimpleBody(ReadWriteAction, header, bodyLength, handler, request, suppressModification);
+			}
+
+			#endregion
+
+
+			#region tester for ReadHeader and Redirect methods
+
+			protected void ReadHeaderRedirectTester(Stream input, Stream output, Action<TMessage> handler, Request request, bool suppressModification) {
+				// argument checks
+				Debug.Assert(input != null);
+				Debug.Assert(output != null);
+				// handler can be null
+				// request can be null
+
+				// state checks
+				IAdapter adapter = this.Adapter;
+				Debug.Assert(adapter != null);
+
+				// create a Message and call ReadHeader and Redirect
+				using (TMessage message = adapter.Create()) {
+					message.AttachStreams(input, output);
+					try {
+						// ReadHeader
+						Assert.Equal(MessageReadingState.None, message.ReadingState);
+						bool actualRead = adapter.ReadHeader(message, input, request);
+						Assert.Equal(true, actualRead);
+						Assert.Equal(MessageReadingState.Header, message.ReadingState);
+
+						// handle the message
+						handler?.Invoke(message);
+
+						// Redirect
+						adapter.Redirect(message, output, input, suppressModification);
+						Assert.Equal(MessageReadingState.BodyRedirected, message.ReadingState);
+					} finally {
+						message.DetachStreams();
+					}
+				}
+
+				return;
+			}
+
+			// for small message
+			protected void TestReadHeaderRedirect(string input, string expectedOutput, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
+				Test(ReadHeaderRedirectTester, input, expectedOutput, handler, request, suppressModification);
+			}
+
+			// for large message.
+			protected void TestReadHeaderRedirect(Stream input, Stream expectedOutput, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
+				Test(ReadHeaderRedirectTester, input, expectedOutput, handler, request, suppressModification);
+			}
+
+			protected void TestReadHeaderRedirectSimpleBody(string header, long bodyLength, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
+				TestSimpleBody(ReadHeaderRedirectTester, header, bodyLength, handler, request, suppressModification);
 			}
 
 			#endregion
@@ -298,13 +428,14 @@ namespace MAPE.Http.Test {
 			public void Empty() {
 				// ARRANGE & ACT
 				bool actual;
-				using (Stream stream = new MemoryStream()) {
+				using (Stream input = new MemoryStream()) {
 					IAdapter adapter = this.Adapter;
 					using (TMessage message = adapter.Create()) {
-						message.AttachStreams(stream, stream);
+						message.AttachStreams(input, input);
 						try {
 							// act
-							actual = adapter.Read(message, null);
+							Debug.Assert(input.Length == 0);
+							actual = adapter.Read(message, input, null);
 						} finally {
 							message.DetachStreams();
 						}
@@ -327,24 +458,12 @@ namespace MAPE.Http.Test {
 			#region types
 
 			public class Sample: Message {
-				#region data
+				#region properties
 
-				private Action<IEnumerable<MessageBuffer.Modification>> action = null;
-
-				#endregion
-
-
-				#region methods
-
-				public void Test(Action<IEnumerable<MessageBuffer.Modification>> action) {
-					this.action = action;
-					try {
-						Write(Stream.Null);
-					} finally {
-						this.action = null;
+				public new IReadOnlyList<MessageBuffer.Modification> Modifications {
+					get {
+						return base.Modifications;
 					}
-
-					return;
 				}
 
 				#endregion
@@ -357,7 +476,7 @@ namespace MAPE.Http.Test {
 				}
 
 				protected override void WriteHeader(Stream output, HeaderBuffer headerBuffer, IEnumerable<MessageBuffer.Modification> modifications) {
-					this.action?.Invoke(modifications);
+					// do nothing
 				}
 
 				protected override void WriteBody(Stream output, BodyBuffer bodyBuffer) {
@@ -394,10 +513,11 @@ namespace MAPE.Http.Test {
 				// ARRANGE
 				Sample sample = new Sample();
 
+				// ACT
+				// do nothing
+
 				// ASSERT
-				sample.Test((modifications) => {
-					Assert.Equal(null, modifications);
-				});
+				Assert.Equal(0, sample.Modifications.Count);
 			}
 
 			[Fact(DisplayName = "insert: first")]
@@ -411,14 +531,12 @@ namespace MAPE.Http.Test {
 				sample.AddModification(new Span(0, 10), null);
 
 				// ASSERT
-				sample.Test((modifications) => {
-					Span[] spans = ExtractSpans(modifications);
+				IReadOnlyList<MessageBuffer.Modification> actual = sample.Modifications;
 
-					Assert.Equal(3, spans.Length);
-					Assert.Equal(new Span(0, 10), spans[0]);
-					Assert.Equal(new Span(10, 20), spans[1]);
-					Assert.Equal(new Span(30, 40), spans[2]);
-				});
+				Assert.Equal(3, actual.Count);
+				Assert.Equal(new Span(0, 10), actual[0].Span);
+				Assert.Equal(new Span(10, 20), actual[1].Span);
+				Assert.Equal(new Span(30, 40), actual[2].Span);
 			}
 
 			[Fact(DisplayName = "insert: last")]
@@ -432,14 +550,12 @@ namespace MAPE.Http.Test {
 				sample.AddModification(new Span(40, 50), null);
 
 				// ASSERT
-				sample.Test((modifications) => {
-					Span[] spans = ExtractSpans(modifications);
+				IReadOnlyList<MessageBuffer.Modification> actual = sample.Modifications;
 
-					Assert.Equal(3, spans.Length);
-					Assert.Equal(new Span(10, 20), spans[0]);
-					Assert.Equal(new Span(30, 40), spans[1]);
-					Assert.Equal(new Span(40, 50), spans[2]);
-				});
+				Assert.Equal(3, actual.Count);
+				Assert.Equal(new Span(10, 20), actual[0].Span);
+				Assert.Equal(new Span(30, 40), actual[1].Span);
+				Assert.Equal(new Span(40, 50), actual[2].Span);
 			}
 
 			[Fact(DisplayName = "insert: middle")]
@@ -453,14 +569,12 @@ namespace MAPE.Http.Test {
 				sample.AddModification(new Span(20, 30), null);
 
 				// ASSERT
-				sample.Test((modifications) => {
-					Span[] spans = ExtractSpans(modifications);
+				IReadOnlyList<MessageBuffer.Modification> actual = sample.Modifications;
 
-					Assert.Equal(3, spans.Length);
-					Assert.Equal(new Span(10, 20), spans[0]);
-					Assert.Equal(new Span(20, 30), spans[1]);
-					Assert.Equal(new Span(30, 40), spans[2]);
-				});
+				Assert.Equal(3, actual.Count);
+				Assert.Equal(new Span(10, 20), actual[0].Span);
+				Assert.Equal(new Span(20, 30), actual[1].Span);
+				Assert.Equal(new Span(30, 40), actual[2].Span);
 			}
 
 			[Fact(DisplayName = "insert: middle, discrete")]
@@ -474,14 +588,12 @@ namespace MAPE.Http.Test {
 				sample.AddModification(new Span(24, 26), null);
 
 				// ASSERT
-				sample.Test((modifications) => {
-					Span[] spans = ExtractSpans(modifications);
+				IReadOnlyList<MessageBuffer.Modification> actual = sample.Modifications;
 
-					Assert.Equal(3, spans.Length);
-					Assert.Equal(new Span(10, 20), spans[0]);
-					Assert.Equal(new Span(24, 26), spans[1]);
-					Assert.Equal(new Span(30, 40), spans[2]);
-				});
+				Assert.Equal(3, actual.Count);
+				Assert.Equal(new Span(10, 20), actual[0].Span);
+				Assert.Equal(new Span(24, 26), actual[1].Span);
+				Assert.Equal(new Span(30, 40), actual[2].Span);
 			}
 
 			[Fact(DisplayName = "overlapped")]
@@ -522,18 +634,16 @@ namespace MAPE.Http.Test {
 				sample.AddModification(new Span(10, 10), handler);
 
 				// ASSERT
-				sample.Test((modifications) => {
-					MessageBuffer.Modification[] actual = modifications.ToArray();
+				IReadOnlyList<MessageBuffer.Modification> actual = sample.Modifications;
 
-					// Note that the added modification is appended at the last
-					Assert.Equal(3, actual.Length);
-					Assert.Equal(new Span(10, 10), actual[0].Span);
-					Assert.Equal(null, actual[0].Handler);
-					Assert.Equal(new Span(10, 10), actual[1].Span);
-					Assert.Equal(null, actual[1].Handler);
-					Assert.Equal(new Span(10, 10), actual[2].Span);
-					Assert.Equal(handler, actual[2].Handler);
-				});
+				// Note that the added modification is appended at the last
+				Assert.Equal(3, actual.Count);
+				Assert.Equal(new Span(10, 10), actual[0].Span);
+				Assert.Equal(null, actual[0].Handler);
+				Assert.Equal(new Span(10, 10), actual[1].Span);
+				Assert.Equal(null, actual[1].Handler);
+				Assert.Equal(new Span(10, 10), actual[2].Span);
+				Assert.Equal(handler, actual[2].Handler);
 			}
 
 			#endregion

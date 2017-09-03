@@ -37,7 +37,7 @@ namespace MAPE.Http {
 
 			public int Length {
 				get {
-					return this.Span.End - this.Span.Start;
+					return this.Span.Length;
 				}
 			}
 
@@ -46,7 +46,7 @@ namespace MAPE.Http {
 
 			#region creation and disposal
 
-			public Modification(int start, int end, Func<Modifier, bool> handler) {
+			internal Modification(int start, int end, Func<Modifier, bool> handler) {
 				// argument checks
 				Debug.Assert(0 <= start);
 				Debug.Assert(start <= end);
@@ -59,7 +59,7 @@ namespace MAPE.Http {
 				return;
 			}
 
-			public Modification(Span span, Func<Modifier, bool> handler) {
+			internal Modification(Span span, Func<Modifier, bool> handler) {
 				// argument checks
 				// handler can be null
 
