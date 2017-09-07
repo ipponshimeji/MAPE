@@ -12,33 +12,15 @@ namespace MAPE.Http {
 	public class Response: Message {
 		#region data
 
-		// Note that Request is not message property
-		protected Request Request { get; private set; } = null;
+		protected Request Request { get; private set; }
 
-		#endregion
+		public int StatusCode {	get; protected set; }
 
+		public bool KeepAliveEnabled { get; protected set; }
 
-		#region data - message properties
+		public Span ProxyAuthenticateSpan { get; protected set; }
 
-		public int StatusCode {
-			get;
-			protected set;
-		}
-
-		public bool KeepAliveEnabled {
-			get;
-			protected set;
-		}
-
-		public Span ProxyAuthenticateSpan {
-			get;
-			protected set;
-		}
-
-		public string ProxyAuthenticateValue {
-			get;
-			protected set;
-		}
+		public string ProxyAuthenticateValue { get; protected set; }
 
 		#endregion
 
@@ -81,10 +63,6 @@ namespace MAPE.Http {
 			output.Flush();
 
 			return;
-		}
-
-		public void RespondSimpleError(int statusCode, string reasonPhrase) {
-			RespondSimpleError(this.Output, statusCode, reasonPhrase);
 		}
 
 		public bool Read(Stream input, Request request) {
@@ -134,12 +112,12 @@ namespace MAPE.Http {
 
 		#region overrides/overridables
 
-		protected override void ResetMessageProperties() {
+		protected override void Reset() {
 			// reset this class level
 			ResetThisClassLevelMessageProperties();
 
 			// reset the base class level
-			base.ResetMessageProperties();
+			base.Reset();
 		}
 
 		protected override void ScanStartLine(HeaderBuffer headerBuffer) {
@@ -211,12 +189,11 @@ namespace MAPE.Http {
 
 		private void ResetThisClassLevelMessageProperties() {
 			// reset message properties of this class level
-			this.StatusCode = 0;
-			this.KeepAliveEnabled = true;
-			this.ProxyAuthenticateSpan = Span.ZeroToZero;
 			this.ProxyAuthenticateValue = null;
-
-			// Note that this.Request is not message property.
+			this.ProxyAuthenticateSpan = Span.ZeroToZero;
+			this.KeepAliveEnabled = true;
+			this.StatusCode = 0;
+			this.Request = null;
 
 			return;
 		}

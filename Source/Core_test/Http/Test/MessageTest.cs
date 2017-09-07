@@ -330,22 +330,17 @@ namespace MAPE.Http.Test {
 
 				// create a Message and call Read and Write
 				using (TMessage message = adapter.Create()) {
-					message.AttachStreams(input, output);
-					try {
-						// Read
-						Assert.Equal(MessageReadingState.None, message.ReadingState);
-						bool actualRead = adapter.Read(message, input, request);
-						Assert.Equal(true, actualRead);
-						Assert.Equal(MessageReadingState.Body, message.ReadingState);
+					// Read
+					Assert.Equal(MessageReadingState.None, message.ReadingState);
+					bool actualRead = adapter.Read(message, input, request);
+					Assert.Equal(true, actualRead);
+					Assert.Equal(MessageReadingState.Body, message.ReadingState);
 
-						// handle the message
-						handler?.Invoke(message);
+					// handle the message
+					handler?.Invoke(message);
 
-						// Write
-						adapter.Write(message, output, suppressModification);
-					} finally {
-						message.DetachStreams();
-					}
+					// Write
+					adapter.Write(message, output, suppressModification);
 				}
 
 				return;
@@ -383,23 +378,18 @@ namespace MAPE.Http.Test {
 
 				// create a Message and call ReadHeader and Redirect
 				using (TMessage message = adapter.Create()) {
-					message.AttachStreams(input, output);
-					try {
-						// ReadHeader
-						Assert.Equal(MessageReadingState.None, message.ReadingState);
-						bool actualRead = adapter.ReadHeader(message, input, request);
-						Assert.Equal(true, actualRead);
-						Assert.Equal(MessageReadingState.Header, message.ReadingState);
+					// ReadHeader
+					Assert.Equal(MessageReadingState.None, message.ReadingState);
+					bool actualRead = adapter.ReadHeader(message, input, request);
+					Assert.Equal(true, actualRead);
+					Assert.Equal(MessageReadingState.Header, message.ReadingState);
 
-						// handle the message
-						handler?.Invoke(message);
+					// handle the message
+					handler?.Invoke(message);
 
-						// Redirect
-						adapter.Redirect(message, output, input, suppressModification);
-						Assert.Equal(MessageReadingState.BodyRedirected, message.ReadingState);
-					} finally {
-						message.DetachStreams();
-					}
+					// Redirect
+					adapter.Redirect(message, output, input, suppressModification);
+					Assert.Equal(MessageReadingState.BodyRedirected, message.ReadingState);
 				}
 
 				return;
@@ -424,21 +414,33 @@ namespace MAPE.Http.Test {
 
 			#region tests
 
-			[Fact(DisplayName = "empty input")]
-			public void Empty() {
+			[Fact(DisplayName = "Read: empty input")]
+			public void Read_Empty() {
 				// ARRANGE & ACT
 				bool actual;
 				using (Stream input = new MemoryStream()) {
 					IAdapter adapter = this.Adapter;
 					using (TMessage message = adapter.Create()) {
-						message.AttachStreams(input, input);
-						try {
-							// act
-							Debug.Assert(input.Length == 0);
-							actual = adapter.Read(message, input, null);
-						} finally {
-							message.DetachStreams();
-						}
+						// act
+						Debug.Assert(input.Length == 0);
+						actual = adapter.Read(message, input, null);
+					}
+				}
+
+				// ASSERT
+				Assert.Equal(false, actual);
+			}
+
+			[Fact(DisplayName = "ReadHeader: empty input")]
+			public void ReadHeader_Empty() {
+				// ARRANGE & ACT
+				bool actual;
+				using (Stream input = new MemoryStream()) {
+					IAdapter adapter = this.Adapter;
+					using (TMessage message = adapter.Create()) {
+						// act
+						Debug.Assert(input.Length == 0);
+						actual = adapter.ReadHeader(message, input, null);
 					}
 				}
 
@@ -484,23 +486,6 @@ namespace MAPE.Http.Test {
 				}
 
 				#endregion
-			}
-
-			#endregion
-
-
-			#region utilities
-
-			public static Span[] ExtractSpans(IEnumerable<MessageBuffer.Modification> modifications) {
-				// argument checks
-				if (modifications == null) {
-					throw new ArgumentNullException(nameof(modifications));
-				}
-
-				return (
-					from modification in modifications
-					select modification.Span
-				).ToArray();
 			}
 
 			#endregion

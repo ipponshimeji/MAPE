@@ -12,18 +12,13 @@ namespace MAPE.Http {
 	public abstract class Message: IDisposable {
 		#region data
 
-		private HeaderBuffer headerBuffer;
+		private readonly HeaderBuffer headerBuffer;
 
-		private BodyBuffer bodyBuffer;
+		private readonly BodyBuffer bodyBuffer;
+
+		public MessageReadingState ReadingState { get; private set; }
 
 		private List<MessageBuffer.Modification> modifications;
-
-		private Stream output;
-
-		public MessageReadingState ReadingState {
-			get;
-			private set;
-		}
 
 		public Version Version {
 			get;
@@ -45,21 +40,9 @@ namespace MAPE.Http {
 
 		#region properties
 
-		public bool IsStreamAttached {
-			get {
-				return this.headerBuffer.CanRead || this.output != null;
-			}
-		}
-
 		public bool MessageRead {
 			get {
 				return this.ReadingState == MessageReadingState.Body;
-			}
-		}
-
-		protected Stream Output {
-			get {
-				return this.output;
 			}
 		}
 
@@ -77,7 +60,7 @@ namespace MAPE.Http {
 		protected Message() {
 			// initialize members
 			this.headerBuffer = new HeaderBuffer();
-			this.bodyBuffer = new BodyBuffer();
+			this.bodyBuffer = new BodyBuffer(this.headerBuffer);
 			this.modifications = new List<MessageBuffer.Modification>();
 			ResetThisClassLevelMessageProperties();
 
@@ -85,8 +68,10 @@ namespace MAPE.Http {
 		}
 
 		public void Dispose() {
+			this.Version = null;
 			this.modifications.Clear();
 			this.modifications = null;
+			this.ReadingState = MessageReadingState.Error;
 			this.bodyBuffer.Dispose();
 			this.headerBuffer.Dispose();
 
@@ -98,37 +83,17 @@ namespace MAPE.Http {
 
 		#region methods - lifecycle
 
-		/// <summary>
-		/// 
-		/// </summary>
-		/// <param name="input"></param>
-		/// <param name="output"></param>
-		/// <remarks>
-		/// This object does not own the ownership of <paramref name="input"/> and <paramref name="output"/> .
-		/// That is, this object does not Dispose them in its Detach() call.
-		/// </remarks>
-		public void AttachStreams(Stream input, Stream output) {
-			// argument checks
-			Debug.Assert(input != null || output != null);
-
-			// attach input and output
-			this.headerBuffer.AttachStream(input);
-			this.bodyBuffer.AttachStream(this.headerBuffer);
-			this.output = output;
-
-			Debug.Assert(this.ContentLength == 0);
+		public void ActivateInstance() {
+			// state checks
+			Debug.Assert(this.ReadingState == MessageReadingState.None);
 
 			return;
 		}
 
-		public void DetachStreams() {
-			// reset message properties read from input
-			ResetMessageProperties();
-
-			// detach input and output
-			this.output = null;
-			this.bodyBuffer.DetachStream();
-			this.headerBuffer.DetachStream();
+		public void DeactivateInstance() {
+			// reset instance
+			Reset();
+			Debug.Assert(this.ReadingState == MessageReadingState.None);
 
 			return;
 		}
@@ -151,10 +116,12 @@ namespace MAPE.Http {
 			if (input == null) {
 				throw new ArgumentNullException(nameof(input));
 			}
+			if (input.CanRead == false) {
+				throw new ArgumentException("It is not readable.", nameof(input));
+			}
 
 			// read a message from the input
-			ReadHeader(input);
-			if (this.ReadingState == MessageReadingState.Header) {
+			if (ReadHeader(input)) {
 				ReadBody(input);
 			}
 
@@ -166,53 +133,64 @@ namespace MAPE.Http {
 			if (input == null) {
 				throw new ArgumentNullException(nameof(input));
 			}
+			if (input.CanRead == false) {
+				throw new ArgumentException("It is not readable.", nameof(input));
+			}
 
 			// read header part from the input
-			HeaderBuffer headerBuffer = this.headerBuffer;
-			// headerBuffer.InputStream = input;
+			bool read = false;
 			try {
-				// state checks
-				Debug.Assert(headerBuffer.CanRead);
+				HeaderBuffer headerBuffer = this.headerBuffer;
 
 				// clear current contents
-				ResetMessageProperties();
-				headerBuffer.ResetBuffer();
-				bodyBuffer.ResetBuffer();
-				Debug.Assert(this.ReadingState == MessageReadingState.None);
+				if (this.ReadingState != MessageReadingState.None) {
+					Reset();
+				}
 
-				// read start line
-				ScanStartLine(headerBuffer);
+				// read header
+				headerBuffer.Input = input;
+				try {
+					// state checks
+					Debug.Assert(headerBuffer.CanRead);
 
-				// read header fields
-				bool emptyLine;
-				do {
-					emptyLine = ScanHeaderField(headerBuffer);
-				} while (emptyLine == false);
+					// read start line
+					ScanStartLine(headerBuffer);
 
-				// update state
-				int endOfHeaderOffset = headerBuffer.CurrentOffset - 2;  // subtract empty line bytes
-				this.EndOfHeaderFields = new Span(endOfHeaderOffset, endOfHeaderOffset);
-				this.ReadingState = MessageReadingState.Header;
-			} catch (EndOfStreamException) {
-				// no data from input
-				// Note that incomplete data results an exception other than EndOfStreamException.
-				Debug.Assert(this.ReadingState == MessageReadingState.None);
-				// continue
+					// read header fields
+					bool emptyLine;
+					do {
+						emptyLine = ScanHeaderField(headerBuffer);
+					} while (emptyLine == false);
+
+					// update state
+					int endOfHeaderOffset = headerBuffer.CurrentOffset - 2;  // subtract empty line bytes
+					this.EndOfHeaderFields = new Span(endOfHeaderOffset, endOfHeaderOffset);
+					this.ReadingState = MessageReadingState.Header;
+					read = true;
+				} catch (EndOfStreamException) {
+					// no data from input
+					// Note that incomplete data results an exception other than EndOfStreamException.
+					Debug.Assert(this.ReadingState == MessageReadingState.None);
+					Debug.Assert(read == false);
+					// continue
+				} finally {
+					headerBuffer.Input = null;
+				}
 			} catch {
 				this.ReadingState = MessageReadingState.Error;
 				throw;
-			} finally {
-//				headerBuffer.InputStream = null;
 			}
 
-			return this.ReadingState == MessageReadingState.Header;
+			return read;
 		}
 
 		protected void ReadBody(Stream input) {
 			// argument checks
 			if (input == null) {
-				// at this point, input is dummy
 				throw new ArgumentNullException(nameof(input));
+			}
+			if (input.CanRead == false) {
+				throw new ArgumentException("It is not readable", nameof(input));
 			}
 
 			// state checks
@@ -222,12 +200,11 @@ namespace MAPE.Http {
 
 			// read body part from the input
 			// Note that the bodyBuffer reads bytes through the headerBuffer.
-			HeaderBuffer headerBuffer = this.headerBuffer;
-			// headerBuffer.InputStream = input;
+			this.headerBuffer.Input = input;
 			try {
 				// state checks
-				Debug.Assert(headerBuffer.CanRead);
-				Debug.Assert(bodyBuffer.CanRead);
+				Debug.Assert(this.headerBuffer.CanRead);
+				Debug.Assert(this.bodyBuffer.CanRead);
 
 				// read body
 				ScanBody(this.bodyBuffer);
@@ -236,7 +213,7 @@ namespace MAPE.Http {
 				this.ReadingState = MessageReadingState.Error;
 				throw;
 			} finally {
-				//headerBuffer.InputStream = null;
+				this.headerBuffer.Input = null;
 			}
 
 			return;
@@ -270,7 +247,13 @@ namespace MAPE.Http {
 				throw new ArgumentNullException(nameof(output));
 			}
 			if (output.CanWrite == false) {
-				throw new ArgumentException("It is not writable", nameof(output));
+				throw new ArgumentException("It is not writable.", nameof(output));
+			}
+			if (input == null) {
+				throw new ArgumentNullException(nameof(input));
+			}
+			if (input.CanRead == false) {
+				throw new ArgumentException("It is not readable.", nameof(input));
 			}
 
 			// state checks
@@ -279,24 +262,20 @@ namespace MAPE.Http {
 			}
 
 			// write/redirect a message
-			IEnumerable<MessageBuffer.Modification> modifications = (0 < this.modifications.Count) ? this.modifications : null;
-			WriteHeader(output, this.headerBuffer, modifications);
-			RedirectBody(output, input, this.bodyBuffer);
+			HeaderBuffer headerBuffer = this.headerBuffer;
+			headerBuffer.Input = input;
+			try {
+				IEnumerable<MessageBuffer.Modification> modifications = (0 < this.modifications.Count) ? this.modifications : null;
+				WriteHeader(output, headerBuffer, modifications);
+				RedirectBody(output, input, this.bodyBuffer);
+			} finally {
+				headerBuffer.Input = null;
+			}
 
 			// update state
 			this.ReadingState = MessageReadingState.BodyRedirected;
 
 			return;
-		}
-
-		public void Write() {
-			// state checks
-			Stream output = this.output;
-			if (output == null) {
-				throw new InvalidOperationException();
-			}
-
-			Write(output);
 		}
 
 		public void ClearModifications() {
@@ -344,9 +323,13 @@ namespace MAPE.Http {
 
 		#region overridables
 
-		protected virtual void ResetMessageProperties() {
+		protected virtual void Reset() {
 			// reset message properties
 			ResetThisClassLevelMessageProperties();
+
+			// reset buffers
+			this.bodyBuffer.ResetBuffer();
+			this.headerBuffer.ResetBuffer();
 
 			return;
 		}
@@ -471,11 +454,11 @@ namespace MAPE.Http {
 
 		private void ResetThisClassLevelMessageProperties() {
 			// reset message properties of this class level
+			this.EndOfHeaderFields = Span.ZeroToZero;
+			this.ContentLength = 0;
+			this.Version = null;
 			this.modifications.Clear();
 			this.ReadingState = MessageReadingState.None;
-			this.Version = null;
-			this.ContentLength = 0;
-			this.EndOfHeaderFields = Span.ZeroToZero;
 
 			return;
 		}

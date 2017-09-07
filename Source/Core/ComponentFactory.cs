@@ -81,12 +81,12 @@ namespace MAPE {
 
 			#region methods
 
-			public Request AllocRequest(Stream input, Stream output) {
+			public Request AllocRequest() {
 				// allocate an instance
 				Request instance = AllocInstance();
 				try {
 					// activate the instance
-					instance.AttachStreams(input, output);
+					instance.ActivateInstance();
 				} catch {
 					// do not cache back the instance in error 
 					DiscardInstance(instance);
@@ -104,7 +104,7 @@ namespace MAPE {
 
 				// deactivate the instance and try to cache it
 				try {
-					instance.DetachStreams();
+					instance.DeactivateInstance();
 					ReleaseInstance(instance, discardInstance);
 				} catch {
 					// do not cahce back the instance in error 
@@ -124,6 +124,10 @@ namespace MAPE {
 				return new Request();
 			}
 
+			protected override void DiscardInstance(Request instance) {
+				DisposableUtil.DisposeSuppressingErrors(instance);
+			}
+
 			#endregion
 		}
 
@@ -138,12 +142,12 @@ namespace MAPE {
 
 			#region methods
 
-			public Response AllocResponse(Stream input, Stream output) {
+			public Response AllocResponse() {
 				// allocate an instance
 				Response instance = AllocInstance();
 				try {
 					// activate the instance
-					instance.AttachStreams(input, output);
+					instance.ActivateInstance();
 				} catch {
 					// do not cache back the instance in error 
 					DiscardInstance(instance);
@@ -161,7 +165,7 @@ namespace MAPE {
 
 				// deactivate the instance and try to cache it
 				try {
-					instance.DetachStreams();
+					instance.DeactivateInstance();
 					ReleaseInstance(instance, discardInstance);
 				} catch {
 					// do not cahce back the instance in error 
@@ -179,6 +183,10 @@ namespace MAPE {
 
 			protected override Response CreateInstance() {
 				return new Response();
+			}
+
+			protected override void DiscardInstance(Response instance) {
+				DisposableUtil.DisposeSuppressingErrors(instance);
 			}
 
 			#endregion
@@ -310,16 +318,16 @@ namespace MAPE {
 
 		#region IHttpComponentFactory
 
-		public virtual Request AllocRequest(Stream input, Stream output) {
-			return requestCache.AllocRequest(input, output);
+		public virtual Request AllocRequest() {
+			return requestCache.AllocRequest();
 		}
 
 		public virtual void ReleaseRequest(Request instance, bool discardInstance = false) {
 			requestCache.ReleaseRequest(instance, discardInstance);
 		}
 
-		public virtual Response AllocResponse(Stream input, Stream output) {
-			return responseCache.AllocResponse(input, output);
+		public virtual Response AllocResponse() {
+			return responseCache.AllocResponse();
 		}
 
 		public virtual void ReleaseResponse(Response instance, bool discardInstance = false) {

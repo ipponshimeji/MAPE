@@ -159,15 +159,12 @@ namespace MAPE.Http {
 		}
 
 		public virtual void Dispose() {
-			// state checks
-			// Its resources have been cleared at this point.
-			// Because derived class level implementations clear their resources
-			// before they call this class level implementation,
-			// and it includes indirect ResetBuffer() call. 
-			// See the derived class implementations (HeaderBuffer.Dispose() and BodyBuffer.Dispose()).
-			Debug.Assert(this.next == 0);
-			Debug.Assert(this.limit == 0);
-			Debug.Assert(this.memoryBlock == null);
+			// release the memory block
+			byte[] temp = this.memoryBlock;
+			this.memoryBlock = null;
+			ReleaseMemoryBlock(temp);
+
+			return;
 		}
 
 		#endregion
@@ -175,11 +172,13 @@ namespace MAPE.Http {
 
 		#region methods
 
+		// ToDo: remove
 		public static HttpException CreateBadRequestException() {
 			return new HttpException(HttpStatusCode.BadRequest);
 		}
 
 		public static bool IsValidModifications(IEnumerable<Modification> modifications) {
+			// argument checks
 			if (modifications == null) {
 				// null is valid
 				return true;
@@ -243,7 +242,8 @@ namespace MAPE.Http {
 			// fill bytes if no more unread byte
 			if (this.limit <= this.next) {
 				UpdateBuffer();
-				// Note that this.memoryBlock, this.limit and this.next may be changed.
+				// Note that the following members may be changed by this call.
+				//   this.memoryBlock, this.limit and this.next
 			}
 			Debug.Assert(this.next < this.limit);
 
@@ -513,8 +513,15 @@ namespace MAPE.Http {
 			this.limit = 0;
 			byte[] temp = this.memoryBlock;
 			this.memoryBlock = null;
-			if (temp != null) {
-				ReleaseMemoryBlockOnResetBuffer(temp);
+			ReleaseMemoryBlock(temp);
+
+			return;
+		}
+
+		protected virtual void ReleaseMemoryBlock(byte[] memoryBlock) {
+			// release the memory block
+			if (memoryBlock != null) {
+				ComponentFactory.FreeMemoryBlock(memoryBlock);
 			}
 
 			return;
@@ -523,11 +530,6 @@ namespace MAPE.Http {
 		protected virtual byte[] UpdateMemoryBlock(byte[] currentMemoryBlock) {
 			// by default, reuse one memory block
 			return (currentMemoryBlock != null) ? currentMemoryBlock : ComponentFactory.AllocMemoryBlock();
-		}
-
-		protected virtual void ReleaseMemoryBlockOnResetBuffer(byte[] memoryBlock) {
-			// by default, release the 'only-one' memory block
-			ComponentFactory.FreeMemoryBlock(memoryBlock);
 		}
 
 		protected abstract int ReadBytes(byte[] buffer, int offset, int count);

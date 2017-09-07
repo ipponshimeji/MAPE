@@ -115,12 +115,12 @@ namespace MAPE.Http {
 
 		#region overrides/overridables
 
-		protected override void ResetMessageProperties() {
+		protected override void Reset() {
 			// reset this class level
 			ResetThisClassLevelMessageProperties();
 
 			// reset the base class level
-			base.ResetMessageProperties();
+			base.Reset();
 		}
 
 		protected override void ScanStartLine(HeaderBuffer headerBuffer) {
@@ -214,12 +214,13 @@ namespace MAPE.Http {
 
 		private void ResetThisClassLevelMessageProperties() {
 			// reset message properties of this class level
-			this.Method = null;
-			this.HostEndPoint = null;
-			this.TargetUri = null;
-			this.RequestTargetSpan = Span.ZeroToZero;
-			this.HostSpan = Span.ZeroToZero;
 			this.ProxyAuthorizationSpan = Span.ZeroToZero;
+			this.HostSpan = Span.ZeroToZero;
+			this.RequestTargetSpan = Span.ZeroToZero;
+			this.TargetUri = null;
+			this.HostEndPoint = null;
+			this.isConnectMethod = false;
+			this.Method = null;
 
 			return;
 		}

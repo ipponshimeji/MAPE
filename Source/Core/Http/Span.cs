@@ -7,6 +7,7 @@ namespace MAPE.Http {
 
 		public static readonly Span ZeroToZero = new Span(0, 0);
 
+
 		public readonly int Start;
 
 		public readonly int End;

@@ -14,13 +14,13 @@ namespace MAPE.Http {
 		private static readonly char[] WS = new char[] { (char)SP, (char)HTAB };    // SP, HTAB
 
 
-		private Stream input;
+		public Stream Input { get; set; } = null;
 
-		private List<byte[]> memoryBlocks;
+		private List<byte[]> memoryBlocks = new List<byte[]>();
 
-		private int currentMemoryBlockBaseOffset;
+		private int currentMemoryBlockBaseOffset = 0;
 
-		private StringBuilder stockStringBuf;
+		private StringBuilder stockStringBuf = new StringBuilder();
 
 		#endregion
 
@@ -29,7 +29,7 @@ namespace MAPE.Http {
 
 		public bool CanRead {
 			get {
-				return this.input != null;
+				return this.Input != null;
 			}
 		}
 
@@ -45,69 +45,19 @@ namespace MAPE.Http {
 		#region creation and disposal
 
 		public HeaderBuffer(): base() {
-			// initialize members
-			this.input = null;
-			this.memoryBlocks = new List<byte[]>();
-			this.currentMemoryBlockBaseOffset = 0;
-			this.stockStringBuf = new StringBuilder();
-
-			return;
 		}
 
 		public override void Dispose() {
-			// ensure detached
-			DetachStream();
-
-			// clear resources
+			// dispose this class level
 			this.stockStringBuf = null;
-			this.memoryBlocks = null;
+			this.Input = null;
 
+			// dispose the base class level
 			base.Dispose();
-		}
 
-		/// <summary>
-		/// </summary>
-		/// <param name="input"></param>
-		/// <remarks>
-		/// This object does not own the ownership of <paramref name="input"/>.
-		/// That is, this object does not Dispose it in its Detach() call.
-		/// </remarks>
-		public void AttachStream(Stream input) {
-			// argument checks
-			// input may be null
-
-			// state checks
-			if (this.input != null) {
-				throw new InvalidOperationException("This object already attached streams.");
-			}
-
-			// set input
-			this.input = input;
-			// the buffer state should be 'reset' state 
+			// this.memoryBlocks is cleared in base.Dispose()
 			Debug.Assert(this.memoryBlocks.Count == 0);
-			Debug.Assert(this.currentMemoryBlockBaseOffset == 0);
-			Debug.Assert(this.stockStringBuf.Length == 0);
-			Debug.Assert(this.Limit == 0);
-			Debug.Assert(this.Next == 0);
-
-			return;
-		}
-
-		public void DetachStream() {
-			// state checks
-			if (this.input == null) {
-				// nothing to do
-				return;
-			}
-
-			// do not dispose the input, just clear it
-			// This object does not have the ownership of it.
-			this.input = null;
-
-			// reset buffer state
-			ResetBuffer();
-
-			return;
+			this.memoryBlocks = null;
 		}
 
 		#endregion
@@ -478,10 +428,24 @@ namespace MAPE.Http {
 			// reset this class level
 			this.stockStringBuf.Clear();
 			this.currentMemoryBlockBaseOffset = 0;
+			Debug.Assert(this.Input == null);
+
+			// reset the base class level
+			base.ResetBuffer();
+
+			// this.memoryBlocks is cleared in base.ResetBuffer() call
+			Debug.Assert(this.memoryBlocks.Count == 0);
+		}
+
+		protected override void ReleaseMemoryBlock(byte[] memoryBlock) {
+			// argument checks
+			Debug.Assert(this.memoryBlocks.Count == 0 || this.memoryBlocks.Last() == memoryBlock);
+
+			// release the memory blocks
 			this.memoryBlocks.ForEach(
-				(memoryBlock) => {
+				(value) => {
 					try {
-						ComponentFactory.FreeMemoryBlock(memoryBlock);
+						ComponentFactory.FreeMemoryBlock(value);
 					} catch {
 						// continue
 					}
@@ -489,8 +453,7 @@ namespace MAPE.Http {
 			);
 			this.memoryBlocks.Clear();
 
-			// reset the base class level
-			base.ResetBuffer();
+			return;
 		}
 
 		protected override byte[] UpdateMemoryBlock(byte[] currentMemoryBlock) {
@@ -502,7 +465,7 @@ namespace MAPE.Http {
 				int increment = currentMemoryBlock.Length;
 				if (int.MaxValue - newBaseOffset < increment) {
 					// header size exceeds 2G
-					throw new HttpException(HttpStatusCode.InternalServerError);
+					throw new Exception("The header size must be smaller than 2G bytes.");
 				}
 				newBaseOffset += currentMemoryBlock.Length;
 			}
@@ -522,12 +485,6 @@ namespace MAPE.Http {
 			return newMemoryBlock;
 		}
 
-		protected override void ReleaseMemoryBlockOnResetBuffer(byte[] memoryBlock) {
-			// nothing to do
-			// Memory blocks are maintained in this.memoryBlocks,
-			// and managed by this class level.
-		}
-
 		protected override int ReadBytes(byte[] buffer, int offset, int count) {
 			// argument checks
 			Debug.Assert(buffer != null);
@@ -535,7 +492,7 @@ namespace MAPE.Http {
 			Debug.Assert(0 <= count && count <= buffer.Length - offset);
 
 			// state checks
-			if (this.input == null) {
+			if (this.Input == null) {
 				throw new InvalidOperationException("No input stream is attached to this object.");
 			}
 
@@ -543,7 +500,7 @@ namespace MAPE.Http {
 			Exception error = null;
 			int readCount = 0;
 			try {
-				readCount = this.input.Read(buffer, offset, count);
+				readCount = this.Input.Read(buffer, offset, count);
 			} catch (Exception exception) {
 				error = exception;
 				// continue

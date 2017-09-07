@@ -19,7 +19,7 @@ namespace MAPE.Http {
 
 		#region data
 
-		private HeaderBuffer headerBuffer = null;
+		private readonly HeaderBuffer headerBuffer;
 
 		private Stream bodyStream = null;
 
@@ -45,59 +45,25 @@ namespace MAPE.Http {
 
 		#region creation and disposal
 
-		public BodyBuffer(): base() {
+		public BodyBuffer(HeaderBuffer headerBuffer): base() {
+			// argument checks
+			if (headerBuffer == null) {
+				throw new ArgumentNullException(nameof(headerBuffer));
+			}
+
+			// initialize members
+			this.headerBuffer = headerBuffer;
+
+			return;
 		}
 
 		public override void Dispose() {
-			// ensure detached
-			DetachStream();
+			// dispose this class level
+			this.chunkingOutput = null;
+			DisposableUtil.ClearDisposableObject(ref this.bodyStream);
 
+			// dispose the base class level
 			base.Dispose();
-		}
-
-		/// <summary>
-		/// </summary>
-		/// <param name="input"></param>
-		/// <remarks>
-		/// This object does not own the ownership of <paramref name="input"/>.
-		/// That is, this object does not Dispose it in its Detach() call.
-		/// </remarks>
-		public void AttachStream(HeaderBuffer headerBuffer) {
-			// argument checks
-			Debug.Assert(headerBuffer != null);
-
-			// state checks
-			if (this.headerBuffer != null) {
-				throw new InvalidOperationException("This object already attached streams.");
-			}
-
-			// set the headerBuffer
-			this.headerBuffer = headerBuffer;
-			// the buffer state should be 'reset' state 
-			Debug.Assert(this.chunkingOutput == null);
-			Debug.Assert(this.bodyLength == 0);
-			Debug.Assert(this.bodyStream == null);
-			Debug.Assert(this.Limit == 0);
-			Debug.Assert(this.Next == 0);
-
-			return;
-		}
-
-		public void DetachStream() {
-			// state checks
-			if (this.headerBuffer == null) {
-				// nothing to do
-				return;
-			}
-
-			// do not dispose the headerBuffer, just clear it
-			// This object does not have the ownership of it.
-			this.headerBuffer = null;
-
-			// reset buffer state
-			ResetBuffer();
-
-			return;
 		}
 
 		#endregion
@@ -421,10 +387,10 @@ namespace MAPE.Http {
 		protected override byte[] UpdateMemoryBlock(byte[] currentMemoryBlock) {
 			if (currentMemoryBlock != null) {
 				Stream output = this.chunkingOutput;
-				if (output != null && currentMemoryBlock != null) {
+				if (output != null) {
 					// the case that it is handling chunked body
 
-					// flush the bytes in the currentMemoryBlock to the chunkingOutputStream 
+					// flush the bytes in the currentMemoryBlock to the chunkingOutput
 					int start = this.unflushedStart;
 					int end = this.Limit;
 					int count = end - start;
@@ -432,6 +398,7 @@ namespace MAPE.Http {
 						chunkingOutput.Write(currentMemoryBlock, start, count);
 						this.bodyLength += count;
 					}
+
 					this.unflushedStart = 0;
 				}
 			}
@@ -441,7 +408,7 @@ namespace MAPE.Http {
 
 		protected override int ReadBytes(byte[] buffer, int offset, int count) {
 			// state checks
-			if (this.headerBuffer == null) {
+			if (this.headerBuffer.CanRead == false) {
 				throw new InvalidOperationException("No input stream is attached to this object.");
 			}
 

@@ -33,9 +33,9 @@ namespace MAPE.Http {
 			// process Http request/response
 			bool tunnelingMode = false;
 			IHttpComponentFactory componentFactory = owner.ComponentFactory;
-			Request request = componentFactory.AllocRequest(requestInput, requestOutput);
+			Request request = componentFactory.AllocRequest();
 			try {
-				Response response = componentFactory.AllocResponse(responseInput, responseOutput);
+				Response response = componentFactory.AllocResponse();
 				try {
 					// process each client request
 					while (request.Read(requestInput)) {
@@ -45,11 +45,11 @@ namespace MAPE.Http {
 						bool retry = OnCommunicate(owner, repeatCount, request, null);
 						if (request.IsConnectMethod && owner.UsingProxy == false) {
 							// connecting to the actual server directly
-							response.RespondSimpleError(200, "Connection established");
+							Response.RespondSimpleError(responseOutput, 200, "Connection established");
 							tunnelingMode = true;
 						} else {
 							do {
-								request.Write();
+								request.Write(requestOutput);
 								if (response.Read(responseInput, request) == false) {
 									// no response from the server
 									Exception innerException = new Exception("No response from the server.");
@@ -59,7 +59,7 @@ namespace MAPE.Http {
 								retry = OnCommunicate(owner, repeatCount, request, response);
 							} while (retry);
 							// send the final response to the client
-							response.Write();
+							response.Write(responseOutput);
 							tunnelingMode = (request.IsConnectMethod && response.StatusCode == 200);
 						}
 
@@ -84,7 +84,7 @@ namespace MAPE.Http {
 					if (httpError != null) {
 						// Note that the connection may be disabled at this point and may cause an exception.
 						try {
-							response.RespondSimpleError(httpError.StatusCode, httpError.Message);
+							Response.RespondSimpleError(responseOutput, httpError.StatusCode, httpError.Message);
 						} catch {
 							// continue
 						}
