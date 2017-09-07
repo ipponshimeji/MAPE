@@ -74,7 +74,9 @@
     <Compile Include="Command\SystemSettings.cs" />
     <Compile Include="Command\SystemSettingsSwitcher.cs" />
     <Compile Include="ComponentBase\ComponentLoggerExtensions.cs" />
+    <Compile Include="ComponentBase\ICacheableObject.cs" />
     <Compile Include="ComponentBase\IComponentLogger.cs" />
+    <Compile Include="ComponentBase\CacheableInstanceCache.cs" />
     <Compile Include="Http\BodyBuffer.cs" />
     <Compile Include="Http\MessageReadingState.cs" />
     <Compile Include="Http\HttpException.cs" />

@@ -70,7 +70,7 @@ namespace MAPE {
 			#endregion
 		}
 
-		public class RequestCache: InstanceCache<Request> {
+		public class RequestCache: CacheableInstanceCache<Request> {
 			#region creation and disposal
 
 			public RequestCache(): base(nameof(RequestCache)) {
@@ -82,37 +82,11 @@ namespace MAPE {
 			#region methods
 
 			public Request AllocRequest() {
-				// allocate an instance
-				Request instance = AllocInstance();
-				try {
-					// activate the instance
-					instance.ActivateInstance();
-				} catch {
-					// do not cache back the instance in error 
-					DiscardInstance(instance);
-					throw;
-				}
-
-				return instance;
+				return AllocInstance();
 			}
 
 			public void ReleaseRequest(Request instance, bool discardInstance) {
-				// argument checks
-				if (instance == null) {
-					throw new ArgumentNullException(nameof(instance));
-				}
-
-				// deactivate the instance and try to cache it
-				try {
-					instance.DeactivateInstance();
-					ReleaseInstance(instance, discardInstance);
-				} catch {
-					// do not cahce back the instance in error 
-					DiscardInstance(instance);
-					// continue
-				}
-
-				return;
+				ReleaseInstance(instance, discardInstance);
 			}
 
 			#endregion
@@ -131,7 +105,7 @@ namespace MAPE {
 			#endregion
 		}
 
-		public class ResponseCache: InstanceCache<Response> {
+		public class ResponseCache: CacheableInstanceCache<Response> {
 			#region creation and disposal
 
 			public ResponseCache(): base(nameof(ResponseCache)) {
@@ -143,37 +117,11 @@ namespace MAPE {
 			#region methods
 
 			public Response AllocResponse() {
-				// allocate an instance
-				Response instance = AllocInstance();
-				try {
-					// activate the instance
-					instance.ActivateInstance();
-				} catch {
-					// do not cache back the instance in error 
-					DiscardInstance(instance);
-					throw;
-				}
-
-				return instance;
+				return AllocInstance();
 			}
 
 			public void ReleaseResponse(Response instance, bool discardInstance) {
-				// argument checks
-				if (instance == null) {
-					throw new ArgumentNullException(nameof(instance));
-				}
-
-				// deactivate the instance and try to cache it
-				try {
-					instance.DeactivateInstance();
-					ReleaseInstance(instance, discardInstance);
-				} catch {
-					// do not cahce back the instance in error 
-					DiscardInstance(instance);
-					// continue
-				}
-
-				return;
+				ReleaseInstance(instance, discardInstance);
 			}
 
 			#endregion

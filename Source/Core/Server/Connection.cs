@@ -74,7 +74,6 @@ namespace MAPE.Server {
 			StopCommunication();
 		}
 
-
 		public void ActivateInstance(ConnectionCollection owner) {
 			// argument checks
 			Debug.Assert(owner != null);

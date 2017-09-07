@@ -31,11 +31,14 @@ namespace MAPE.ComponentBase {
 		#endregion
 
 
-		#region data - synchronized by locking this
+		#region data - synchronized by locking instanceLocker
+
+		private readonly object instanceLocker = new object();
 
 		private Queue<T> cache = new Queue<T>();
 
 		private int maxCachedInstanceCount = DefaultMaxCachedInstanceCount;
+
 
 		// statistics
 		private uint allocatedCount = 0;
@@ -51,7 +54,7 @@ namespace MAPE.ComponentBase {
 
 		public int MaxCachedInstanceCount {
 			get {
-//				lock (this) {
+//				lock (this.instanceLocker) {
 					return this.maxCachedInstanceCount;
 //				}
 			}
@@ -61,7 +64,7 @@ namespace MAPE.ComponentBase {
 					throw new ArgumentOutOfRangeException(nameof(value));
 				}
 
-				lock (this) {
+				lock (this.instanceLocker) {
 					this.maxCachedInstanceCount = value;
 				}
 			}
@@ -81,7 +84,7 @@ namespace MAPE.ComponentBase {
 
 		public virtual void Dispose() {
 			Queue<T> temp;
-			lock (this) {
+			lock (this.instanceLocker) {
 				// clear the instance cache
 				temp = this.cache;
 				this.cache = null;
@@ -113,7 +116,7 @@ namespace MAPE.ComponentBase {
 			uint allocatedCount;
 			uint releasedCount;
 			uint maxActiveCount;
-			lock (this) {
+			lock (this.instanceLocker) {
 				cacheName = this.CacheName;
 				allocatedCount = this.allocatedCount;
 				releasedCount = this.releasedCount;
@@ -132,9 +135,23 @@ namespace MAPE.ComponentBase {
 			Logger.LogVerbose(cacheName ?? string.Empty, message);
 		}
 
+		protected void DiscardInstanceIgnoringException(T instance) {
+			// argument checks
+			Debug.Assert(instance != null);
+
+			// discard the instance ignoring exception
+			try {
+				DiscardInstance(instance);
+			} catch {
+				// continue
+			}
+
+			return;
+		}
+
 		protected T AllocInstance() {
 			T instance = null;
-			lock (this) {
+			lock (this.instanceLocker) {
 				// state checks
 				Queue<T> cache = this.cache;
 				if (cache == null) {
@@ -169,7 +186,7 @@ namespace MAPE.ComponentBase {
 			}
 
 			try {
-				lock (this) {
+				lock (this.instanceLocker) {
 					// update statistics
 					++this.releasedCount;
 
@@ -203,25 +220,6 @@ namespace MAPE.ComponentBase {
 
 		protected virtual void DiscardInstance(T instance) {
 			// do nothing by default
-		}
-
-		#endregion
-
-
-		#region privates
-
-		private void DiscardInstanceIgnoringException(T instance) {
-			// argument checks
-			Debug.Assert(instance != null);
-
-			// discard the instance ignoring exception
-			try {
-				DiscardInstance(instance);
-			} catch {
-				// continue
-			}
-
-			return;
 		}
 
 		#endregion

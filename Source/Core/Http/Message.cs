@@ -6,10 +6,11 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using MAPE.ComponentBase;
 
 
 namespace MAPE.Http {
-	public abstract class Message: IDisposable {
+	public abstract class Message: IDisposable, ICacheableObject {
 		#region data
 
 		private readonly HeaderBuffer headerBuffer;
@@ -81,18 +82,16 @@ namespace MAPE.Http {
 		#endregion
 
 
-		#region methods - lifecycle
+		#region ICacheableObject
 
-		public void ActivateInstance() {
-			// state checks
-			Debug.Assert(this.ReadingState == MessageReadingState.None);
-
-			return;
-		}
-
-		public void DeactivateInstance() {
+		public void OnCaching() {
 			// reset instance
 			Reset();
+			Debug.Assert(this.ReadingState == MessageReadingState.None);
+		}
+
+		public void OnDecached() {
+			// state checks
 			Debug.Assert(this.ReadingState == MessageReadingState.None);
 
 			return;
