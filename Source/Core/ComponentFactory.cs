@@ -13,7 +13,7 @@ namespace MAPE {
     public class ComponentFactory: IServerComponentFactory, IHttpComponentFactory {
 		#region types
 
-		public class ConnectionCache: InstanceCache<Connection> {
+		public class ConnectionCache: CacheableInstanceCache<Connection, ConnectionCollection> {
 			#region creation and disposal
 
 			public ConnectionCache(): base(nameof(ConnectionCache)) {
@@ -25,37 +25,11 @@ namespace MAPE {
 			#region methods
 
 			public Connection AllocConnection(ConnectionCollection owner) {
-				// allocate an instance
-				Connection instance = AllocInstance();
-				try {
-					// activate the instance
-					instance.ActivateInstance(owner);
-				} catch {
-					// do not cache back the instance in error 
-					DiscardInstance(instance);
-					throw;
-				}
-
-				return instance;
+				return AllocInstance(owner);
 			}
 
 			public void ReleaseConnection(Connection instance, bool discardInstance) {
-				// argument checks
-				if (instance == null) {
-					throw new ArgumentNullException(nameof(instance));
-				}
-
-				// deactivate the instance and try to cache it
-				try {
-					instance.DeactivateInstance();
-					ReleaseInstance(instance, discardInstance);
-				} catch {
-					// do not cahce back the instance in error 
-					DiscardInstance(instance);
-					// continue
-				}
-
-				return;
+				ReleaseInstance(instance, discardInstance);
 			}
 
 			#endregion

@@ -12,22 +12,10 @@ namespace MAPE.Http {
 	public class Communication {
 		#region methods
 
-		public static void Communicate(ICommunicationOwner owner, Stream requestInput, Stream requestOutput, Stream responseInput, Stream responseOutput) {
+		public static void Communicate(ICommunicationOwner owner) {
 			// argument checks
 			if (owner == null) {
 				throw new ArgumentNullException(nameof(owner));
-			}
-			if (requestInput == null) {
-				throw new ArgumentNullException(nameof(requestInput));
-			}
-			if (requestOutput == null) {
-				throw new ArgumentNullException(nameof(requestOutput));
-			}
-			if (responseInput == null) {
-				throw new ArgumentNullException(nameof(responseInput));
-			}
-			if (responseOutput == null) {
-				throw new ArgumentNullException(nameof(responseOutput));
 			}
 
 			// process Http request/response
@@ -38,19 +26,19 @@ namespace MAPE.Http {
 				Response response = componentFactory.AllocResponse();
 				try {
 					// process each client request
-					while (request.Read(requestInput)) {
+					while (request.Read(owner.RequestInput)) {
 						// send the request to the server
 						// The request is resent while the owner instructs modifications.
 						int repeatCount = 0;
 						bool retry = OnCommunicate(owner, repeatCount, request, null);
-						if (request.IsConnectMethod && owner.UsingProxy == false) {
+						if (request.IsConnectMethod && owner.ConnectingToProxy == false) {
 							// connecting to the actual server directly
-							Response.RespondSimpleError(responseOutput, 200, "Connection established");
+							Response.RespondSimpleError(owner.ResponseOutput, 200, "Connection established");
 							tunnelingMode = true;
 						} else {
 							do {
-								request.Write(requestOutput);
-								if (response.Read(responseInput, request) == false) {
+								request.Write(owner.RequestOutput);
+								if (response.Read(owner.ResponseInput, request) == false) {
 									// no response from the server
 									Exception innerException = new Exception("No response from the server.");
 									throw new HttpException(innerException, HttpStatusCode.BadGateway);
@@ -59,7 +47,7 @@ namespace MAPE.Http {
 								retry = OnCommunicate(owner, repeatCount, request, response);
 							} while (retry);
 							// send the final response to the client
-							response.Write(responseOutput);
+							response.Write(owner.ResponseOutput);
 							tunnelingMode = (request.IsConnectMethod && response.StatusCode == 200);
 						}
 
@@ -84,7 +72,7 @@ namespace MAPE.Http {
 					if (httpError != null) {
 						// Note that the connection may be disabled at this point and may cause an exception.
 						try {
-							Response.RespondSimpleError(responseOutput, httpError.StatusCode, httpError.Message);
+							Response.RespondSimpleError(owner.ResponseOutput, httpError.StatusCode, httpError.Message);
 						} catch {
 							// continue
 						}
@@ -101,14 +89,10 @@ namespace MAPE.Http {
 
 			// process tunneling mode
 			if (tunnelingMode) {
-				Tunnel(owner, requestInput, requestOutput, responseInput, responseOutput);
+				Tunnel(owner, owner.RequestInput, owner.RequestOutput, owner.ResponseInput, owner.ResponseOutput);
 			}
 
 			return;
-		}
-
-		public static void Communicate(ICommunicationOwner owner, Stream clientStream, Stream serverStream) {
-			Communicate(owner, clientStream, serverStream, serverStream, clientStream);
 		}
 
 		#endregion
@@ -135,7 +119,7 @@ namespace MAPE.Http {
 			if (needRetry || response == null) {
 				// the case that the request will be sent to the server right after this
 
-				if (owner.UsingProxy == false && request.TargetUri != null) {
+				if (owner.ConnectingToProxy == false && request.TargetUri != null) {
 					// The case that MAPE is connecting to the server directly and
 					// its request-target in request-line is absolute-form
 					// (non-null TargetUri means its request-target is absolute-form)

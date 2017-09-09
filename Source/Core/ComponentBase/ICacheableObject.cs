@@ -7,4 +7,10 @@ namespace MAPE.ComponentBase {
 
 		void OnDecached();
 	}
+
+	public interface ICacheableObject<TInitParam> {
+		void OnCaching();
+
+		void OnDecached(TInitParam initParam);
+	}
 }

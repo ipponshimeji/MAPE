@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Diagnostics;
+using System.IO;
 using MAPE.ComponentBase;
 
 
@@ -9,7 +9,15 @@ namespace MAPE.Http {
 
 		IHttpComponentFactory ComponentFactory { get; }
 
-		bool UsingProxy { get; }
+		Stream RequestInput { get; }
+
+		Stream RequestOutput { get; }
+
+		Stream ResponseInput { get; }
+
+		Stream ResponseOutput { get; }
+
+		bool ConnectingToProxy { get; }
 
 		bool OnCommunicate(int repeatCount, Request request, Response response);
 

@@ -72,6 +72,10 @@ namespace MAPE.Utils {
 			return new DnsEndPoint(uri.Host, uri.Port);
 		}
 
+		public static bool AreSameHostNames(string name1, string name2) {
+			return string.Compare(name1, name2, StringComparison.OrdinalIgnoreCase) == 0;
+		}
+
 		public static void BackupAndSave(string filePath, Action<string> saveTo, int backupHistory) {
 			// argument checks
 			if (filePath == null) {

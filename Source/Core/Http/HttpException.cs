@@ -39,7 +39,7 @@ namespace MAPE.Http {
 		public HttpException(Exception innerException, HttpStatusCode httpStatusCode) : this(innerException, httpStatusCode, GetDefaultMessage(httpStatusCode)) {
 		}
 
-		public HttpException(Exception innerException) : this(innerException, HttpStatusCode.InternalServerError) {
+		public HttpException(Exception innerException) : this(innerException, HttpStatusCode.BadGateway) {
 		}
 
 		public HttpException(HttpStatusCode httpStatusCode, string message): this(null, httpStatusCode, message) {
@@ -63,6 +63,8 @@ namespace MAPE.Http {
 					return "Bad Request";
 				case HttpStatusCode.InternalServerError:
 					return "Internal Server Error";
+				case HttpStatusCode.BadGateway:
+					return "Bad Gateway";
 				default:
 					// ToDo: should be improved?
 					return statusCode.ToString();

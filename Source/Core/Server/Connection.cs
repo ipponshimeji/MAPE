@@ -2,18 +2,144 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using MAPE.ComponentBase;
 using MAPE.Http;
 using MAPE.Utils;
 
 namespace MAPE.Server {
-    public class Connection: TaskingComponent, ICommunicationOwner {
+    public class Connection: TaskingComponent, ICacheableObject<ConnectionCollection>, ICommunicationOwner {
+		#region types
+
+		private struct ServerConnection {
+			#region data
+
+			private TcpClient server;
+
+			private string host;
+
+			private int port;
+
+			#endregion
+
+
+			#region properties
+
+			public bool IsConnecting {
+				get {
+					return this.server != null;
+				}
+			}
+
+			public string EndPoint {
+				get {
+					// state checks
+					if (this.server == null) {
+						throw CreateNotConnectingException();
+					}
+
+					return $"{this.host}:{this.port}";
+				}
+			}
+
+			public Stream Stream {
+				get {
+					// state checks
+					// Be careful to access this.server only once,
+					// otherwise this property must be called in an atomic scope by locking instanceLocker.
+					TcpClient server = this.server;
+					if (server == null) {
+						throw CreateNotConnectingException();
+					}
+
+					return server.GetStream();
+				}
+			}
+
+			public Socket Socket {
+				get {
+					// state checks
+					// Be careful to access this.server only once,
+					// otherwise this property must be called in an atomic scope by locking instanceLocker.
+					TcpClient server = this.server;
+					if (server == null) {
+						throw CreateNotConnectingException();
+					}
+
+					return server.Client;
+				}
+			}
+
+			#endregion
+
+
+			#region methods
+
+			public bool IsEndPoint(string host, int port) {
+				return port == this.port && Util.AreSameHostNames(host, this.host);
+			}
+
+			public void Connect(string host, int port) {
+				// argument checks
+				Debug.Assert(string.IsNullOrEmpty(host) == false);
+				Debug.Assert(IPEndPoint.MinPort < port && port <= IPEndPoint.MaxPort);
+
+				// state checks
+				Debug.Assert(this.server == null);
+
+				// connect to the server
+				this.server = new TcpClient(host, port);
+				this.host = host;
+				this.port = port;
+
+				return;
+			}
+
+			public void Disconnect() {
+				// disconnect from the server
+				this.port = 0;
+				this.host = null;
+
+				TcpClient temp = this.server;
+				this.server = null;
+				if (temp != null) {
+					temp.Close();
+				}
+
+				return;
+			}
+
+			public void Reconnect() {
+				// backup the current endpoint information.
+				string host = this.host;
+				int port = this.port;
+
+				// disconnect from the server
+				Disconnect();
+
+				// reconnect to the server
+				Connect(host, port);
+
+				return;
+			}
+
+			#endregion
+
+
+			#region privates
+
+			private static InvalidOperationException CreateNotConnectingException() {
+				return new InvalidOperationException("It is not connecting to any server.");
+			}
+
+			#endregion
+		}
+
+		#endregion
+
+
 		#region constants
 
 		public const string ComponentNameBase = "Connection";
@@ -21,22 +147,26 @@ namespace MAPE.Server {
 		#endregion
 
 
-		#region data
+		#region data - regarded as practically read only
+
+		// These fields are set only in OnCaching() and OnDecached() methods.
 
 		private ConnectionCollection owner = null;
+
+		private int retryCount;
 
 		#endregion
 
 
-		#region data - synchronized by locking this
+		#region data - atomized by locking this.instanceLocker
 
-		private int retryCount;
+		private readonly object instanceLocker = new object();
 
 		private TcpClient client = null;
 
-		private ReconnectableTcpClient server = null;
+		private ServerConnection server;
 
-		private bool usingProxy = false;
+		private bool connectingToProxy = false;
 
 		private Proxy.BasicCredential proxyCredential = null;
 
@@ -57,6 +187,20 @@ namespace MAPE.Server {
 			}
 		}
 
+		private Stream ClientStream {
+			get {
+				// state checks
+				// Be careful to access this.client only once,
+				// otherwise you need to atomize operations by locking instanceLocker.
+				TcpClient client = this.client;
+				if (client == null) {
+					throw new ObjectDisposedException(this.ComponentName);
+				}
+
+				return client.GetStream();
+			}
+		}
+
 		#endregion
 
 
@@ -65,6 +209,7 @@ namespace MAPE.Server {
 		public Connection(): base(allocateComponentId: false) {
 			// initialize members
 			this.ComponentName = ComponentNameBase;
+			this.server = new ServerConnection();
 
 			return;
 		}
@@ -74,11 +219,45 @@ namespace MAPE.Server {
 			StopCommunication();
 		}
 
-		public void ActivateInstance(ConnectionCollection owner) {
-			// argument checks
-			Debug.Assert(owner != null);
+		#endregion
 
-			lock (this) {
+
+		#region ICacheableObject<ConnectionCollection>
+
+		public void OnCaching() {
+			// clear the instance
+			lock (this.instanceLocker) {
+				// state checks
+				if (this.owner == null) {
+					// already cleared
+					return;
+				}
+				if (this.client != null) {
+					throw new InvalidOperationException("The instance is still in use.");
+				}
+
+				// uninitialize members
+				Debug.Assert(this.proxyCredential == null);
+				Debug.Assert(this.connectingToProxy == false);
+				Debug.Assert(this.server.IsConnecting == false);
+				Debug.Assert(this.client == null);
+				this.retryCount = 0;
+				this.owner = null;
+				this.Task = null;
+				this.ComponentName = ComponentNameBase;
+			}
+
+			return;
+		}
+
+		public void OnDecached(ConnectionCollection owner) {
+			// argument checks
+			if (owner == null) {
+				throw new ArgumentNullException(nameof(owner));
+			}
+
+			// reset the instance to be reused
+			lock (this.instanceLocker) {
 				// state checks
 				if (this.owner != null) {
 					throw new InvalidOperationException("The instance is in use.");
@@ -87,33 +266,13 @@ namespace MAPE.Server {
 				// initialize members
 				this.ParentComponentId = owner.Owner.ComponentId;
 				this.ComponentId = Logger.AllocComponentId();
+				Debug.Assert(this.Task == null);
 				this.owner = owner;
 				this.retryCount = owner.Owner.RetryCount;
 				Debug.Assert(this.client == null);
-				Debug.Assert(this.server == null);
+				Debug.Assert(this.server.IsConnecting == false);
+				Debug.Assert(this.connectingToProxy == false);
 				Debug.Assert(this.proxyCredential == null);
-			}
-
-			return;
-		}
-
-		public void DeactivateInstance() {
-			lock (this) {
-				// state checks
-				if (this.owner == null) {
-					// already deactivated
-					return;
-				}
-				if (this.client != null) {
-					throw new InvalidOperationException("The instance is still working.");
-				}
-
-				// uninitialize members
-				Debug.Assert(this.proxyCredential == null);
-				Debug.Assert(this.server == null);
-				Debug.Assert(this.client == null);
-				this.owner = null;
-				this.Task = null;
 			}
 
 			return;
@@ -131,27 +290,27 @@ namespace MAPE.Server {
 			}
 
 			try {
-				lock (this) {
-					// log
-					bool verbose = ShouldLog(TraceEventType.Verbose);
-					if (verbose) {
-						LogVerbose($"Starting for {client.Client.RemoteEndPoint.ToString()} ...");
-					}
+				// log
+				bool verbose = ShouldLog(TraceEventType.Verbose);
+				if (verbose) {
+					LogVerbose($"Starting for {client.Client.RemoteEndPoint.ToString()} ...");
+				}
 
+				lock (this.instanceLocker) {
 					// state checks
 					if (this.owner == null) {
 						throw new ObjectDisposedException(this.ComponentName);
 					}
-
 					Task communicatingTask = this.Task;
 					if (communicatingTask != null) {
 						throw new InvalidOperationException("It already started communication.");
 					}
+
+					// prepare a communicating task
 					communicatingTask = new Task(Communicate);
 					communicatingTask.ContinueWith(
 						(t) => {
 							LogVerbose("Stopped.");
-							this.ComponentName = ComponentNameBase;
 							this.owner.OnConnectionCompleted(this);
 						}
 					);
@@ -161,7 +320,7 @@ namespace MAPE.Server {
 					Debug.Assert(this.client == null);
 					this.client = client;
 
-					// start communicating task
+					// start the communicating task
 					communicatingTask.Start();
 
 					// log
@@ -181,17 +340,18 @@ namespace MAPE.Server {
 			bool stopConfirmed = false;
 			try {
 				Task communicatingTask;
-				lock (this) {
+				lock (this.instanceLocker) {
 					// state checks
 					if (this.owner == null) {
 						throw new ObjectDisposedException(this.ComponentName);
 					}
-
 					communicatingTask = this.Task;
 					if (communicatingTask == null) {
 						// already stopped
 						return true;
 					}
+
+					// log
 					LogVerbose("Stopping...");
 
 					// force the connections to close
@@ -218,69 +378,6 @@ namespace MAPE.Server {
 		#endregion
 
 
-		#region overridables
-
-		protected virtual bool SetModifications(Request request, Response response) {
-			// argument checks
-			if (request == null) {
-				throw new ArgumentNullException(nameof(request));
-			}
-			// response may be null
-
-			// Currently only basic authorization for the proxy is handled.
-
-			// ToDo: thread protection if pipe line mode is supported.
-			bool retry = false;
-			IReadOnlyCollection<byte> overridingProxyAuthorization = null;
-			if (response == null) {
-				// before requesting firstly
-				if (request.ProxyAuthorizationSpan.IsZeroToZero) {
-					// set the cached proxy credential 
-					Proxy.BasicCredential proxyCredential = this.proxyCredential;
-					if (proxyCredential == null) {
-						string endPoint = this.server.EndPoint;
-						string realm = null;
-						proxyCredential = this.Proxy.GetServerBasicCredentials(endPoint, realm, firstRequest: true, oldBasicCredentials: null);
-						this.proxyCredential = proxyCredential; // may be null
-					}
-					overridingProxyAuthorization = proxyCredential?.Bytes;
-				}
-			} else {
-				// after responded from the server
-				if (response.StatusCode == 407) {
-					// 407: Proxy Authentication Required
-					// the current credential seems to be invalid (or null)
-					string endPoint = this.server.EndPoint;
-					string realm = "Proxy"; // ToDo: extract realm from the field
-					Proxy.BasicCredential proxyCredential = this.Proxy.GetServerBasicCredentials(endPoint, realm, firstRequest: false, oldBasicCredentials: this.proxyCredential);
-					this.proxyCredential = proxyCredential;
-					overridingProxyAuthorization = proxyCredential?.Bytes;
-				} else {
-					// no need to resending
-					overridingProxyAuthorization = null;
-				}
-			}
-
-			// set modifications if necessary 
-			if (overridingProxyAuthorization != null) {
-				// set or overwrite the Proxy-Authorization field.
-				Span span = request.ProxyAuthorizationSpan;
-				if (span.IsZeroToZero) {
-					span = request.EndOfHeaderFields;
-				}
-				request.AddModification(
-					span,
-					(modifier) => { modifier.Write(overridingProxyAuthorization); return true; }
-				);
-				retry = true;
-			}
-
-			return retry;
-		}
-
-		#endregion
-
-
 		#region ICommunicationOwner - for Communication class only
 
 		IHttpComponentFactory ICommunicationOwner.ComponentFactory {
@@ -295,9 +392,33 @@ namespace MAPE.Server {
 			}
 		}
 
-		bool ICommunicationOwner.UsingProxy {
+		Stream ICommunicationOwner.RequestInput {
 			get {
-				return this.usingProxy;
+				return this.ClientStream;
+			}
+		}
+
+		Stream ICommunicationOwner.RequestOutput {
+			get {
+				return this.server.Stream;
+			}
+		}
+
+		Stream ICommunicationOwner.ResponseInput {
+			get {
+				return this.server.Stream;
+			}
+		}
+
+		Stream ICommunicationOwner.ResponseOutput {
+			get {
+				return this.ClientStream;
+			}
+		}
+
+		bool ICommunicationOwner.ConnectingToProxy {
+			get {
+				return this.connectingToProxy;
 			}
 		}
 
@@ -314,23 +435,17 @@ namespace MAPE.Server {
 			}
 
 			// preparations
-			ReconnectableTcpClient server = this.server;
-			if (server == null) {
-				throw new InvalidOperationException("The server connection has been closed.");
-			}
-			// ToDo: convert to an inner function in VS2017
-			Action<string, int, Exception> onConnectionError = (h, p, e) => {
-				LogError($"Cannot connect to the actual proxy '{h}:{p}': {e.Message}");
-				throw new HttpException(HttpStatusCode.InternalServerError, "Not Connected to Actual Proxy");
-			};
 			bool logVerbose = ShouldLog(TraceEventType.Verbose);
 			bool retry = false;
+			bool connectingToProxy;
+			lock (this.instanceLocker) {
+				connectingToProxy = this.connectingToProxy;
+			}
 
-			// start connection
 			if (response == null) {
 				// on before requesting to the server firstly
 
-				// connect to the server
+				// detect the server to be connected
 				IActualProxy actualProxy = this.Proxy.ActualProxy;
 				IReadOnlyCollection<DnsEndPoint> remoteEndPoints = null;
 				if (actualProxy != null) {
@@ -341,39 +456,48 @@ namespace MAPE.Server {
 					}
 				}
 				if (remoteEndPoints != null) {
-					this.usingProxy = true;
+					connectingToProxy = true;
 					LogVerbose($"Connecting to proxy '{actualProxy.Description}'");
 				} else {
+					DnsEndPoint endPoint = request.HostEndPoint;
 					remoteEndPoints = new DnsEndPoint[] {
-						request.HostEndPoint
+						endPoint
 					};
-					this.usingProxy = false;
-					LogVerbose($"Connecting directly to '{request.Host}'");
+					connectingToProxy = false;
+					LogVerbose($"Connecting directly to '{endPoint.Host}:{endPoint.Port}'");
 				}
 
+				// connect to the server
 				try {
-					server.EnsureConnect(remoteEndPoints);
+					EnsureConnectToServer(remoteEndPoints);
+					Debug.Assert(this.server.IsConnecting);
+					lock (this.instanceLocker) {
+						this.connectingToProxy = connectingToProxy;
+					}
 				} catch (Exception exception) {
 					// the case that server connection is not available
-					this.usingProxy = false;
-					onConnectionError(null, 0, exception);
+					lock (this.instanceLocker) {
+						this.connectingToProxy = false;
+					}
+					LogError($"Cannot connect to the server: {exception.Message}");
+					throw new HttpException(HttpStatusCode.BadGateway, "Cannot connect to the server.");
 				}
-				LogVerbose($"Connected to '{server.EndPoint}'");
+				LogVerbose($"Connected to '{this.server.EndPoint}'");
 			}
 
-			// retry checks and get modifications
+			// retry check and get modifications
 			if (repeatCount <= this.retryCount) {
 				// set modifications on the request
 				retry = SetModifications(request, response);
-				if (retry == false && this.usingProxy == false && request.IsConnectMethod) {
+				if (retry == false && connectingToProxy == false && request.IsConnectMethod) {
 					// ToDo: can be more smart?
 					LogDirectTunnelingResult(request);
 				}
 			} else {
 				LogWarning("Overruns the retry count. Responding the current response.");
+				Debug.Assert(retry == false);
 			}
 
-			// log and Keep-Alive check
 			if (response != null) {
 				// on after responded from the server
 
@@ -382,16 +506,16 @@ namespace MAPE.Server {
 
 				// manage the connection for non-Keep-Alive mode
 				if (response.KeepAliveEnabled == false && !(request.IsConnectMethod && response.StatusCode == 200)) {
-					// disconnect the server connection
-					server.Disconnect();
-
-					// re-connect the server connection if the request is going to be re-rent
-					if (retry) {
+					if (retry == false) {
+						// disconnect from the server
+						DisconnectFromServer();
+					} else {
+						// reconnect to the server to resend the request
 						try {
-							server.EnsureConnect();
+							ReconnectToServer();
 						} catch (Exception exception) {
-							// the case that server connection is not available
-							onConnectionError(server.Host, server.Port, exception);
+							LogError($"Cannot connect to the server: {exception.Message}");
+							throw new HttpException(HttpStatusCode.BadGateway, "Cannot connect to the server.");
 						}
 					}
 				}
@@ -413,12 +537,14 @@ namespace MAPE.Server {
 					// an EndOfStreamException means disconnection at an appropriate timing.
 					LogVerbose($"The communication ends normally.");
 				} else {
+					// adjust the exception
 					string detail = null;
 					if (exception != null && request != null && request.MessageRead) {
 						httpException = exception as HttpException;
 						if (httpException == null) {
+							// wrap the exception into an HttpException
 							httpException = new HttpException(exception);
-							Debug.Assert(httpException.HttpStatusCode == HttpStatusCode.InternalServerError);
+							Debug.Assert(httpException.HttpStatusCode == HttpStatusCode.BadGateway);
 							detail = exception.Message;
 						} else {
 							detail = httpException.InnerException?.Message;
@@ -450,8 +576,6 @@ namespace MAPE.Server {
 			// log
 			switch (communicationSubType) {
 				case CommunicationSubType.Session:
-					Debug.Assert(this.server != null);
-					this.server.Reconnectable = false;	// no need to reconnect in tunneling mode
 					LogVerbose("Started tunneling mode.");
 					break;
 				case CommunicationSubType.UpStream:
@@ -476,8 +600,10 @@ namespace MAPE.Server {
 				case CommunicationSubType.DownStream:
 					string direction = communicationSubType.ToString();
 					if (exception != null) {
+						// terminate the communication
 						StopCommunication();
 
+						// decide error severity
 						TraceEventType eventType = TraceEventType.Error;
 						if (exception is IOException) {
 							SocketException socketException = exception.InnerException as SocketException;
@@ -492,13 +618,15 @@ namespace MAPE.Server {
 								}
 							}
 						}
+
+						// log
 						Log(eventType, $"Error in {direction} tunneling: {exception.Message}");
 					} else {
 						// shutdown the communication
 						bool downStream = (communicationSubType == CommunicationSubType.DownStream);
-						lock (this) {
-							if (this.server != null) {
-								Socket socket = this.server.Client;
+						lock (this.instanceLocker) {
+							if (this.server.IsConnecting) {
+								Socket socket = this.server.Socket;
 								socket.Shutdown(downStream ? SocketShutdown.Receive : SocketShutdown.Send);
 							}
 							if (this.client != null) {
@@ -515,6 +643,76 @@ namespace MAPE.Server {
 		#endregion
 
 
+		#region overridables
+
+		protected virtual bool SetModifications(Request request, Response response) {
+			// argument checks
+			if (request == null) {
+				throw new ArgumentNullException(nameof(request));
+			}
+			// response may be null
+
+			// Currently only basic authorization for the proxy is handled.
+
+			// ToDo: convert local function in C# 7
+			Func<bool, string, Proxy.BasicCredential> getServerBasicCredentials = (firstRequest, realm) => {
+				// set the cached proxy credential 
+				Proxy.BasicCredential proxyCredential;
+				lock (this.instanceLocker) {
+					Proxy.BasicCredential currentProxyCredential = this.proxyCredential;
+					proxyCredential = firstRequest ? currentProxyCredential : null;
+					if (proxyCredential == null) {
+						string endPoint = this.server.EndPoint;
+						proxyCredential = this.Proxy.GetServerBasicCredentials(endPoint, realm, firstRequest: firstRequest, oldBasicCredentials: currentProxyCredential);
+						this.proxyCredential = proxyCredential; // may be null
+					}
+				}
+
+				return proxyCredential;
+			};
+
+			bool retry = false;
+			IReadOnlyCollection<byte> overridingProxyAuthorization = null;
+			if (response == null) {
+				// before requesting firstly
+				if (request.ProxyAuthorizationSpan.IsZeroToZero) {
+					// set the cached proxy credential 
+					Proxy.BasicCredential proxyCredential = getServerBasicCredentials(true, null);
+					overridingProxyAuthorization = proxyCredential?.Bytes;
+				}
+			} else {
+				// after responded from the server
+				if (response.StatusCode == 407) {
+					// 407: Proxy Authentication Required
+					// the current credential seems to be invalid (or null)
+					Proxy.BasicCredential proxyCredential = getServerBasicCredentials(false, "Proxy"); // ToDo: extract realm from the field
+					overridingProxyAuthorization = proxyCredential?.Bytes;
+				} else {
+					// no need to resending
+					overridingProxyAuthorization = null;
+				}
+			}
+
+			// set modifications if necessary 
+			if (overridingProxyAuthorization != null) {
+				// set or overwrite the Proxy-Authorization field.
+				Span span = request.ProxyAuthorizationSpan;
+				if (span.IsZeroToZero) {
+					span = request.EndOfHeaderFields;
+				}
+				request.AddModification(
+					span,
+					(modifier) => { modifier.Write(overridingProxyAuthorization); return true; }
+				);
+				retry = true;
+			}
+
+			return retry;
+		}
+
+		#endregion
+
+
 		#region privates
 
 		/// <summary>
@@ -525,22 +723,15 @@ namespace MAPE.Server {
 		/// You must call this method inside a lock(this) scope.
 		/// </remarks>
 		private void CloseTcpConnections() {
-			TcpClient client;
-			ReconnectableTcpClient server;
-
 			// close server connection
-			server = this.server;
-			this.server = null;
-			client = this.client;
+			TcpClient client = this.client;
 			this.client = null;
 
-			if (server != null) {
-				try {
-					server.Dispose();
-				} catch (Exception exception) {
-					LogVerbose($"Exception on closing server connection: {exception.Message}");
-					// continue
-				}
+			try {
+				this.server.Disconnect();
+			} catch (Exception exception) {
+				LogVerbose($"Exception on closing server connection: {exception.Message}");
+				// continue
 			}
 			if (client != null) {
 				try {
@@ -555,34 +746,76 @@ namespace MAPE.Server {
 		}
 
 		private void Communicate() {
-			// preparations
-			ConnectionCollection owner;
-			Proxy proxy;
-			TcpClient client;
-			ReconnectableTcpClient server = new ReconnectableTcpClient();
-			lock (this) {
-				owner = this.owner;
-				proxy = this.Proxy;
-				client = this.client;
-				this.server = server;
-			}
-
 			// communicate
 			try {
-				using (NetworkStream clientStream = this.client.GetStream()) {
-					using (Stream serverStream = server.GetStream()) {
-						Communication.Communicate(this, clientStream, serverStream);
-					}
-				}
+				Communication.Communicate(this);
 			} catch (Exception exception) {
 				LogError($"Error: {exception.Message}");
 				// continue
 			} finally {
 				LogVerbose("Communication completed.");
-				lock (this) {
-					this.proxyCredential = null;
+				lock (this.instanceLocker) {
 					CloseTcpConnections();
+					this.proxyCredential = null;
+					this.connectingToProxy = false;
 				}
+			}
+
+			return;
+		}
+
+		private void EnsureConnectToServer(IReadOnlyCollection<DnsEndPoint> endPoints) {
+			// argument checks
+			Debug.Assert(endPoints != null);
+
+			lock (this.instanceLocker) {
+				// state checks
+				if (this.server.IsConnecting) {
+					// check the current server connection
+					foreach (DnsEndPoint endPoint in endPoints) {
+						if (this.server.IsEndPoint(endPoint.Host, endPoint.Port)) {
+							// the current connection is reusable
+							return;
+						}
+					}
+
+					// disconnect to re-connect the connection
+					this.server.Disconnect();
+				}
+
+				// connect to the server
+				Debug.Assert(this.server.IsConnecting == false);  // disconnected at this point
+				Exception error = null;
+				foreach (DnsEndPoint endPoint in endPoints) {
+					try {
+						this.server.Connect(endPoint.Host, endPoint.Port);
+						break;
+					} catch (Exception exception) {
+						error = exception;
+					}
+				}
+				if (error != null) {
+					throw error;
+				}
+				Debug.Assert(this.server.IsConnecting);
+			}
+
+			return;
+		}
+
+		private void DisconnectFromServer() {
+			lock (this.instanceLocker) {
+				// disconnect from the server connection
+				this.server.Disconnect();
+			}
+
+			return;
+		}
+
+		private void ReconnectToServer() {
+			lock (this.instanceLocker) {
+				// reconnect to the server connection
+				this.server.Reconnect();
 			}
 
 			return;
