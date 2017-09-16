@@ -101,7 +101,6 @@
     <Compile Include="Server\StaticActualProxy.cs" />
     <Compile Include="Server\IActualProxy.cs" />
     <Compile Include="Server\IServerComponentFactory.cs" />
-    <Compile Include="Server\ReconnectableTcpClient.cs" />
     <Compile Include="Server\IProxyRunner.cs" />
     <Compile Include="Server\Settings\ProxySettings.cs" />
     <Compile Include="Server\Settings\ListenerSettings.cs" />
