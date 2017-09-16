@@ -166,6 +166,15 @@ namespace MAPE.Server {
 
 		private ServerConnection server;
 
+		// Stream caches.
+		// After the connection is requested to disconnect, the stream objects remain for a while   
+		// so that the Communication object can terminate the connection without NullReferenceException. 
+		// The streams has been disposed by its owner (TcpClient object) at that time, 
+		// so its call causes a ObjectDisposedException, 
+		// but it is understandable than NullReferenceException.
+		private Stream clientStream = null;
+		private Stream serverStream = null;
+
 		private bool connectingToProxy = false;
 
 		private Proxy.BasicCredential proxyCredential = null;
@@ -184,20 +193,6 @@ namespace MAPE.Server {
 		public IServerComponentFactory ComponentFactory {
 			get {
 				return this.owner.ComponentFactory;
-			}
-		}
-
-		private Stream ClientStream {
-			get {
-				// state checks
-				// Be careful to access this.client only once,
-				// otherwise you need to atomize operations by locking instanceLocker.
-				TcpClient client = this.client;
-				if (client == null) {
-					throw new ObjectDisposedException(this.ComponentName);
-				}
-
-				return client.GetStream();
 			}
 		}
 
@@ -239,6 +234,8 @@ namespace MAPE.Server {
 				// uninitialize members
 				Debug.Assert(this.proxyCredential == null);
 				Debug.Assert(this.connectingToProxy == false);
+				Debug.Assert(this.serverStream == null);
+				Debug.Assert(this.clientStream == null);
 				Debug.Assert(this.server.IsConnecting == false);
 				Debug.Assert(this.client == null);
 				this.retryCount = 0;
@@ -271,6 +268,8 @@ namespace MAPE.Server {
 				this.retryCount = owner.Owner.RetryCount;
 				Debug.Assert(this.client == null);
 				Debug.Assert(this.server.IsConnecting == false);
+				Debug.Assert(this.clientStream == null);
+				Debug.Assert(this.serverStream == null);
 				Debug.Assert(this.connectingToProxy == false);
 				Debug.Assert(this.proxyCredential == null);
 			}
@@ -319,6 +318,7 @@ namespace MAPE.Server {
 					this.ComponentName = $"{ComponentNameBase} <{this.ComponentId}>";
 					Debug.Assert(this.client == null);
 					this.client = client;
+					this.clientStream = client.GetStream();
 
 					// start the communicating task
 					communicatingTask.Start();
@@ -394,25 +394,25 @@ namespace MAPE.Server {
 
 		Stream ICommunicationOwner.RequestInput {
 			get {
-				return this.ClientStream;
+				return this.clientStream;
 			}
 		}
 
 		Stream ICommunicationOwner.RequestOutput {
 			get {
-				return this.server.Stream;
+				return this.serverStream;
 			}
 		}
 
 		Stream ICommunicationOwner.ResponseInput {
 			get {
-				return this.server.Stream;
+				return this.serverStream;
 			}
 		}
 
 		Stream ICommunicationOwner.ResponseOutput {
 			get {
-				return this.ClientStream;
+				return this.clientStream;
 			}
 		}
 
@@ -741,6 +741,8 @@ namespace MAPE.Server {
 					// continue
 				}
 			}
+			// No need to clear the serverStream and clientStream at this point.
+			// See the comment on the fields. 
 
 			return;
 		}
@@ -758,6 +760,8 @@ namespace MAPE.Server {
 					CloseTcpConnections();
 					this.proxyCredential = null;
 					this.connectingToProxy = false;
+					this.serverStream = null;
+					this.clientStream = null;
 				}
 			}
 
@@ -789,6 +793,7 @@ namespace MAPE.Server {
 				foreach (DnsEndPoint endPoint in endPoints) {
 					try {
 						this.server.Connect(endPoint.Host, endPoint.Port);
+						this.serverStream = this.server.Stream;
 						break;
 					} catch (Exception exception) {
 						error = exception;
@@ -816,6 +821,7 @@ namespace MAPE.Server {
 			lock (this.instanceLocker) {
 				// reconnect to the server connection
 				this.server.Reconnect();
+				this.serverStream = this.server.Stream;
 			}
 
 			return;
