@@ -166,14 +166,16 @@ namespace MAPE.Server {
 
 		private ServerConnection server;
 
-		// Stream caches.
+		// CommunicationIOs.
+		// This objects is to implement ICommunicationOwner, but also acts as caches. 
 		// After the connection is requested to disconnect, the stream objects remain for a while   
 		// so that the Communication object can terminate the connection without NullReferenceException. 
 		// The streams has been disposed by its owner (TcpClient object) at that time, 
 		// so its call causes a ObjectDisposedException, 
 		// but it is understandable than NullReferenceException.
-		private Stream clientStream = null;
-		private Stream serverStream = null;
+		// The objects themselves are not thread safe. Their contents must be changed in the communication thread.
+		private MessageIO requestIO = null;
+		private MessageIO responseIO = null;
 
 		private bool connectingToProxy = false;
 
@@ -234,8 +236,8 @@ namespace MAPE.Server {
 				// uninitialize members
 				Debug.Assert(this.proxyCredential == null);
 				Debug.Assert(this.connectingToProxy == false);
-				Debug.Assert(this.serverStream == null);
-				Debug.Assert(this.clientStream == null);
+				Debug.Assert(this.responseIO == null);
+				Debug.Assert(this.requestIO == null);
 				Debug.Assert(this.server.IsConnecting == false);
 				Debug.Assert(this.client == null);
 				this.retryCount = 0;
@@ -268,8 +270,8 @@ namespace MAPE.Server {
 				this.retryCount = owner.Owner.RetryCount;
 				Debug.Assert(this.client == null);
 				Debug.Assert(this.server.IsConnecting == false);
-				Debug.Assert(this.clientStream == null);
-				Debug.Assert(this.serverStream == null);
+				Debug.Assert(this.requestIO == null);
+				Debug.Assert(this.responseIO == null);
 				Debug.Assert(this.connectingToProxy == false);
 				Debug.Assert(this.proxyCredential == null);
 			}
@@ -318,7 +320,9 @@ namespace MAPE.Server {
 					this.ComponentName = $"{ComponentNameBase} <{this.ComponentId}>";
 					Debug.Assert(this.client == null);
 					this.client = client;
-					this.clientStream = client.GetStream();
+					Stream clientStream = client.GetStream();
+					this.requestIO = new MessageIO(input: clientStream, output: null);
+					this.responseIO = new MessageIO(input: null, output: clientStream);
 
 					// start the communicating task
 					communicatingTask.Start();
@@ -392,27 +396,15 @@ namespace MAPE.Server {
 			}
 		}
 
-		Stream ICommunicationOwner.RequestInput {
+		IMessageIO ICommunicationOwner.RequestIO {
 			get {
-				return this.clientStream;
+				return this.requestIO;
 			}
 		}
 
-		Stream ICommunicationOwner.RequestOutput {
+		IMessageIO ICommunicationOwner.ResponseIO {
 			get {
-				return this.serverStream;
-			}
-		}
-
-		Stream ICommunicationOwner.ResponseInput {
-			get {
-				return this.serverStream;
-			}
-		}
-
-		Stream ICommunicationOwner.ResponseOutput {
-			get {
-				return this.clientStream;
+				return this.responseIO;
 			}
 		}
 
@@ -741,8 +733,8 @@ namespace MAPE.Server {
 					// continue
 				}
 			}
-			// No need to clear the serverStream and clientStream at this point.
-			// See the comment on the fields. 
+			// No need to clear the requestIO and responseIO at this point.
+			// They acts as caches. See the comment on the fields. 
 
 			return;
 		}
@@ -760,8 +752,8 @@ namespace MAPE.Server {
 					CloseTcpConnections();
 					this.proxyCredential = null;
 					this.connectingToProxy = false;
-					this.serverStream = null;
-					this.clientStream = null;
+					this.responseIO = null;
+					this.requestIO = null;
 				}
 			}
 
@@ -793,7 +785,7 @@ namespace MAPE.Server {
 				foreach (DnsEndPoint endPoint in endPoints) {
 					try {
 						this.server.Connect(endPoint.Host, endPoint.Port);
-						this.serverStream = this.server.Stream;
+						UpdateServerStream();
 						break;
 					} catch (Exception exception) {
 						error = exception;
@@ -821,8 +813,17 @@ namespace MAPE.Server {
 			lock (this.instanceLocker) {
 				// reconnect to the server connection
 				this.server.Reconnect();
-				this.serverStream = this.server.Stream;
+				UpdateServerStream();
 			}
+
+			return;
+		}
+
+		// Note: thread unsafe
+		private void UpdateServerStream() {
+			Stream serverStream = this.server.Stream;
+			this.requestIO.SetOutput(serverStream);
+			this.responseIO.SetInput(serverStream);
 
 			return;
 		}

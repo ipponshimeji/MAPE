@@ -10,29 +10,14 @@ using MAPE.Testing;
 
 namespace MAPE.Http.Test {
 	public class MessageTest {
-		#region data
-
-		public const string CRLF = "\x000D\x000A";    // CRLF
-
-		public static readonly byte[] CRLFBytes = new byte[] { 0x0D, 0x0A };
-
-		public static readonly Encoding MessageEncoding = new ASCIIEncoding();
-
-		public static readonly string EmptyBody = string.Empty;
-
-		#endregion
-
-
 		#region utilities
 
-		private static void WriteCRLFTo(Stream stream) {
-			// argument checks
-			if (stream == null) {
-				throw new ArgumentNullException(nameof(stream));
+		public static MessageSample CreateMessageSample(bool largeMessage = false) {
+			if (largeMessage) {
+				return new DiskMessageSample();
+			} else {
+				return new MemoryMessageSample();
 			}
-
-			// write CRLF to the stream
-			stream.Write(CRLFBytes, 0, CRLFBytes.Length);
 		}
 
 		#endregion
@@ -44,15 +29,17 @@ namespace MAPE.Http.Test {
 			#region types
 
 			public interface IAdapter {
-				TMessage Create();
+				TMessage Create(IMessageIO io);
 
-				bool Read(TMessage message, Stream input, Request request);
+				bool Read(TMessage message, Request request);
 
-				void Write(TMessage message, Stream output, bool suppressModification);
+				void Write(TMessage message, bool suppressModification);
 
-				bool ReadHeader(TMessage message, Stream input, Request request);
+				bool ReadHeader(TMessage message, Request request);
 
-				void Redirect(TMessage message, Stream output, Stream input, bool suppressModification);
+				void SkipBody(TMessage message);
+
+				void Redirect(TMessage message, bool suppressModification);
 			}
 
 			#endregion
@@ -82,245 +69,12 @@ namespace MAPE.Http.Test {
 			#endregion
 
 
-			#region utilities
+			#region testers
 
-			public static string CreateMessageString(params string[] lines) {
+			protected int TestReadAndWrite(MessageSample sample, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
 				// argument checks
-				if (lines == null) {
-					throw new ArgumentNullException(nameof(lines));
-				}
-
-				// Note that CRLF is not appended after the last line.
-				return string.Join(CRLF, lines);
-			}
-
-			public static void WriteLinesTo(Stream stream, params string[] lines) {
-				// argument checks
-				if (stream == null) {
-					throw new ArgumentNullException(nameof(stream));
-				}
-				if (lines == null) {
-					throw new ArgumentNullException(nameof(lines));
-				}
-
-				// write each line in ASCII encoding
-				// Note that CRLF is appended at the end of each line.
-				foreach (string line in lines) {
-					byte[] bytes = MessageEncoding.GetBytes(line);
-					stream.Write(bytes, 0, bytes.Length);
-					WriteCRLFTo(stream);
-				}
-
-				return;
-			}
-
-			public static void WriteRandomBody(long bodyLength, Stream stream1, Stream stream2 = null, bool appendCRLF = false) {
-				// argument checks
-				if (bodyLength < 0) {
-					throw new ArgumentOutOfRangeException(nameof(bodyLength));
-				}
-				if (stream1 == null) {
-					throw new ArgumentNullException(nameof(stream1));
-				}
-				// stream2 can be null
-
-				// write random body to the streams
-				Random random = new Random();
-				byte[] buf = new byte[1024];
-				while (0 < bodyLength) {
-					int writeLen = checked((int)Math.Min(bodyLength, buf.Length));
-					for (int i = 0; i < writeLen; ++i) {
-						// give value in range of [0x30, 0x7F), that is, ['0', '~']
-						// so that the data is readable when it displayed
-						buf[i] = (byte)(random.Next(0x4F) + 0x30);
-					}
-					stream1.Write(buf, 0, writeLen);
-					if (stream2 != null) {
-						stream2.Write(buf, 0, writeLen);
-					}
-
-					bodyLength -= writeLen;
-				}
-
-				// append CRLF if necessary
-				if (appendCRLF) {
-					WriteCRLFTo(stream1);
-					if (stream2 != null) {
-						WriteCRLFTo(stream2);
-					}
-				}
-
-				return;
-			}
-
-			public static void WriteRandomBody(long bodyLength, Stream stream1, bool appendCRLF) {
-				WriteRandomBody(bodyLength, stream1, null, appendCRLF);
-			}
-
-			protected static void AssertEqualContents(Stream expected, Stream actual, int length) {
-				// argument checks
-				if (expected == null || actual == null) {
-					// passes only both expected and actual are null
-					Assert.Equal(expected, actual);
-					return;
-				}
-				if (length == 0) {
-					return;     // no content to be checked
-				} else if (length < 0) {
-					throw new ArgumentOutOfRangeException(nameof(length));
-				}
-				if (expected.Length - expected.Position < length) {
-					throw new ArgumentException("Its contents are smaller than the length to be checked.", nameof(expected));
-				}
-				if (actual.Length - actual.Position < length) {
-					throw new ArgumentException("Its contents are smaller than the length to be checked.", nameof(actual));
-				}
-
-				// preparations
-				const int BufferSize = 256;
-				byte[] expectedBuffer = new byte[BufferSize];
-				byte[] actualBuffer = new byte[BufferSize];
-				Action<Stream, int, byte[]> fillBuffer = (stream, count, buf) => {
-					// argument checks
-					Debug.Assert(stream != null);
-					Debug.Assert(0 < count);
-					Debug.Assert(buf != null && count <= buf.Length);
-
-					// fill the buffer
-					int offset = 0;
-					while (0 < count) {
-						int readCount = stream.Read(buf, offset, count);
-						if (readCount <= 0) {
-							throw new Exception("Unexpected end of stream.");
-						}
-						offset += readCount;
-						count -= readCount;
-					}
-				};
-
-				// compare their contents
-				int baseOffset = 0;
-				while (0 < length) {
-					// assert a block
-					int readLen = Math.Min(length, BufferSize);
-					fillBuffer(expected, readLen, expectedBuffer);
-					fillBuffer(actual, readLen, actualBuffer);
-					for (int i = 0; i < readLen; ++i) {
-						if (expectedBuffer[i] != actualBuffer[i]) {
-							string expectedText = MessageEncoding.GetString(expectedBuffer, 0, readLen);
-							string actualText = MessageEncoding.GetString(actualBuffer, 0, readLen);
-							int startOffset = baseOffset;
-							int endOffset = baseOffset + readLen;
-							string message = $"AssertEqualContents() Failure at offset {startOffset}.{Environment.NewLine}The contents in offset [{startOffset}, {endOffset}) are as follows:";
-							throw new Xunit.Sdk.AssertActualExpectedException(expectedText, actualText, message);
-						}
-					}
-
-					// prepare the next block
-					baseOffset += readLen;
-					length -= readLen;
-				}
-
-				return;
-			}
-
-
-			// for small message
-			protected void Test(Action<Stream, Stream, Action<TMessage>, Request, bool> action, string input, string expectedOutput, Action<TMessage> handler, Request request, bool suppressModification) {
-				// argument checks
-				if (action == null) {
-					throw new ArgumentNullException(nameof(action));
-				}
-				if (input == null) {
-					throw new ArgumentNullException(nameof(input));
-				}
-				// expectedOutput can be null
-				// handler can be null
-				// request can be null
-
-				// test
-				string actualOutput;
-				using (MemoryStream outputStream = new MemoryStream()) {
-					using (Stream inputStream = new MemoryStream(MessageEncoding.GetBytes(input))) {
-						// call action
-						action(inputStream, outputStream, handler, request, suppressModification);
-					}
-
-					// get actual output
-					int length = checked((int)outputStream.Length);
-					actualOutput = MessageEncoding.GetString(outputStream.GetBuffer(), 0, length);
-				}
-
-				// assert the output as string
-				Assert.Equal(expectedOutput, actualOutput);
-			}
-
-			// for large message.
-			protected void Test(Action<Stream, Stream, Action<TMessage>, Request, bool> action, Stream input, Stream expectedOutput, Action<TMessage> handler, Request request, bool suppressModification) {
-				// argument checks
-				if (action == null) {
-					throw new ArgumentNullException(nameof(action));
-				}
-				if (input == null) {
-					throw new ArgumentNullException(nameof(input));
-				}
-				// expectedOutput can be null
-				// handler can be null
-				// request can be null
-
-				// read and write a message
-				long startPosition = input.Position;
-				IAdapter adapter = this.Adapter;
-				using (Stream actualOutput = TestUtil.CreateTempFileStream()) {
-					action(input, actualOutput, handler, request, suppressModification);
-
-					// assert the output
-					actualOutput.Position = 0;
-					if (input == expectedOutput) {
-						// input is the expected output
-						expectedOutput.Position = startPosition;
-					}
-					int length = checked((int)(expectedOutput.Length - expectedOutput.Position));
-					AssertEqualContents(expectedOutput, actualOutput, length);
-				}
-
-				return;
-			}
-
-			protected void TestSimpleBody(Action<Stream, Stream, Action<TMessage>, Request, bool> action, string header, long bodyLength, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
-				// argument checks
-				if (action == null) {
-					throw new ArgumentNullException(nameof(action));
-				}
-				if (header == null) {
-					throw new ArgumentNullException(nameof(header));
-				}
-				if (bodyLength < 0) {
-					throw new ArgumentOutOfRangeException(nameof(bodyLength));
-				}
-
-				// create input with random body and test with it
-				using (Stream input = TestUtil.CreateTempFileStream()) {
-					// ARRANGE
-					WriteLinesTo(input, header);
-					WriteRandomBody(bodyLength, input);
-					input.Position = 0;
-					Stream expectedOutput = input;  // same to the input
-
-					// Test
-					Test(action, input, expectedOutput, handler, request, suppressModification);
-				}
-			}
-
-			#endregion
-
-
-			#region tester for Read and Write methods
-
-			protected void ReadWriteAction(Stream input, Stream output, Action<TMessage> handler, Request request, bool suppressModification) {
-				// argument checks
-				Debug.Assert(input != null);
-				Debug.Assert(output != null);
+				Debug.Assert(sample != null);
+				sample.CompleteArranging();
 				// handler can be null
 				// request can be null
 
@@ -329,46 +83,30 @@ namespace MAPE.Http.Test {
 				Debug.Assert(adapter != null);
 
 				// create a Message and call Read and Write
-				using (TMessage message = adapter.Create()) {
-					// Read
+				int messageCount = 0;
+				using (TMessage message = adapter.Create(sample)) {
 					Assert.Equal(MessageReadingState.None, message.ReadingState);
-					bool actualRead = adapter.Read(message, input, request);
-					Assert.Equal(true, actualRead);
-					Assert.Equal(MessageReadingState.Body, message.ReadingState);
 
-					// handle the message
-					handler?.Invoke(message);
+					// Read
+					while (adapter.Read(message, request)) {
+						Assert.Equal(MessageReadingState.Body, message.ReadingState);
+						++messageCount;
 
-					// Write
-					adapter.Write(message, output, suppressModification);
+						// handle the message
+						handler?.Invoke(message);
+
+						// Write
+						adapter.Write(message, suppressModification);
+					}
 				}
 
-				return;
+				return messageCount;
 			}
 
-			// for small message
-			protected void TestReadWrite(string input, string expectedOutput, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
-				Test(ReadWriteAction, input, expectedOutput, handler, request, suppressModification);
-			}
-
-			// for large message.
-			protected void TestReadWrite(Stream input, Stream expectedOutput, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
-				Test(ReadWriteAction, input, expectedOutput, handler, request, suppressModification);
-			}
-
-			protected void TestReadWriteSimpleBody(string header, long bodyLength, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
-				TestSimpleBody(ReadWriteAction, header, bodyLength, handler, request, suppressModification);
-			}
-
-			#endregion
-
-
-			#region tester for ReadHeader and Redirect methods
-
-			protected void ReadHeaderRedirectTester(Stream input, Stream output, Action<TMessage> handler, Request request, bool suppressModification) {
+			protected int TestReadHeaderAndRedirect(MessageSample sample, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
 				// argument checks
-				Debug.Assert(input != null);
-				Debug.Assert(output != null);
+				Debug.Assert(sample != null);
+				sample.CompleteArranging();
 				// handler can be null
 				// request can be null
 
@@ -377,36 +115,58 @@ namespace MAPE.Http.Test {
 				Debug.Assert(adapter != null);
 
 				// create a Message and call ReadHeader and Redirect
-				using (TMessage message = adapter.Create()) {
-					// ReadHeader
+				int messageCount = 0;
+				using (TMessage message = adapter.Create(sample)) {
 					Assert.Equal(MessageReadingState.None, message.ReadingState);
-					bool actualRead = adapter.ReadHeader(message, input, request);
-					Assert.Equal(true, actualRead);
-					Assert.Equal(MessageReadingState.Header, message.ReadingState);
 
-					// handle the message
-					handler?.Invoke(message);
+					// ReadHeader
+					while (adapter.ReadHeader(message, request)) {
+						Assert.Equal(MessageReadingState.Header, message.ReadingState);
+						++messageCount;
 
-					// Redirect
-					adapter.Redirect(message, output, input, suppressModification);
-					Assert.Equal(MessageReadingState.BodyRedirected, message.ReadingState);
+						// handle the message
+						handler?.Invoke(message);
+
+						// Redirect
+						adapter.Redirect(message, suppressModification);
+						Assert.Equal(MessageReadingState.BodyRedirected, message.ReadingState);
+					}
 				}
 
-				return;
+				return messageCount;
 			}
 
-			// for small message
-			protected void TestReadHeaderRedirect(string input, string expectedOutput, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
-				Test(ReadHeaderRedirectTester, input, expectedOutput, handler, request, suppressModification);
-			}
+			protected int TestReadHeaderAndSkipBody(MessageSample sample, Action<TMessage> handler = null, Request request = null) {
+				// argument checks
+				Debug.Assert(sample != null);
+				sample.CompleteArranging();
+				// handler can be null
+				// request can be null
 
-			// for large message.
-			protected void TestReadHeaderRedirect(Stream input, Stream expectedOutput, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
-				Test(ReadHeaderRedirectTester, input, expectedOutput, handler, request, suppressModification);
-			}
+				// state checks
+				IAdapter adapter = this.Adapter;
+				Debug.Assert(adapter != null);
 
-			protected void TestReadHeaderRedirectSimpleBody(string header, long bodyLength, Action<TMessage> handler = null, Request request = null, bool suppressModification = false) {
-				TestSimpleBody(ReadHeaderRedirectTester, header, bodyLength, handler, request, suppressModification);
+				// create a Message and call ReadHeader and SkipBody
+				int messageCount = 0;
+				using (TMessage message = adapter.Create(sample)) {
+					Assert.Equal(MessageReadingState.None, message.ReadingState);
+
+					// ReadHeader
+					while (adapter.ReadHeader(message, request)) {
+						Assert.Equal(MessageReadingState.Header, message.ReadingState);
+						++messageCount;
+
+						// handle the message
+						handler?.Invoke(message);
+
+						// SkipBody
+						adapter.SkipBody(message);
+						Assert.Equal(MessageReadingState.BodyRedirected, message.ReadingState);
+					}
+				}
+
+				return messageCount;
 			}
 
 			#endregion
@@ -416,36 +176,36 @@ namespace MAPE.Http.Test {
 
 			[Fact(DisplayName = "Read: empty input")]
 			public void Read_Empty() {
-				// ARRANGE & ACT
-				bool actual;
 				using (Stream input = new MemoryStream()) {
+					MessageIO io = new MessageIO(input, output: null);
 					IAdapter adapter = this.Adapter;
-					using (TMessage message = adapter.Create()) {
-						// act
+					using (TMessage message = adapter.Create(io)) {
+						// ACT
 						Debug.Assert(input.Length == 0);
-						actual = adapter.Read(message, input, null);
+						bool actual = adapter.Read(message, null);
+
+						// ASSERT
+						Assert.Equal(false, actual);
+						Assert.Equal(MessageReadingState.None, message.ReadingState);
 					}
 				}
-
-				// ASSERT
-				Assert.Equal(false, actual);
 			}
 
 			[Fact(DisplayName = "ReadHeader: empty input")]
 			public void ReadHeader_Empty() {
-				// ARRANGE & ACT
-				bool actual;
 				using (Stream input = new MemoryStream()) {
+					MessageIO io = new MessageIO(input, output: null);
 					IAdapter adapter = this.Adapter;
-					using (TMessage message = adapter.Create()) {
-						// act
+					using (TMessage message = adapter.Create(io)) {
+						// ACT
 						Debug.Assert(input.Length == 0);
-						actual = adapter.ReadHeader(message, input, null);
+						bool actual = adapter.ReadHeader(message, null);
+
+						// ASSERT
+						Assert.Equal(false, actual);
+						Assert.Equal(MessageReadingState.None, message.ReadingState);
 					}
 				}
-
-				// ASSERT
-				Assert.Equal(false, actual);
 			}
 
 			#endregion

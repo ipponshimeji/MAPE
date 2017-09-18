@@ -21,24 +21,24 @@ namespace MAPE.Http {
 			// process Http request/response
 			bool tunnelingMode = false;
 			IHttpComponentFactory componentFactory = owner.ComponentFactory;
-			Request request = componentFactory.AllocRequest();
+			Request request = componentFactory.AllocRequest(owner.RequestIO);
 			try {
-				Response response = componentFactory.AllocResponse();
+				Response response = componentFactory.AllocResponse(owner.ResponseIO);
 				try {
 					// process each client request
-					while (request.Read(owner.RequestInput)) {
+					while (request.Read()) {
 						// send the request to the server
 						// The request is resent while the owner instructs modifications.
 						int repeatCount = 0;
 						bool retry = OnCommunicate(owner, repeatCount, request, null);
 						if (request.IsConnectMethod && owner.ConnectingToProxy == false) {
 							// connecting to the actual server directly
-							Response.RespondSimpleError(owner.ResponseOutput, 200, "Connection established");
+							RespondSimpleError(owner, 200, "Connection established");
 							tunnelingMode = true;
 						} else {
 							do {
-								request.Write(owner.RequestOutput);
-								if (response.Read(owner.ResponseInput, request) == false) {
+								request.Write();
+								if (response.Read(request) == false) {
 									// no response from the server
 									Exception innerException = new Exception("No response from the server.");
 									throw new HttpException(innerException, HttpStatusCode.BadGateway);
@@ -47,7 +47,7 @@ namespace MAPE.Http {
 								retry = OnCommunicate(owner, repeatCount, request, response);
 							} while (retry);
 							// send the final response to the client
-							response.Write(owner.ResponseOutput);
+							response.Write();
 							tunnelingMode = (request.IsConnectMethod && response.StatusCode == 200);
 						}
 
@@ -72,7 +72,7 @@ namespace MAPE.Http {
 					if (httpError != null) {
 						// Note that the connection may be disabled at this point and may cause an exception.
 						try {
-							Response.RespondSimpleError(owner.ResponseOutput, httpError.StatusCode, httpError.Message);
+							RespondSimpleError(owner, httpError.StatusCode, httpError.Message);
 						} catch {
 							// continue
 						}
@@ -89,7 +89,7 @@ namespace MAPE.Http {
 
 			// process tunneling mode
 			if (tunnelingMode) {
-				Tunnel(owner, owner.RequestInput, owner.RequestOutput, owner.ResponseInput, owner.ResponseOutput);
+				Tunnel(owner);
 			}
 
 			return;
@@ -99,6 +99,10 @@ namespace MAPE.Http {
 
 
 		#region privates
+
+		private static void RespondSimpleError(ICommunicationOwner owner, int statusCode, string reasonPhrase) {
+			Response.RespondSimpleError(owner.ResponseIO.Output, statusCode, reasonPhrase);
+		}
 
 		private static bool OnCommunicate(ICommunicationOwner owner, int repeatCount, Request request, Response response) {
 			// argument checks
@@ -161,13 +165,9 @@ namespace MAPE.Http {
 			return;
 		}
 
-		private static void Tunnel(ICommunicationOwner owner, Stream requestInput, Stream requestOutput, Stream responseInput, Stream responseOutput) {
+		private static void Tunnel(ICommunicationOwner owner) {
 			// argument checks
 			Debug.Assert(owner != null);
-			Debug.Assert(requestInput != null);
-			Debug.Assert(requestOutput != null);
-			Debug.Assert(responseInput != null);
-			Debug.Assert(responseOutput != null);
 
 			// handle tunneling mode communication
 			try {
@@ -175,10 +175,10 @@ namespace MAPE.Http {
 				owner.OnTunnelingStarted(CommunicationSubType.Session);
 
 				// run downstream task on another thread
-				Task downstreamTask = Task.Run(() => { Forward(owner, responseInput, responseOutput, CommunicationSubType.DownStream); });
+				Task downstreamTask = Task.Run(() => { Forward(owner, CommunicationSubType.DownStream); });
 				try {
 					// run upstream task
-					Forward(owner, requestInput, requestOutput, CommunicationSubType.UpStream);
+					Forward(owner, CommunicationSubType.UpStream);
 				} finally {
 					downstreamTask.Wait();
 				}
@@ -198,12 +198,26 @@ namespace MAPE.Http {
 			return;
 		}
 
-		private static void Forward(ICommunicationOwner owner, Stream input, Stream output, CommunicationSubType type) {
+		private static void Forward(ICommunicationOwner owner, CommunicationSubType type) {
 			// argument checks
 			Debug.Assert(owner != null);
+			IMessageIO io;
+			switch (type) {
+				case CommunicationSubType.UpStream:
+					io = owner.RequestIO;
+					break;
+				case CommunicationSubType.DownStream:
+					io = owner.ResponseIO;
+					break;
+				default:
+					throw new ArgumentOutOfRangeException(nameof(type));			
+			}
+			Debug.Assert(io != null);
+
+			Stream input = io.Input;
 			Debug.Assert(input != null);
+			Stream output = io.Output;
 			Debug.Assert(output != null);
-			Debug.Assert(type == CommunicationSubType.UpStream || type == CommunicationSubType.DownStream);
 
 			// forward bytes from the input to the output
 			try {

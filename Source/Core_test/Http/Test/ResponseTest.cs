@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net;
-using System.Text;
 using Xunit;
 
 
@@ -19,7 +18,7 @@ namespace MAPE.Http.Test {
 			#endregion
 		}
 
-		public abstract class ReadAndWriteBasicTest<TResponse>: ReadAndWriteTestBase<TResponse> where TResponse : Response {
+		public abstract class ReadAndWriteBasicTest<TResponse>: ReadAndWriteTestBase<TResponse> where TResponse: Response {
 			#region creation
 
 			protected ReadAndWriteBasicTest(IAdapter adapter): base(adapter) {
@@ -32,491 +31,820 @@ namespace MAPE.Http.Test {
 
 			[Fact(DisplayName = "simple")]
 			public void Simple() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"HTTP/1.1 200 OK",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = input;
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
 
-				// Test
-				TestReadWrite(input, expectedOutput, (response) => {
-					Assert.Equal(new Version(1, 1), response.Version);
-					Assert.Equal(200, response.StatusCode);
-				});
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
+						Assert.Equal(new Version(1, 1), response.Version);
+						Assert.Equal(200, response.StatusCode);
+					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
 			}
 
 			[Fact(DisplayName = "HTTP-version: 1.0")]
 			public void Version_10() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"HTTP/1.0 200 OK",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = input;
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.0 200 OK",
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
 
-				// Test
-				TestReadWrite(input, expectedOutput, (response) => {
-					Assert.Equal(new Version(1, 0), response.Version);
-					Assert.Equal(200, response.StatusCode);
-				});
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
+						Assert.Equal(new Version(1, 0), response.Version);
+						Assert.Equal(200, response.StatusCode);
+					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
 			}
 
 			[Fact(DisplayName = "HTTP-version: invalid HTTP-name")]
 			public void Version_InvalidHTTPName() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"HTTPS/1.1 200 OK",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = null;
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTPS/1.1 200 OK", // HTTP-version: invalid! 
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
 
-				// Test
-				HttpException exception = Assert.Throws<HttpException>(
-					() => TestReadWrite(input, expectedOutput)
-				);
-				Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+					// ACT & ASSERT
+					HttpException exception = Assert.Throws<HttpException>(
+						() => TestReadAndWrite(sample)
+					);
+					Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+				}
 			}
 
 			[Fact(DisplayName = "HTTP-version: lower-case HTTP-name")]
 			public void Version_LowerCaseHTTPName() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"http/1.1 200 OK",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = null;
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"http/1.1 200 OK",  //  HTTP-version: invalid! 
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
 
-				// Test
-				HttpException exception = Assert.Throws<HttpException>(
-					() => TestReadWrite(input, expectedOutput)
-				);
-				Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+					// ACT & ASSERT
+					HttpException exception = Assert.Throws<HttpException>(
+						() => TestReadAndWrite(sample)
+					);
+					Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+				}
 			}
 
 			[Fact(DisplayName = "HTTP-version: invalid digits")]
 			public void Version_InvalidDigits() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"HTTP/1.1.2 200 OK",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = null;
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1.2 200 OK",    // HTTP-version: invalid! 
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
 
-				// Test
-				HttpException exception = Assert.Throws<HttpException>(
-					() => TestReadWrite(input, expectedOutput)
-				);
-				Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+					// ACT & ASSERT
+					HttpException exception = Assert.Throws<HttpException>(
+						() => TestReadAndWrite(sample)
+					);
+					Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+				}
 			}
 
 			[Fact(DisplayName = "status-code: 407")]
 			public void StatusCode_407() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"HTTP/1.1 407 Proxy Authentication Required",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = input;
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 407 Proxy Authentication Required",
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
 
-				// Test
-				TestReadWrite(input, expectedOutput, (response) => {
-					Assert.Equal(407, response.StatusCode);
-				});
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
+						Assert.Equal(407, response.StatusCode);
+					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
 			}
 
 			[Fact(DisplayName = "status-code: non-digit")]
 			public void StatusCode_NonDigit() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"HTTP/1.1 XYZ OK",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = null;
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 XYZ OK",  // status-code: non-digit!
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
 
-				// Test
-				HttpException exception = Assert.Throws<HttpException>(
-					() => TestReadWrite(input, expectedOutput)
-				);
-				Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+					// ACT & ASSERT
+					HttpException exception = Assert.Throws<HttpException>(
+						() => TestReadAndWrite(sample)
+					);
+					Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+				}
 			}
 
-			[Fact(DisplayName = "status-code: too many digits")]
-			public void StatusCode_TooManyDigits() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"HTTP/1.1 0200 OK",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = null;
+			[Fact(DisplayName = "status-code: too long digits")]
+			public void StatusCode_TooLongDigits() {
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 0200 OK",	// status-code: too long digits!
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
 
-				// Test
-				HttpException exception = Assert.Throws<HttpException>(
-					() => TestReadWrite(input, expectedOutput)
-				);
-				Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+					// ACT & ASSERT
+					HttpException exception = Assert.Throws<HttpException>(
+						() => TestReadAndWrite(sample)
+					);
+					Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+				}
 			}
 
-			[Fact(DisplayName = "status-code: too little digits")]
-			public void StatusCode_TooLittleDigits() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"HTTP/1.1 20 Invalid Status Code",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = null;
+			[Fact(DisplayName = "status-code: too short digits")]
+			public void StatusCode_TooShortDigits() {
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 20 Invalid Status Code",	// status-code: too short digits!
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
 
-				// Test
-				HttpException exception = Assert.Throws<HttpException>(
-					() => TestReadWrite(input, expectedOutput)
-				);
-				Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+					// ACT & ASSERT
+					HttpException exception = Assert.Throws<HttpException>(
+						() => TestReadAndWrite(sample)
+					);
+					Assert.Equal(HttpStatusCode.BadGateway, exception.HttpStatusCode);
+				}
 			}
 
 			[Fact(DisplayName = "reason-phrase: empty")]
 			public void ReasonPhrase_Empty() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"HTTP/1.1 200 ",
-					"",
-					EmptyBody
-				);
-				string expectedOutput = input;
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 200 ",	// reason-phrase: empty
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
 
-				// Test
-				TestReadWrite(input, expectedOutput, (response) => {
-					Assert.Equal(new Version(1, 1), response.Version);
-					Assert.Equal(200, response.StatusCode);
-				});
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
+						Assert.Equal(new Version(1, 1), response.Version);
+						Assert.Equal(200, response.StatusCode);
+					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
 			}
 
 			[Fact(DisplayName = "header: large")]
 			public void Header_Large() {
-				// ARRANGE
-				StringBuilder buf = new StringBuilder();
-				buf.Append($"HTTP/1.1 200 OK{CRLF}");
-				for (int i = 0; i < 50; ++i) {
-					buf.Append($"X-Test-{i}: 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789{CRLF}");
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK"
+					);
+					for (int i = 0; i < 50; ++i) {
+						sample.AppendText($"X-Test-{i}: 012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789", appendCRLF: true);
+					}
+					sample.AppendHeader(
+						""
+					);
+					// This sample header to be tested must consume more than two memory blocks.
+					Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < sample.SampleWriterPosition);
+					sample.AppendBody(MessageSample.EmptyBody);
+
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
+						Assert.Equal(200, response.StatusCode);
+					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
 				}
-				buf.Append(CRLF);
-				string input = buf.ToString();
-
-				// This sample header to be tested must consume more than two memory blocks.
-				// Note that the length of the string is equal to the count of message octets in this sample.  
-				Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < input.Length);
-				string expectedOutput = input;
-
-				// Test
-				TestReadWrite(input, expectedOutput, (response) => {
-					Assert.Equal(200, response.StatusCode);
-				});
 			}
 
 			[Fact(DisplayName = "body: tiny")]
 			public void Body_Tiny() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"HTTP/1.1 200 OK",
-					"Content-Length: 1",
-					"",
-					"1"
-				);
-				// The body length should be in range of 'tiny' length.
-				// That is, the whole message must be stored in one memory block.
-				// In a Response object, 'tiny' length body is stored in the rest of header's memory block.
-				// Note that the length of the string is equal to the count of message octets in this sample.  
-				Debug.Assert(input.Length < ComponentFactory.MemoryBlockCache.MemoryBlockSize);
-				string expectedOutput = input;
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						"Content-Length: 1",
+						""
+					);
+					sample.AppendBody("1");
 
-				// Test
-				TestReadWrite(input, expectedOutput, (response) => {
-					Assert.Equal(1, response.ContentLength);
-				});
+					// The body length should be in range of 'tiny' length.
+					// That is, the whole message must be stored in one memory block.
+					// In a Response object, 'tiny' length body is stored in the rest of header's memory block.
+					Debug.Assert(sample.SampleWriterPosition < ComponentFactory.MemoryBlockCache.MemoryBlockSize);
+
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
+						Assert.Equal(1, response.ContentLength);
+					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
 			}
 
 			[Fact(DisplayName = "body: small")]
 			public void Body_Small() {
-				// ARRANGE
-				const int bodyLength = ComponentFactory.MemoryBlockCache.MemoryBlockSize - 10;
-				string header = CreateMessageString(
-					"HTTP/1.1 200 OK",
-					$"Content-Length: {bodyLength}",
-					""
-				);
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					const long bodyLength = ComponentFactory.MemoryBlockCache.MemoryBlockSize - 10;
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						$"Content-Length: {bodyLength}",
+						""
+					);
+					sample.AppendRandomData(bodyLength);
 
-				// The body length should be in range of 'small' length.
-				// That is, 
-				// * It cannot be stored in the rest of header's memory block, but
-				// * It can be stored in one memory block.
-				// In a Response object, 'small' length body is stored in a memory block.
-				Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < header.Length + 2 + bodyLength);
-				Debug.Assert(bodyLength <= ComponentFactory.MemoryBlockCache.MemoryBlockSize);
+					// The body length should be in range of 'small' length.
+					// That is, 
+					// * It cannot be stored in the rest of header's memory block, but
+					// * It can be stored in one memory block.
+					// In a Response object, 'small' length body is stored in a memory block.
+					Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < sample.SampleWriterPosition);
+					Debug.Assert(bodyLength <= ComponentFactory.MemoryBlockCache.MemoryBlockSize);
 
-				// Test
-				TestReadWriteSimpleBody(header, bodyLength, (response) => {
-					Assert.Equal(bodyLength, response.ContentLength);
-				});
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
+						Assert.Equal(bodyLength, response.ContentLength);
+					});
+					sample.AssertOutputEqualToSample();
+					Assert.Equal(1, actualMessageCount);
+				}
 			}
 
 			[Fact(DisplayName = "body: medium")]
 			public void Body_Medium() {
-				// ARRANGE
-				const int bodyLength = 10 * 1024;   // 10k
-				string header = CreateMessageString(
-					"HTTP/1.1 200 OK",
-					$"Content-Length: {bodyLength}",
-					""
-				);
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					const long bodyLength = 10 * 1024;   // 10k
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						$"Content-Length: {bodyLength}",
+						""
+					);
+					sample.AppendRandomData(bodyLength);
 
-				// The body length should be in range of 'medium' length.
-				// That is, 
-				// * It must be larger than the memory block size, and
-				// * It must be smaller than or equal to BodyBuffer.BodyStreamThreshold.
-				// In a Response object, 'medium' length body is stored in a MemoryStream.
-				Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < bodyLength);
-				Debug.Assert(bodyLength <= BodyBuffer.BodyStreamThreshold);
+					// The body length should be in range of 'medium' length.
+					// That is, 
+					// * It must be larger than the memory block size, and
+					// * It must be smaller than or equal to BodyBuffer.BodyStreamThreshold.
+					// In a Response object, 'medium' length body is stored in a MemoryStream.
+					Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < bodyLength);
+					Debug.Assert(bodyLength <= BodyBuffer.BodyStreamThreshold);
 
-				// Test
-				TestReadWriteSimpleBody(header, bodyLength, (response) => {
-					Assert.Equal(bodyLength, response.ContentLength);
-				});
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
+						Assert.Equal(bodyLength, response.ContentLength);
+					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
 			}
 
 			[Fact(DisplayName = "body: large")]
 			public void Body_Large() {
-				// ARRANGE
-				const int bodyLength = BodyBuffer.BodyStreamThreshold * 2;
-				string header = CreateMessageString(
-					"HTTP/1.1 200 OK",
-					$"Content-Length: {bodyLength}",
-					""
-				);
+				using (MessageSample sample = CreateMessageSample(largeMessage: true)) {
+					// ARRANGE
+					const long bodyLength = BodyBuffer.BodyStreamThreshold * 2;
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						$"Content-Length: {bodyLength}",
+						""
+					);
+					sample.AppendRandomData(bodyLength);
 
-				// The body length should be in range of 'large' length.
-				// That is, 
-				// * It must be larger than BodyBuffer.BodyStreamThreshold.
-				// In a Response object, 'large' length body is stored in a FileStream.
-				Debug.Assert(BodyBuffer.BodyStreamThreshold < bodyLength);
+					// The body length should be in range of 'large' length.
+					// That is, 
+					// * It must be larger than BodyBuffer.BodyStreamThreshold.
+					// In a Response object, 'large' length body is stored in a FileStream.
+					Debug.Assert(BodyBuffer.BodyStreamThreshold < bodyLength);
 
-				// Test
-				TestReadWriteSimpleBody(header, bodyLength, (response) => {
-					Assert.Equal(bodyLength, response.ContentLength);
-				});
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
+						Assert.Equal(bodyLength, response.ContentLength);
+					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
 			}
 
 			[Fact(DisplayName = "body: chunked")]
 			public void Body_Chunked() {
-				using (MemoryStream input = new MemoryStream()) {
-					// ToDo: in VS2017, convert it to a local method
-					Action<string> writeLine = (string line) => {
-						WriteLinesTo(input, line);
-					};
-					Action<long> writeChunkData = (long size) => {
-						WriteRandomBody(size, input, appendCRLF: true);
-					};
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
 
-					// write header
-					WriteLinesTo(
-						input,
+					// The sample.CheckChunkFlushing is not meaningful with Write() method,
+					// because Write() writes stored body at once.
+					Debug.Assert(sample.CheckChunkFlushing == false);
+
+					sample.AppendHeader(
 						"HTTP/1.1 200 OK",
-						$"Transfer-Encoding: chunked",
+						"Transfer-Encoding: chunked",
 						""
 					);
 
 					// write chunked body
-					writeLine("A0");        // chunk-size, in upper case
-					writeChunkData(0xA0);   // chunk-data
-					writeLine("cd");        // chunk-size, in lower case 
-					writeChunkData(0xCD);   // chunk-data
-					writeLine("0");         // last-chunk
-					writeLine("");			// end of chunked-body
+					sample.AppendSimpleChunk(0xA0);
+					sample.AppendSimpleChunk(0xCD);
+					sample.AppendLastChunk();
 
-					input.Position = 0;
-					Stream expectedOutput = input;  // same to the input
-
-					// Test
-					TestReadWrite(input, expectedOutput, (response) => {
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
 						Assert.Equal(-1, response.ContentLength);
 					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
 				}
 			}
 
 			[Fact(DisplayName = "body: chunked with trailers")]
 			public void Body_Chunked_with_Trailers() {
-				using (MemoryStream input = new MemoryStream()) {
-					// ToDo: in VS2017, convert it to a local method
-					Action<string> writeLine = (string line) => {
-						WriteLinesTo(input, line);
-					};
-					Action<long> writeChunkData = (long size) => {
-						WriteRandomBody(size, input, appendCRLF: true);
-					};
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
 
-					// write header
-					WriteLinesTo(
-						input,
+					// The sample.CheckChunkFlushing is not meaningful with Write() method,
+					// because Write() writes stored body at once.
+					Debug.Assert(sample.CheckChunkFlushing == false);
+
+					sample.AppendHeader(
 						"HTTP/1.1 200 OK",
-						$"Transfer-Encoding: chunked",
+						"Transfer-Encoding: chunked",
 						""
 					);
 
 					// write chunked body
-					writeLine("10");				// chunk-size
-					writeChunkData(0x10);			// chunk-data
-					writeLine("10");				// chunk-size
-					writeChunkData(0x10);			// chunk-data
-					writeLine("10");				// chunk-size
-					writeChunkData(0x10);			// chunk-data
-					writeLine("0");					// last-chunk
-					writeLine("X-Test-1: dummy");	// trailer
-					writeLine("X-Test-2: dummy");   // trailer
-					writeLine("");					// end of chunked-body
+					sample.AppendSimpleChunk(0x10);
+					sample.AppendSimpleChunk(0x10);
+					sample.AppendSimpleChunk(0x10);
+					sample.AppendLastChunk("X-Test-1: dummy");
 
-					input.Position = 0;
-					Stream expectedOutput = input;  // same to the input
-
-					// Test
-					TestReadWrite(input, expectedOutput, (response) => {
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
 						Assert.Equal(-1, response.ContentLength);
 					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
 				}
 			}
 
 			[Fact(DisplayName = "body: chunked large")]
 			public void Body_Chunked_Large() {
-				using (MemoryStream input = new MemoryStream()) {
-					// ToDo: in VS2017, convert it to a local method
-					Action<string> writeLine = (string line) => {
-						WriteLinesTo(input, line);
-					};
-					Action<long> writeChunkData = (long size) => {
-						WriteRandomBody(size, input, appendCRLF: true);
-					};
+				using (MessageSample sample = CreateMessageSample(largeMessage: true)) {
+					// ARRANGE
 
-					// write header
-					WriteLinesTo(
-						input,
+					// The sample.CheckChunkFlushing is not meaningful with Write() method,
+					// because Write() writes stored body at once.
+					Debug.Assert(sample.CheckChunkFlushing == false);
+
+					sample.AppendHeader(
 						"HTTP/1.1 200 OK",
-						$"Transfer-Encoding: chunked",
+						"Transfer-Encoding: chunked",
 						""
 					);
 
 					// write chunked body
-					for (int i = 0; i < 100; ++i) {
-						writeLine("100");		// chunk-size, in upper case
-						writeChunkData(0x100);  // chunk-data
+					for (int i = 0; i < 1024; ++i) {
+						sample.AppendSimpleChunk(1024);
 					}
-					writeLine("0");				// last-chunk
-					writeLine("");				// end of chunked-body
+					sample.AppendLastChunk();
 
-					input.Position = 0;
-					Stream expectedOutput = input;  // same to the input
-
-					// Test
-					TestReadWrite(input, expectedOutput, (response) => {
+					// ACT & ASSERT
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
 						Assert.Equal(-1, response.ContentLength);
 					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
 				}
 			}
 
 			[Fact(DisplayName = "redirect: tiny")]
 			public void Redirect_Tiny() {
-				// ARRANGE
-				string input = CreateMessageString(
-					"HTTP/1.1 200 OK",
-					"Content-Length: 10",
-					"",
-					"0123456789"
-				);
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						"Content-Length: 10",
+						""
+					);
+					sample.AppendBody("0123456789");
 
-				// The body length should be in range of 'tiny' length.
-				// That is, the whole message must be stored in one memory block.
-				// In a Response object, 'tiny' length body is stored in the rest of header's memory block.
-				// Note that the length of the string is equal to the count of message octets in this sample.  
-				Debug.Assert(input.Length < ComponentFactory.MemoryBlockCache.MemoryBlockSize);
-				string expectedOutput = input;
+					// The body length should be in range of 'tiny' length.
+					// That is, the whole message must be stored in one memory block.
+					// In a Response object, 'tiny' length body is stored in the rest of header's memory block.
+					Debug.Assert(sample.SampleWriterPosition < ComponentFactory.MemoryBlockCache.MemoryBlockSize);
 
-				// TEST
-				TestReadHeaderRedirect(input, expectedOutput, (response) => {
-					Assert.Equal(10, response.ContentLength);
-				});
+					// ACT & ASSERT
+					int actualMessageCount = TestReadHeaderAndRedirect(sample, (response) => {
+						Assert.Equal(10, response.ContentLength);
+					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
 			}
 
 			[Fact(DisplayName = "redirect: medium")]
 			public void Redirect_Medium() {
-				// ARRANGE
-				const int bodyLength = 10 * 1024;   // 10k
-				string header = CreateMessageString(
-					"HTTP/1.1 200 OK",
-					$"Content-Length: {bodyLength}",
-					""
-				);
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					const long bodyLength = 10 * 1024;   // 10k
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						$"Content-Length: {bodyLength}",
+						""
+					);
+					sample.AppendRandomData(bodyLength);
 
-				// The body length should be in range of 'medium' length.
-				// That is, 
-				// * It must be larger than the memory block size, and
-				// * It must be smaller than or equal to BodyBuffer.BodyStreamThreshold.
-				// In a Response object, 'medium' length body is stored in a MemoryStream.
-				Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < bodyLength);
-				Debug.Assert(bodyLength <= BodyBuffer.BodyStreamThreshold);
+					// The body length should be in range of 'medium' length.
+					// That is, 
+					// * It must be larger than the memory block size, and
+					// * It must be smaller than or equal to BodyBuffer.BodyStreamThreshold.
+					// In a Response object, 'medium' length body is stored in a MemoryStream.
+					Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < bodyLength);
+					Debug.Assert(bodyLength <= BodyBuffer.BodyStreamThreshold);
 
-				// Test
-				TestReadHeaderRedirectSimpleBody(header, bodyLength, (response) => {
-					Assert.Equal(bodyLength, response.ContentLength);
-				});
+					// ACT & ASSERT
+					int actualMessageCount = TestReadHeaderAndRedirect(sample, (response) => {
+						Assert.Equal(bodyLength, response.ContentLength);
+					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
 			}
 
 			[Fact(DisplayName = "redirect: chunked")]
 			public void Redirect_Chunked() {
-				using (MemoryStream input = new MemoryStream()) {
-					// ToDo: in VS2017, convert it to a local method
-					Action<string> writeLine = (string line) => {
-						WriteLinesTo(input, line);
-					};
-					Action<long> writeChunkData = (long size) => {
-						WriteRandomBody(size, input, appendCRLF: true);
-					};
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
 
-					// write header
-					WriteLinesTo(
-						input,
+					// Redirect() supports chunked transfer
+					sample.CheckChunkFlushing = true;
+
+					sample.AppendHeader(
 						"HTTP/1.1 200 OK",
-						$"Transfer-Encoding: chunked",
+						"Transfer-Encoding: chunked",
 						""
 					);
 
 					// write chunked body
-					writeLine("D0");        // chunk-size, in upper case
-					writeChunkData(0xD0);   // chunk-data
-					writeLine("8");         // chunk-size, in lower case 
-					writeChunkData(0x08);   // chunk-data
-					writeLine("0");         // last-chunk
-					writeLine("");          // end of chunked-body
+					sample.AppendSimpleChunk(0x100);
+					sample.AppendSimpleChunk(0x100);
+					sample.AppendSimpleChunk(0x100);
+					sample.AppendLastChunk();
 
-					input.Position = 0;
-					Stream expectedOutput = input;  // same to the input
-
-					// Test
-					TestReadHeaderRedirect(input, expectedOutput, (response) => {
+					// ACT & ASSERT
+					int actualMessageCount = TestReadHeaderAndRedirect(sample, (response) => {
 						Assert.Equal(-1, response.ContentLength);
 					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
+			}
+
+			[Fact(DisplayName = "skip body")]
+			public void SkipBody() {
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						"Content-Length: 7",
+						""
+					);
+					sample.AppendBody("ABCDEFG");
+
+					// ACT & ASSERT
+					int actualMessageCount = TestReadHeaderAndSkipBody(sample, (response) => {
+						Assert.Equal(7, response.ContentLength);
+					});
+					Assert.Equal(1, actualMessageCount);
+					sample.AssertAllSampleBytesRead();
+				}
+			}
+
+			[Fact(DisplayName = "prefetched bytes: Read/Write")]
+			public void PrefetchedBytes_ReadAndWrite() {
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						"Content-Length: 7",
+						""
+					);
+					sample.AppendBody("1234567");
+
+					// insert 0-length body message in the middle of sequence
+					// In prefetched bytes processing, 0-length body handling is mistakable.
+					sample.AppendHeader(
+						"HTTP/1.1 302 Found",
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
+
+					sample.AppendHeader(
+						"HTTP/1.1 404 Not Found",
+						"Content-Length: 0",
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
+
+					// The body length should be in range of 'tiny' length.
+					// "prefetched bytes" occurs when the body is 'tiny' length for simple body.
+					// In this case, whole three messages are on one memory block. 
+					Debug.Assert(sample.SampleWriterPosition < ComponentFactory.MemoryBlockCache.MemoryBlockSize);
+
+					// ACT & ASSERT
+					int counter = 0;
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
+						switch (counter) {
+							case 0:
+								Assert.Equal(200, response.StatusCode);
+								Assert.Equal(7, response.ContentLength);
+								break;
+							case 1:
+								Assert.Equal(302, response.StatusCode);
+								Assert.Equal(0, response.ContentLength);
+								break;
+							case 2:
+								Assert.Equal(404, response.StatusCode);
+								Assert.Equal(0, response.ContentLength);
+								break;
+						}
+						++counter;
+					});
+					Assert.Equal(3, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
+			}
+
+			[Fact(DisplayName = "prefetched bytes: ReadHeader/Redirect")]
+			public void PrefetchedBytes_ReadHeaderAndRedirect() {
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						"Content-Length: 7",
+						""
+					);
+					sample.AppendBody("1234567");
+
+					// insert 0-length body message in the middle of sequence
+					// In prefetched bytes processing, 0-length body handling is mistakable.
+					sample.AppendHeader(
+						"HTTP/1.1 302 Found",
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
+
+					sample.AppendHeader(
+						"HTTP/1.1 404 Not Found",
+						"Content-Length: 0",
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
+
+					// The body length should be in range of 'tiny' length.
+					// "prefetched bytes" occurs when the body is 'tiny' length for simple body.
+					// In this case, whole three messages are on one memory block. 
+					Debug.Assert(sample.SampleWriterPosition < ComponentFactory.MemoryBlockCache.MemoryBlockSize);
+
+					// ACT & ASSERT
+					int counter = 0;
+					int actualMessageCount = TestReadHeaderAndRedirect(sample, (response) => {
+						switch (counter) {
+							case 0:
+								Assert.Equal(200, response.StatusCode);
+								Assert.Equal(7, response.ContentLength);
+								break;
+							case 1:
+								Assert.Equal(302, response.StatusCode);
+								Assert.Equal(0, response.ContentLength);
+								break;
+							case 2:
+								Assert.Equal(404, response.StatusCode);
+								Assert.Equal(0, response.ContentLength);
+								break;
+						}
+						++counter;
+					});
+					Assert.Equal(3, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
+			}
+
+			[Fact(DisplayName = "prefetched bytes: ReadHeader/SkipBody")]
+			public void PrefetchedBytes_ReadHeaderAndSkipBody() {
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						"Content-Length: 7",
+						""
+					);
+					sample.AppendBody("1234567");
+
+					// insert 0-length body message in the middle of sequence
+					// In prefetched bytes processing, 0-length body handling is mistakable.
+					sample.AppendHeader(
+						"HTTP/1.1 302 Found",
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
+
+					sample.AppendHeader(
+						"HTTP/1.1 404 Not Found",
+						"Content-Length: 0",
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
+
+					// The body length should be in range of 'tiny' length.
+					// "prefetched bytes" occurs when the body is 'tiny' length for simple body.
+					// In this case, whole three messages are on one memory block. 
+					Debug.Assert(sample.SampleWriterPosition < ComponentFactory.MemoryBlockCache.MemoryBlockSize);
+
+					// ACT & ASSERT
+					int counter = 0;
+					int actualMessageCount = TestReadHeaderAndSkipBody(sample, (response) => {
+						switch (counter) {
+							case 0:
+								Assert.Equal(200, response.StatusCode);
+								Assert.Equal(7, response.ContentLength);
+								break;
+							case 1:
+								Assert.Equal(302, response.StatusCode);
+								Assert.Equal(0, response.ContentLength);
+								break;
+							case 2:
+								Assert.Equal(404, response.StatusCode);
+								Assert.Equal(0, response.ContentLength);
+								break;
+						}
+						++counter;
+					});
+					Assert.Equal(3, actualMessageCount);
+					sample.AssertAllSampleBytesRead();
+				}
+			}
+
+			[Fact(DisplayName = "prefetched bytes: chunked")]
+			public void PrefetchedBytes_Chunked() {
+				using (MessageSample sample = CreateMessageSample()) {
+					// Redirect() supports chunked transfer
+					sample.CheckChunkFlushing = true;
+
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						"Transfer-Encoding: chunked",
+						""
+					);
+					sample.AppendSimpleChunk(0x10);
+					sample.AppendSimpleChunk(0x10);
+					sample.AppendLastChunk();
+
+					// the whole first message is stored on the memory block in headerBuffer. 
+					long firstMessageLen = sample.SampleWriterPosition;
+					Debug.Assert(firstMessageLen < ComponentFactory.MemoryBlockCache.MemoryBlockSize);
+
+					// the second message uses the memory block in bodyBuffer. 
+					sample.AppendHeader(
+						"HTTP/1.1 302 Found",
+						"Transfer-Encoding: chunked",
+						""
+					);
+					long secondMessageBodyOffset = sample.SampleWriterPosition;
+					sample.AppendSimpleChunk(1050);
+					sample.AppendSimpleChunk(1050);	
+					sample.AppendLastChunk();
+
+					// the second message uses the memory block in bodyBuffer. 
+					long secondMessageBodyLen = sample.SampleWriterPosition - secondMessageBodyOffset;
+					Debug.Assert(ComponentFactory.MemoryBlockCache.MemoryBlockSize < secondMessageBodyLen);
+					Debug.Assert(secondMessageBodyLen < 2 * ComponentFactory.MemoryBlockCache.MemoryBlockSize);
+
+					sample.AppendHeader(
+						"HTTP/1.1 404 Not Found",
+						"Transfer-Encoding: chunked",
+						""
+					);
+					sample.AppendSimpleChunk(0x10);
+					sample.AppendLastChunk();
+
+					// ACT & ASSERT
+					int counter = 0;
+					int actualMessageCount = TestReadHeaderAndRedirect(sample, (response) => {
+						switch (counter) {
+							case 0:
+								Assert.Equal(200, response.StatusCode);
+								Assert.Equal(-1, response.ContentLength);
+								break;
+							case 1:
+								Assert.Equal(302, response.StatusCode);
+								Assert.Equal(-1, response.ContentLength);
+								break;
+							case 2:
+								Assert.Equal(404, response.StatusCode);
+								Assert.Equal(-1, response.ContentLength);
+								break;
+						}
+						++counter;
+					});
+					Assert.Equal(3, actualMessageCount);
+					sample.AssertOutputEqualToSample();
+				}
+			}
+
+			[Fact(DisplayName = "prefetched bytes: InputReconnect")]
+			public void PrefetchedBytes_InputReconnect() {
+				using (MessageSample sample = CreateMessageSample()) {
+					// ARRANGE
+					sample.AppendHeader(
+						"HTTP/1.1 200 OK",
+						"Content-Length: 7",
+						""
+					);
+					sample.AppendBody("1234567");
+
+					sample.AppendHeader(
+						"HTTP/1.1 302 Found",
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
+
+					long thirdMessageOffset = sample.SampleWriterPosition;
+					sample.AppendHeader(
+						"HTTP/1.1 404 Not Found",
+						"Content-Length: 0",
+						""
+					);
+					sample.AppendBody(MessageSample.EmptyBody);
+
+					// The body length should be in range of 'tiny' length.
+					// "prefetched bytes" occurs when the body is 'tiny' length for simple body.
+					// In this case, whole three messages are on one memory block. 
+					Debug.Assert(sample.SampleWriterPosition < ComponentFactory.MemoryBlockCache.MemoryBlockSize);
+
+					// the second message will be skipped
+					string expectedOutput = string.Join(
+						MessageSample.CRLF,   // separator
+						"HTTP/1.1 200 OK",
+						"Content-Length: 7",
+						"",
+						"1234567HTTP/1.1 404 Not Found",  // Note no CRLF at the end of the body
+						"Content-Length: 0",
+						"",
+						MessageSample.EmptyBody
+					);
+
+					// ACT & ASSERT
+					int counter = 0;
+					int actualMessageCount = TestReadAndWrite(sample, (response) => {
+						switch (counter) {
+							case 0:
+								Assert.Equal(200, response.StatusCode);
+								Assert.Equal(7, response.ContentLength);
+								// move to the third message
+								// It causes InputReconnected event.
+								sample.ChangeSampleReaderPosition(thirdMessageOffset);
+								break;
+							case 1:
+								// the third message instead of the second message
+								Assert.Equal(404, response.StatusCode);
+								Assert.Equal(0, response.ContentLength);
+								break;
+						}
+						++counter;
+					});
+					Assert.Equal(2, actualMessageCount);
+					sample.AssertOutputEqualTo(expectedOutput);
 				}
 			}
 
 			// ToDo: body
 			//  with chunk-ext 
 			//  multi transfer-coding in Transfer-Encoding
-			// ToDo: redirect
-			//  medium
 			// ToDo: request param
 
 			#endregion
@@ -535,24 +863,30 @@ namespace MAPE.Http.Test {
 
 				#region IAdapter
 
-				public Response Create() {
-					return new Response();
+				public Response Create(IMessageIO io) {
+					Response response = new Response();
+					response.AttachIO(io);
+					return response;
 				}
 
-				public bool Read(Response message, Stream input, Request request) {
-					return message.Read(input, request);
+				public bool Read(Response message, Request request) {
+					return message.Read(request);
 				}
 
-				public void Write(Response message, Stream output, bool suppressModification) {
-					message.Write(output, suppressModification);
+				public void Write(Response message, bool suppressModification) {
+					message.Write(suppressModification);
 				}
 
-				public bool ReadHeader(Response message, Stream input, Request request) {
-					return message.ReadHeader(input, request);
+				public bool ReadHeader(Response message, Request request) {
+					return message.ReadHeader(request);
 				}
 
-				public void Redirect(Response message, Stream output, Stream input, bool suppressModification) {
-					message.Redirect(output, input, suppressModification);
+				public void SkipBody(Response message) {
+					message.SkipBody();
+				}
+
+				public void Redirect(Response message, bool suppressModification) {
+					message.Redirect(suppressModification);
 				}
 
 				#endregion

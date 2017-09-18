@@ -1,10 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Text;
 
 
@@ -65,9 +62,8 @@ namespace MAPE.Http {
 			return;
 		}
 
-		public bool Read(Stream input, Request request) {
+		public bool Read(Request request) {
 			// argument checks
-			Debug.Assert(input != null);
 			// request can be null
 
 			// state checks
@@ -78,7 +74,7 @@ namespace MAPE.Http {
 			// set this.Request during reading message.
 			this.Request = request;
 			try {
-				return base.Read(input);
+				return base.Read();
 			} catch (Exception exception) {
 				throw new HttpException(exception, HttpStatusCode.BadGateway);
 			} finally {
@@ -86,9 +82,8 @@ namespace MAPE.Http {
 			}
 		}
 
-		public bool ReadHeader(Stream input, Request request) {
+		public bool ReadHeader(Request request) {
 			// argument checks
-			Debug.Assert(input != null);
 			// request can be null
 
 			// state checks
@@ -99,7 +94,7 @@ namespace MAPE.Http {
 			// set this.Request during reading message.
 			this.Request = request;
 			try {
-				return base.ReadHeader(input);
+				return base.ReadHeader();
 			} catch (Exception exception) {
 				throw new HttpException(exception, HttpStatusCode.BadGateway);
 			} finally {

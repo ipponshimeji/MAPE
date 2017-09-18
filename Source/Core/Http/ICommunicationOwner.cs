@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using MAPE.ComponentBase;
 
 
@@ -9,13 +8,9 @@ namespace MAPE.Http {
 
 		IHttpComponentFactory ComponentFactory { get; }
 
-		Stream RequestInput { get; }
+		IMessageIO RequestIO { get; }
 
-		Stream RequestOutput { get; }
-
-		Stream ResponseInput { get; }
-
-		Stream ResponseOutput { get; }
+		IMessageIO ResponseIO { get; }
 
 		bool ConnectingToProxy { get; }
 

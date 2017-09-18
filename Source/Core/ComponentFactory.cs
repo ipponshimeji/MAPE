@@ -44,7 +44,7 @@ namespace MAPE {
 			#endregion
 		}
 
-		public class RequestCache: CacheableInstanceCache<Request> {
+		public class RequestCache: CacheableInstanceCache<Request, IMessageIO> {
 			#region creation and disposal
 
 			public RequestCache(): base(nameof(RequestCache)) {
@@ -55,8 +55,8 @@ namespace MAPE {
 
 			#region methods
 
-			public Request AllocRequest() {
-				return AllocInstance();
+			public Request AllocRequest(IMessageIO io) {
+				return AllocInstance(io);
 			}
 
 			public void ReleaseRequest(Request instance, bool discardInstance) {
@@ -79,7 +79,7 @@ namespace MAPE {
 			#endregion
 		}
 
-		public class ResponseCache: CacheableInstanceCache<Response> {
+		public class ResponseCache: CacheableInstanceCache<Response, IMessageIO> {
 			#region creation and disposal
 
 			public ResponseCache(): base(nameof(ResponseCache)) {
@@ -90,8 +90,8 @@ namespace MAPE {
 
 			#region methods
 
-			public Response AllocResponse() {
-				return AllocInstance();
+			public Response AllocResponse(IMessageIO io) {
+				return AllocInstance(io);
 			}
 
 			public void ReleaseResponse(Response instance, bool discardInstance) {
@@ -240,16 +240,16 @@ namespace MAPE {
 
 		#region IHttpComponentFactory
 
-		public virtual Request AllocRequest() {
-			return requestCache.AllocRequest();
+		public virtual Request AllocRequest(IMessageIO io) {
+			return requestCache.AllocRequest(io);
 		}
 
 		public virtual void ReleaseRequest(Request instance, bool discardInstance = false) {
 			requestCache.ReleaseRequest(instance, discardInstance);
 		}
 
-		public virtual Response AllocResponse() {
-			return responseCache.AllocResponse();
+		public virtual Response AllocResponse(IMessageIO io) {
+			return responseCache.AllocResponse(io);
 		}
 
 		public virtual void ReleaseResponse(Response instance, bool discardInstance = false) {

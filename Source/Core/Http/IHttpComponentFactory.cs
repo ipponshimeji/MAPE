@@ -3,11 +3,11 @@
 
 namespace MAPE.Http {
 	public interface IHttpComponentFactory {
-		Request AllocRequest();
+		Request AllocRequest(IMessageIO io);
 
 		void ReleaseRequest(Request instance, bool discardInstance = false);
 
-		Response AllocResponse();
+		Response AllocResponse(IMessageIO io);
 
 		void ReleaseResponse(Response instance, bool discardInstance = false);
 	}

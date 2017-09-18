@@ -100,10 +100,17 @@ namespace MAPE.Http {
 					// The body is to be stored in the rest of header buffer. (tiny body)
 
 					// read body bytes into the rest of the header buffer
-					Debug.Assert(restLen <= int.MaxValue);
-					FillBuffer(headerBuffer, (int)restLen);
-					Debug.Assert(contentLength == headerBuffer.Limit - headerBuffer.Next);
-					Debug.Assert(this.MemoryBlock == null);
+					if (0 <= restLen) {
+						Debug.Assert(restLen <= int.MaxValue);
+						FillBuffer(headerBuffer, (int)restLen);
+						Debug.Assert(contentLength == headerBuffer.Limit - headerBuffer.Next);
+						Debug.Assert(this.MemoryBlock == null);
+					} else {
+						// there is data of the next message
+						Debug.Assert(contentLength <= int.MaxValue);
+						int offset = headerBuffer.Next + (int)contentLength;
+						headerBuffer.SetPrefetchedBytes(offset);
+					}
 				} else {
 					byte[] memoryBlock = EnsureMemoryBlockAllocated();
 					if (contentLength <= memoryBlock.Length) {
@@ -156,7 +163,14 @@ namespace MAPE.Http {
 
 			// write body bytes in the header buffer to the output
 			int bodyBytesInHeaderBufferLength = headerBuffer.Limit - headerBuffer.Next;
-			WriteTo(headerBuffer, output, headerBuffer.Next, bodyBytesInHeaderBufferLength);
+			if (bodyBytesInHeaderBufferLength <= contentLength) {
+				WriteTo(headerBuffer, output, headerBuffer.Next, bodyBytesInHeaderBufferLength);
+			} else {
+				// there is data of the next message
+				bodyBytesInHeaderBufferLength = (int)contentLength;
+				WriteTo(headerBuffer, output, headerBuffer.Next, bodyBytesInHeaderBufferLength);
+				headerBuffer.SetPrefetchedBytes(headerBuffer.Next + bodyBytesInHeaderBufferLength);
+			}
 
 			// write rest of body bytes to the output
 			// the memoryBlock is used as just intermediate buffer instead of storing media
@@ -229,7 +243,7 @@ namespace MAPE.Http {
 
 				// copy body bytes read in the header buffer into this buffer
 				byte[] memoryBlock = EnsureMemoryBlockAllocated();
-				CopyFrom(this.headerBuffer, this.headerBuffer.Next, this.headerBuffer.Limit - this.headerBuffer.Next);
+				CopyFrom(this.headerBuffer, this.headerBuffer.Next, headerBuffer.Limit - headerBuffer.Next);
 				this.unflushedStart = 0;
 
 				// skip chunked data
@@ -252,6 +266,12 @@ namespace MAPE.Http {
 
 				// flush the unflushed data
 				FlushChunkingOutput();
+
+				// check prefetched bytes
+				int length = this.Limit - this.Next;
+				if (0 < length) {
+					this.headerBuffer.SetPrefetchedBytes(this.MemoryBlock, this.Next, length);
+				}
 			} finally {
 				this.chunkingOutput = null;
 			}
@@ -307,7 +327,7 @@ namespace MAPE.Http {
 			// write the body
 			// Note the media where the body is stored depends on its size.  
 			if (this.bodyStream != null) {
-				// the body was stored in the stream (large body or chunked body)
+				// the body was stored in the stream (large/medium body or chunked body)
 				this.bodyStream.Seek(0, SeekOrigin.Begin);
 				this.bodyStream.CopyTo(output);
 			} else {
@@ -322,7 +342,8 @@ namespace MAPE.Http {
 				} else {
 					// the body was stored in the rest of the header buffer (tiny body)
 					HeaderBuffer headerBuffer = this.headerBuffer;
-					Debug.Assert(headerBuffer.Limit - headerBuffer.Next == bodyLengthInInt);
+					// Be careful not to write bytes of the next message.
+					Debug.Assert(bodyLengthInInt <= headerBuffer.Limit - headerBuffer.Next);
 					WriteTo(headerBuffer, output, headerBuffer.Next, bodyLengthInInt);
 				}
 			}
@@ -331,19 +352,13 @@ namespace MAPE.Http {
 			return;
 		}
 
-		public void RedirectBody(Stream output, Stream input, long bodyLength) {
+		public void RedirectBody(Stream output, long bodyLength) {
 			// argument checks
 			if (output == null) {
 				throw new ArgumentNullException(nameof(output));
 			}
 			if (output.CanWrite == false) {
 				throw new ArgumentException("It is not writable", nameof(output));
-			}
-			if (input == null) {
-				throw new ArgumentNullException(nameof(input));
-			}
-			if (input.CanRead == false) {
-				throw new ArgumentException("It is not readable", nameof(input));
 			}
 
 			// state checks
@@ -353,13 +368,14 @@ namespace MAPE.Http {
 
 			// redirect the body
 			// ToDo: attach stream to headerBuffer
-			if (0 < bodyLength) {
+			if (0 <= bodyLength) {
 				// normal body
+				// Call StoreBody() even if bodyLength is 0 to process prefetched bytes.
 				StoreBody(output, bodyLength);
 			} else if (bodyLength == -1) {
 				// chunked body
 				StoreChunkedBody(output);
-			} else if (bodyLength != 0) {
+			} else {
 				Debug.Assert(bodyLength < -1);
 				throw new ArgumentOutOfRangeException(nameof(bodyLength));
 			}

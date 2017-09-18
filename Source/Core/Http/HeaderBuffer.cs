@@ -13,12 +13,15 @@ namespace MAPE.Http {
 
 		private static readonly char[] WS = new char[] { (char)SP, (char)HTAB };    // SP, HTAB
 
-
-		public Stream Input { get; set; } = null;
+		private IMessageIO io = null;
 
 		private List<byte[]> memoryBlocks = new List<byte[]>();
 
 		private int currentMemoryBlockBaseOffset = 0;
+
+		byte[] prefetchedBytes = null;
+
+		int prefetchedBytesLength = 0;
 
 		private StringBuilder stockStringBuf = new StringBuilder();
 
@@ -27,9 +30,27 @@ namespace MAPE.Http {
 
 		#region properties
 
+		public IMessageIO IO {
+			get {
+				return this.io;
+			}
+			set {
+				IMessageIO oldValue = this.io;
+				if (value != oldValue) {
+					if (oldValue != null) {
+						oldValue.InputReconnected -= this.IO_InputReconnected;
+					}
+					if (value != null) {
+						value.InputReconnected += this.IO_InputReconnected;
+					}
+					this.io = value;
+				}
+			}
+		}
+
 		public bool CanRead {
 			get {
-				return this.Input != null;
+				return this.IO?.Input != null;
 			}
 		}
 
@@ -50,7 +71,8 @@ namespace MAPE.Http {
 		public override void Dispose() {
 			// dispose this class level
 			this.stockStringBuf = null;
-			this.Input = null;
+			ClearPrefetchedBytes();
+			this.IO = null;
 
 			// dispose the base class level
 			base.Dispose();
@@ -259,6 +281,47 @@ namespace MAPE.Http {
 			return SkipToCRLF();
 		}
 
+		public void SetPrefetchedBytes(byte[] bytes, int offset, int count) {
+			// argument checks
+			if (bytes == null) {
+				throw new ArgumentNullException(nameof(bytes));
+			}
+			if (offset < 0 || bytes.Length < offset) {
+				throw new ArgumentOutOfRangeException(nameof(offset));
+			}
+			if (count <= 0 || bytes.Length - offset < count || ComponentFactory.MemoryBlockCache.MemoryBlockSize < count) {
+				// Note that 0-count is not allowed.
+				throw new ArgumentOutOfRangeException(nameof(count));
+			}
+
+			// mark the given bytes on the source as prefetched bytes
+			// These bytes are part of the next message.
+			byte[] memoryBlock = ComponentFactory.AllocMemoryBlock();
+			try {
+				Buffer.BlockCopy(bytes, offset, memoryBlock, 0, count);
+
+				this.prefetchedBytesLength = count;
+				this.prefetchedBytes = memoryBlock;
+			} catch {
+				ComponentFactory.FreeMemoryBlock(memoryBlock);
+				throw;
+			}
+
+			return;
+		}
+
+		public void SetPrefetchedBytes(int offset) {
+			// argument checks
+			if (offset < 0 || this.Limit <= offset) {
+				// Note that 0-length is not allowed.
+				throw new ArgumentOutOfRangeException(nameof(offset));
+			}
+
+			// mark the last bytes on the current memory block as prefetched bytes
+			// These bytes are part of the next message.
+			SetPrefetchedBytes(this.MemoryBlock, offset, this.Limit - offset);
+		}
+
 		#endregion
 
 
@@ -428,7 +491,6 @@ namespace MAPE.Http {
 			// reset this class level
 			this.stockStringBuf.Clear();
 			this.currentMemoryBlockBaseOffset = 0;
-			Debug.Assert(this.Input == null);
 
 			// reset the base class level
 			base.ResetBuffer();
@@ -471,7 +533,15 @@ namespace MAPE.Http {
 			}
 
 			// allocate a new memory block
-			byte[] newMemoryBlock = ComponentFactory.AllocMemoryBlock();
+			byte[] newMemoryBlock = this.prefetchedBytes;
+			if (newMemoryBlock != null) {
+				// there is prefetched bytes which were read in the previous message processing
+				this.prefetchedBytes = null;
+				Debug.Assert(0 < this.prefetchedBytesLength);
+				// Do not clear this.prefetchedBytesLength, which is used at the next ReadBytes() call 
+			} else {
+				newMemoryBlock = ComponentFactory.AllocMemoryBlock();
+			}
 			try {
 				this.memoryBlocks.Add(newMemoryBlock);
 			} catch {
@@ -492,7 +562,15 @@ namespace MAPE.Http {
 			Debug.Assert(0 <= count && count <= buffer.Length - offset);
 
 			// state checks
-			if (this.Input == null) {
+			if (0 < this.prefetchedBytesLength) {
+				// there is prefetched data
+				Debug.Assert(this.prefetchedBytes == null);     // it was set as the current buffer
+				int length = this.prefetchedBytesLength;
+				this.prefetchedBytesLength = 0;
+				return length;
+			}
+			Stream input = this.IO?.Input;
+			if (input == null) {
 				throw new InvalidOperationException("No input stream is attached to this object.");
 			}
 
@@ -500,7 +578,7 @@ namespace MAPE.Http {
 			Exception error = null;
 			int readCount = 0;
 			try {
-				readCount = this.Input.Read(buffer, offset, count);
+				readCount = input.Read(buffer, offset, count);
 			} catch (Exception exception) {
 				error = exception;
 				// continue
@@ -519,6 +597,33 @@ namespace MAPE.Http {
 			}
 
 			return readCount;
+		}
+
+		#endregion
+
+
+		#region privates
+
+		private void ClearPrefetchedBytes() {
+			// clear prefetched bytes
+			this.prefetchedBytesLength = 0;
+
+			byte[] memoryBlock = this.prefetchedBytes;
+			this.prefetchedBytes = null;
+			if (memoryBlock != null) {
+				ComponentFactory.FreeMemoryBlock(memoryBlock);
+			}
+
+			return;
+		}
+
+		#endregion
+
+
+		#region event handlers
+
+		private void IO_InputReconnected(object sender, EventArgs e) {
+			ClearPrefetchedBytes();
 		}
 
 		#endregion

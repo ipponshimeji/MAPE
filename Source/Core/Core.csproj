@@ -78,6 +78,8 @@
     <Compile Include="ComponentBase\IComponentLogger.cs" />
     <Compile Include="ComponentBase\CacheableInstanceCache.cs" />
     <Compile Include="Http\BodyBuffer.cs" />
+    <Compile Include="Http\MessageIO.cs" />
+    <Compile Include="Http\IMessageIO.cs" />
     <Compile Include="Http\MessageReadingState.cs" />
     <Compile Include="Http\HttpException.cs" />
     <Compile Include="Http\HeaderBuffer.cs" />

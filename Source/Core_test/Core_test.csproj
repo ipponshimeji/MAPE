@@ -59,6 +59,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Http\Test\DiskMessageSample.cs" />
+    <Compile Include="Http\Test\MemoryMessageSample.cs" />
+    <Compile Include="Http\Test\MessageSampleStage.cs" />
+    <Compile Include="Http\Test\MessageSample.cs" />
     <Compile Include="Http\Test\MessageTest.cs" />
     <Compile Include="Http\Test\ResponseTest.cs" />
     <Compile Include="Http\Test\RequestTest.cs" />
