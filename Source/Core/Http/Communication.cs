@@ -38,16 +38,20 @@ namespace MAPE.Http {
 						} else {
 							do {
 								request.Write();
-								if (response.Read(request) == false) {
+								if (response.ReadHeader(request) == false) {
 									// no response from the server
 									Exception innerException = new Exception("No response from the server.");
 									throw new HttpException(innerException, HttpStatusCode.BadGateway);
 								}
 								++repeatCount;
 								retry = OnCommunicate(owner, repeatCount, request, response);
+								if (retry) {
+									// skip the response body
+									response.SkipBody();
+								}
 							} while (retry);
 							// send the final response to the client
-							response.Write();
+							response.Redirect();
 							tunnelingMode = (request.IsConnectMethod && response.StatusCode == 200);
 						}
 
