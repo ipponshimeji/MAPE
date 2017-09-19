@@ -530,23 +530,24 @@ namespace MAPE.Server {
 					LogVerbose($"The communication ends normally.");
 				} else {
 					// adjust the exception
-					string detail = null;
+					Exception actualException = null;
 					if (exception != null && request != null && request.MessageRead) {
 						httpException = exception as HttpException;
 						if (httpException == null) {
 							// wrap the exception into an HttpException
 							httpException = new HttpException(exception);
 							Debug.Assert(httpException.HttpStatusCode == HttpStatusCode.BadGateway);
-							detail = exception.Message;
+							actualException = exception;
 						} else {
-							detail = httpException.InnerException?.Message;
+							actualException = httpException.InnerException;
 						}
 					}
 
 					// log the state
-					if (detail != null) {
+					if (actualException != null) {
 						// report the original exception message (not httpException's)
-						LogError($"Error: {detail}");
+						Tuple<TraceEventType, string> logContent = GetLogContent(actualException);
+						Log(logContent.Item1, logContent.Item2);
 					}
 					if (httpException != null) {
 						string method = request?.Method;
@@ -562,6 +563,36 @@ namespace MAPE.Server {
 			}
 
 			return httpException;
+		}
+
+		private Tuple<TraceEventType, string> GetLogContent(Exception exception) {
+			// argument checks
+			Debug.Assert(exception != null);
+
+			TraceEventType eventType = TraceEventType.Error;
+			string message = exception.Message;
+			if (exception is IOException || exception is SocketException) {
+				SocketException socketException = exception as SocketException;
+				if (socketException == null) {
+					socketException = exception.InnerException as SocketException;
+				}
+				if (socketException != null) {
+					switch (socketException.SocketErrorCode) {
+						case SocketError.ConnectionReset:
+						case SocketError.Interrupted:
+						case SocketError.TimedOut:
+							// may be terminated
+							eventType = TraceEventType.Warning;
+							break;
+					}
+				}
+			} else if (exception is ObjectDisposedException) {
+				// probably the Stream was disposed as a result of a network termination request
+				eventType = TraceEventType.Warning;
+				message = "The connection has been terminated.";
+			}
+
+			return new Tuple<TraceEventType, string>(eventType, message);
 		}
 
 		void ICommunicationOwner.OnTunnelingStarted(CommunicationSubType communicationSubType) {
@@ -596,25 +627,12 @@ namespace MAPE.Server {
 						StopCommunication();
 
 						// decide error severity
-						TraceEventType eventType = TraceEventType.Error;
-						if (exception is IOException) {
-							SocketException socketException = exception.InnerException as SocketException;
-							if (socketException != null) {
-								switch (socketException.SocketErrorCode) {
-									case SocketError.ConnectionReset:
-									case SocketError.Interrupted:
-									case SocketError.TimedOut:
-										// may be terminated
-										eventType = TraceEventType.Warning;
-										break;
-								}
-							}
-						}
+						Tuple<TraceEventType, string> logContent = GetLogContent(exception);
 
 						// log
-						Log(eventType, $"Error in {direction} tunneling: {exception.Message}");
+						Log(logContent.Item1, $"Error in {direction} tunneling: {logContent.Item2}");
 					} else {
-						// shutdown the communication
+						// shutdown the communication of another direction
 						bool downStream = (communicationSubType == CommunicationSubType.DownStream);
 						lock (this.instanceLocker) {
 							if (this.server.IsConnecting) {

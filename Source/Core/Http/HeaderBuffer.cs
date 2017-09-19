@@ -564,7 +564,7 @@ namespace MAPE.Http {
 			// state checks
 			if (0 < this.prefetchedBytesLength) {
 				// there is prefetched data
-				Debug.Assert(this.prefetchedBytes == null);     // it was set as the current buffer
+				Debug.Assert(this.prefetchedBytes == null);     // it was set as the current buffer just before
 				int length = this.prefetchedBytesLength;
 				this.prefetchedBytesLength = 0;
 				return length;
@@ -583,16 +583,20 @@ namespace MAPE.Http {
 				error = exception;
 				// continue
 			}
-			if (error != null || readCount <= 0) {
-				// end of stream is invalid except at the beginning of a HttpMessage
-				if (this.currentMemoryBlockBaseOffset == 0 && this.Limit == 0) {
-					// the beginning of a header
-					// This is a normal end of stram, i.e. no more HttpMessage.
-					// ToDo: detailed message
-					throw new EndOfStreamException();
+			if (readCount <= 0 || error != null) {
+				if (readCount <= 0 || error is EndOfStreamException) {
+					// end of stream is invalid except at the beginning of a HttpMessage
+					if (this.currentMemoryBlockBaseOffset == 0 && this.Limit == 0) {
+						// the beginning of a header
+						// This is a normal end of stram, i.e. no more HttpMessage.
+						throw new EndOfStreamException();
+					} else {
+						// unexpected end of stream
+						throw new Exception("Unexpected end of data.");
+					}
 				} else {
-					// unexpected end of stream
-					throw CreateBadRequestException();
+					Debug.Assert(error != null);
+					throw error;
 				}
 			}
 

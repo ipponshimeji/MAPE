@@ -175,12 +175,13 @@ namespace MAPE.Http {
 			// write rest of body bytes to the output
 			// the memoryBlock is used as just intermediate buffer instead of storing media
 			byte[] memoryBlock = EnsureMemoryBlockAllocated();
-			long amount = bodyBytesInHeaderBufferLength;
-			while (amount < contentLength) {
-				int readCount = ReadBytes(memoryBlock, 0, memoryBlock.Length);
+			long remaining = contentLength - bodyBytesInHeaderBufferLength;
+			while (0 < remaining) {
+				long count = Math.Min(remaining, memoryBlock.Length);
+				int readCount = ReadBytes(memoryBlock, 0, (int)count);
 				Debug.Assert(0 < readCount);    // ReadBytes() throws an exception on end of stream 
 				output.Write(memoryBlock, 0, readCount);
-				amount += readCount;
+				remaining -= readCount;
 			}
 
 			return;
