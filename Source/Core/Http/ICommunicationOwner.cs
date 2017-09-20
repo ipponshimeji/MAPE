@@ -16,6 +16,8 @@ namespace MAPE.Http {
 
 		bool OnCommunicate(int repeatCount, Request request, Response response);
 
+		void OnResponseProcessed(Request request, Response response, bool resending);
+
 		HttpException OnError(Request request, Exception exception);
 
 		void OnTunnelingStarted(CommunicationSubType communicationSubType);

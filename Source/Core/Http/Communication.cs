@@ -30,7 +30,7 @@ namespace MAPE.Http {
 						// send the request to the server
 						// The request is resent while the owner instructs modifications.
 						int repeatCount = 0;
-						bool retry = OnCommunicate(owner, repeatCount, request, null);
+						bool resend = OnCommunicate(owner, repeatCount, request, null);
 						if (request.IsConnectMethod && owner.ConnectingToProxy == false) {
 							// connecting to the actual server directly
 							RespondSimpleError(owner, 200, "Connection established");
@@ -44,14 +44,16 @@ namespace MAPE.Http {
 									throw new HttpException(innerException, HttpStatusCode.BadGateway);
 								}
 								++repeatCount;
-								retry = OnCommunicate(owner, repeatCount, request, response);
-								if (retry) {
+								resend = OnCommunicate(owner, repeatCount, request, response);
+								if (resend) {
 									// skip the response body
 									response.SkipBody();
+									owner.OnResponseProcessed(request, response, resending: true);
 								}
-							} while (retry);
+							} while (resend);
 							// send the final response to the client
 							response.Redirect();
+							owner.OnResponseProcessed(request, response, resending: false);
 							tunnelingMode = (request.IsConnectMethod && response.StatusCode == 200);
 						}
 

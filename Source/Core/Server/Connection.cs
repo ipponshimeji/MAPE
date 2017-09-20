@@ -495,25 +495,39 @@ namespace MAPE.Server {
 
 				// log the round trip result
 				LogRoundTripResult(request, response, retry);
+			}
 
-				// manage the connection for non-Keep-Alive mode
-				if (response.KeepAliveEnabled == false && !(request.IsConnectMethod && response.StatusCode == 200)) {
-					if (retry == false) {
-						// disconnect from the server
-						DisconnectFromServer();
-					} else {
-						// reconnect to the server to resend the request
-						try {
-							ReconnectToServer();
-						} catch (Exception exception) {
-							LogError($"Cannot connect to the server: {exception.Message}");
-							throw new HttpException(HttpStatusCode.BadGateway, "Cannot connect to the server.");
-						}
+			return retry;
+		}
+
+		void ICommunicationOwner.OnResponseProcessed(Request request, Response response, bool resending) {
+			// argument checks
+			if (request == null) {
+				throw new ArgumentNullException(nameof(request));
+			}
+			Debug.Assert(request.ReadingState == MessageReadingState.Body || request.ReadingState == MessageReadingState.BodyRedirected);
+			if (response == null) {
+				throw new ArgumentNullException(nameof(response));
+			}
+			Debug.Assert(response.ReadingState == MessageReadingState.Body || response.ReadingState == MessageReadingState.BodyRedirected);
+
+			// handle Keep-Alive
+			if (response.KeepAliveEnabled == false && !(request.IsConnectMethod && response.StatusCode == 200)) {
+				if (resending == false) {
+					// disconnect from the server
+					DisconnectFromServer();
+				} else {
+					// reconnect to the server to resend the request
+					try {
+						ReconnectToServer();
+					} catch (Exception exception) {
+						LogError($"Cannot connect to the server: {exception.Message}");
+						throw new HttpException(HttpStatusCode.BadGateway, "Cannot connect to the server.");
 					}
 				}
 			}
 
-			return retry;
+			return;
 		}
 
 		HttpException ICommunicationOwner.OnError(Request request, Exception exception) {
