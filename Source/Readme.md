@@ -2,11 +2,11 @@
 
 ## Build Environment
 
-Visual Studio 2015
+Visual Studio 2017
 
 ## Instructions to build
 
-1. Open Mape.sln with Visual Studio 2015.
+1. Open Mape.sln with Visual Studio 2017.
 1. Build it.
 1. Output files are built into `(Solution Folder)\__Bin\(Config)\Windows`,
 where `(Config)` is the current configuration: `Debug`, `Release` or `Release_Signed`.
