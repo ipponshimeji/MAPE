@@ -1,171 +1,53 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\_Configuring\Properties.props" />
+
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{6B4BC62C-83D5-452F-ABF2-6C2DDE02D3AB}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MAPE</RootNamespace>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>MAPE.Core</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-    <TargetFrameworkProfile />
-    <TransformOnBuild>true</TransformOnBuild>
+    <RootNamespace>MAPE</RootNamespace>
+    <Configurations>Debug;Release;Release_Signed</Configurations>
+    <Description>MAPE - Core Library</Description>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>..\__Bin\Debug\Windows\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <OutputPath>..\__Bin\Debug\</OutputPath>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
   </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>..\__Bin\Release\Windows\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <OutputPath>..\__Bin\Release\netstandard2.0\</OutputPath>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release_Signed|AnyCPU'">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>..\__Bin\Release_Signed\Windows\</OutputPath>
-    <DefineConstants>TRACE;SIGNED</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <Prefer32Bit>false</Prefer32Bit>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release_Signed|AnyCPU'">
+    <OutputPath>..\__Bin\Release_Signed\</OutputPath>
+    <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
+    <DefineConstants>TRACE;NETSTANDARD2_0;SIGNED</DefineConstants>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>..\publickey.snk</AssemblyOriginatorKeyFile>
     <DelaySign>true</DelaySign>
   </PropertyGroup>
+
   <ItemGroup>
-    <Reference Include="Newtonsoft.Json, Version=9.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
-      <HintPath>..\packages\Newtonsoft.Json.9.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Configuration" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Net.Http" />
-    <Reference Include="System.Security" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.4.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="4.4.0" />
   </ItemGroup>
+
   <ItemGroup>
-    <Compile Include="Command\Settings\CredentialSettings.cs" />
-    <Compile Include="Command\Settings\GUISettings.cs" />
-    <Compile Include="Command\Settings\CommandSettings.cs" />
-    <Compile Include="Command\GUICommandBase.cs" />
-    <Compile Include="Command\CLICommandBase.cs" />
-    <Compile Include="Command\Settings\ActualProxySettings.cs" />
-    <Compile Include="Command\Settings\SystemSettingsSwitcherSettings.cs" />
-    <Compile Include="Command\SetupContext.cs" />
-    <Compile Include="Command\SystemSettings.cs" />
-    <Compile Include="Command\SystemSettingsSwitcher.cs" />
-    <Compile Include="ComponentBase\ComponentLoggerExtensions.cs" />
-    <Compile Include="ComponentBase\ICacheableObject.cs" />
-    <Compile Include="ComponentBase\IComponentLogger.cs" />
-    <Compile Include="ComponentBase\CacheableInstanceCache.cs" />
-    <Compile Include="Http\BodyBuffer.cs" />
-    <Compile Include="Http\MessageIO.cs" />
-    <Compile Include="Http\IMessageIO.cs" />
-    <Compile Include="Http\MessageReadingState.cs" />
-    <Compile Include="Http\HttpException.cs" />
-    <Compile Include="Http\HeaderBuffer.cs" />
-    <Compile Include="Http\CommunicationSubType.cs" />
-    <Compile Include="Http\IHttpComponentFactory.cs" />
-    <Compile Include="Http\ICommunicationOwner.cs" />
-    <Compile Include="Http\Communication.cs" />
-    <Compile Include="Http\Modifier.cs" />
-    <Compile Include="Http\Span.cs" />
-    <Compile Include="Http\MessageBuffer.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs">
-      <AutoGen>True</AutoGen>
+    <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
-      <DependentUpon>AssemblyInfo.tt</DependentUpon>
-    </Compile>
-    <Compile Include="Properties\Resources.Designer.cs">
       <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
-    <Compile Include="Server\StaticActualProxy.cs" />
-    <Compile Include="Server\IActualProxy.cs" />
-    <Compile Include="Server\IServerComponentFactory.cs" />
-    <Compile Include="Server\IProxyRunner.cs" />
-    <Compile Include="Server\Settings\ProxySettings.cs" />
-    <Compile Include="Server\Settings\ListenerSettings.cs" />
-    <Compile Include="Utils\ColorConsoleLogMonitor.cs" />
-    <Compile Include="Utils\ConsoleLogMonitor.cs" />
-    <Compile Include="Utils\DisposableUtil.cs" />
-    <Compile Include="Utils\IObjectDataValue.cs" />
-    <Compile Include="Utils\ISavableToObjectData.cs" />
-    <Compile Include="Utils\IObjectDataValueFactory.cs" />
-    <Compile Include="Utils\ObjectDataValueType.cs" />
-    <Compile Include="Utils\ObjectDataExtension.cs" />
-    <Compile Include="Utils\JsonObjectData.cs" />
-    <Compile Include="Utils\IObjectData.cs" />
-    <Compile Include="Utils\LogEntry.cs" />
-    <Compile Include="Utils\ILogMonitor.cs" />
-    <Compile Include="Utils\Settings.cs" />
-    <Compile Include="Utils\WebClientForTest.cs">
-      <SubType>Component</SubType>
-    </Compile>
-    <Compile Include="Utils\Util.cs" />
-    <Compile Include="Command\CredentialPersistence.cs" />
-    <Compile Include="Utils\Logger.cs" />
-    <Compile Include="ComponentFactory.cs" />
-    <Compile Include="Command\CommandBase.cs" />
-    <Compile Include="ComponentBase\InstanceCache.cs" />
-    <Compile Include="ComponentBase\Component.cs" />
-    <Compile Include="ComponentBase\TaskingComponent.cs" />
-    <Compile Include="Http\Response.cs" />
-    <Compile Include="Http\Request.cs" />
-    <Compile Include="Http\Message.cs" />
-    <Compile Include="Server\Listener.cs" />
-    <Compile Include="Server\ConnectionCollection.cs" />
-    <Compile Include="Server\Connection.cs" />
-    <Compile Include="Server\Proxy.cs" />
   </ItemGroup>
+
   <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Properties\Resources.ja.resx">
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Properties\Resources.resx">
+    <EmbeddedResource Update="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
-      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup>
-    <Content Include="Properties\AssemblyInfo.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>AssemblyInfo.cs</LastGenOutput>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+
 </Project>

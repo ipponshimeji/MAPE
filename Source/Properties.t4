@@ -1,6 +1,7 @@
 <#
 	#pragma warning disable 219
 
+	string authors = "Takamasa Uramoto";
 	string companyName = "Takamasa Uramoto";
 	string productName = "MAPE";
 	string copyright = "Copyright 2016-2017 Takamasa Uramoto";
