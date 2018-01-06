@@ -167,7 +167,7 @@
     <value>終了を確認できませんでした。</value>
   </data>
   <data name="CLICommandBase_Logo_Command" xml:space="preserve">
-    <value>認証プロキシ爆発しろ！ (MAPE: May Authentication Proxy Explode)</value>
+    <value>認証プロキシ爆発しろ！ (MAPE: May Authentication Proxies Explode)</value>
   </data>
   <data name="CLICommandBase_SaveSettings_Completed" xml:space="preserve">
     <value>設定は'{0}'に保存されました。</value>

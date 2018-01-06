@@ -167,7 +167,7 @@ The found backup is one at {0}. The settings set manually after the point will b
     <value>Cannot confirm its completion.</value>
   </data>
   <data name="CLICommandBase_Logo_Command" xml:space="preserve">
-    <value>MAPE (May Authentication Proxy Explode)</value>
+    <value>MAPE (May Authentication Proxies Explode)</value>
   </data>
   <data name="CLICommandBase_SaveSettings_Completed" xml:space="preserve">
     <value>The settings are saved to '{0}'.</value>
