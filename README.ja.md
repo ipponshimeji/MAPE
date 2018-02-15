@@ -1,6 +1,6 @@
 # 認証プロキシ爆発しろ！
 
-「認証プロキシ爆発しろ！」（英語名 MAPE: May Authentication Proxy Explode）は、
+「認証プロキシ爆発しろ！」（英語名 MAPE: May Authentication Proxies Explode）は、
 認証プロキシに対する苛立ちや呪詛の思いによって心が濁ることをソフトウェア的になんとか防ぐためのツールです。
 
 これは認証プロキシを回避するものでは**ありません**。
