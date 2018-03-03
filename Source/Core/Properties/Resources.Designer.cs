@@ -142,7 +142,7 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
-        ///   MAPE (May Authentication Proxy Explode) に類似しているローカライズされた文字列を検索します。
+        ///   MAPE (May Authentication Proxies Explode) に類似しているローカライズされた文字列を検索します。
         /// </summary>
         internal static string CLICommandBase_Logo_Command {
             get {
@@ -300,29 +300,29 @@ namespace MAPE.Properties {
         }
         
         /// <summary>
-        ///   MAPE gave up resuming proxying. に類似しているローカライズされた文字列を検索します。
+        ///   MAPE gave up starting proxying. に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        internal static string GUICommandBase_Message_FailToResume {
+        internal static string GUICommandBase_Message_FailToStart {
             get {
-                return ResourceManager.GetString("GUICommandBase_Message_FailToResume", resourceCulture);
+                return ResourceManager.GetString("GUICommandBase_Message_FailToStart", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   MAPE will try to resume proxying after {0} milliseconds. に類似しているローカライズされた文字列を検索します。
+        ///   MAPE will retry to start proxying after {0} milliseconds. に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        internal static string GUICommandBase_Message_Resuming {
+        internal static string GUICommandBase_Message_RetryStarting {
             get {
-                return ResourceManager.GetString("GUICommandBase_Message_Resuming", resourceCulture);
+                return ResourceManager.GetString("GUICommandBase_Message_RetryStarting", resourceCulture);
             }
         }
         
         /// <summary>
-        ///   MAPE will retry to resume proxying after {0} milliseconds. に類似しているローカライズされた文字列を検索します。
+        ///   MAPE will try to starting proxying after {0} milliseconds. に類似しているローカライズされた文字列を検索します。
         /// </summary>
-        internal static string GUICommandBase_Message_RetryResuming {
+        internal static string GUICommandBase_Message_TryStarting {
             get {
-                return ResourceManager.GetString("GUICommandBase_Message_RetryResuming", resourceCulture);
+                return ResourceManager.GetString("GUICommandBase_Message_TryStarting", resourceCulture);
             }
         }
         

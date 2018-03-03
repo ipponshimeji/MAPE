@@ -205,14 +205,14 @@
   <data name="CLICommandBase_Prompt_YesNoCancel" xml:space="preserve">
     <value>Y, N, Cのいずれかの文字を入力してください（Y: はい, N: いいえ, C: キャンセル）:</value>
   </data>
-  <data name="GUICommandBase_Message_Resuming" xml:space="preserve">
-    <value>{0} ミリ秒後に接続再開予定です。</value>
+  <data name="GUICommandBase_Message_TryStarting" xml:space="preserve">
+    <value>{0} ミリ秒後に接続を試行します。</value>
   </data>
-  <data name="GUICommandBase_Message_RetryResuming" xml:space="preserve">
+  <data name="GUICommandBase_Message_RetryStarting" xml:space="preserve">
     <value>{0} ミリ秒後に接続を再試行します。</value>
   </data>
-  <data name="GUICommandBase_Message_FailToResume" xml:space="preserve">
-    <value>接続再開を断念しました。</value>
+  <data name="GUICommandBase_Message_FailToStart" xml:space="preserve">
+    <value>接続を断念しました。</value>
   </data>
   <data name="SystemSettingsSwitcher_Message_ProxyIsNotConnectable" xml:space="preserve">
     <value>指定されたプロキシ'{0}'に接続できません。</value>

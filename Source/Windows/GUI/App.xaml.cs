@@ -207,6 +207,11 @@ namespace MAPE.Windows.GUI {
 			SetUIState(UIStateFlags.None);
 			this.Command.DoInitialSetup();
 
+			if (this.Command.Settings.GUI.Start) {
+				// start proxying with delay
+				this.Command.ScheduleStartProxy();
+			}
+
 			// UI state must be updated after the initial setup
 			// otherwise another window can be opened from the context menu
 			UpdateUIState();
