@@ -355,3 +355,27 @@ mape.exe /Save /LogLevel:Verbose
 ```
 mape.exe /SettingsFile:"C:\Temp\test.json"
 ```
+
+### Start
+
+* サポート対象
+    * [ ] Windows コマンド
+    * [x] Windows GUI
+* 値の型: "True", "False", なし,
+* 対応する設定: [GUIオブジェクト](Reference_Settings.md#GUIオブジェクト)の`Start`プロパティ
+* 指定しなかった場合: 設定ファイルの設定が適用されます。設定ファイルにも指定がない場合、値が"False"であるとみなされます。
+
+「認証プロキシ爆発しろ！」起動後、自動的に中継を開始します。
+この場合の詳細な挙動は[「認証プロキシ爆発しろ！」起動時に自動的に中継を開始させる場合の挙動](AdvancedTopics.md#「認証プロキシ爆発しろ！」起動時に自動的に中継を開始させる場合の挙動)を参照してください。
+
+#### 例
+
+「認証プロキシ爆発しろ！」を起動し、中継を開始させる例です。
+
+```
+mapegui.exe /Start
+
+または
+
+mapegui.exe /Start:True
+```
