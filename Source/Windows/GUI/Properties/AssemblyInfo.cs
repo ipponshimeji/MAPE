@@ -10,10 +10,10 @@ using System.Runtime.InteropServices;
 // associated with an assembly.
 [assembly: AssemblyTitle("mapegui")]
 [assembly: AssemblyDescription("MAPE - GUI application for Windows platform")]
-[assembly: AssemblyConfiguration("developing")]
+[assembly: AssemblyConfiguration("beta")]
 [assembly: AssemblyCompany("Takamasa Uramoto")]
 [assembly: AssemblyProduct("MAPE")]
-[assembly: AssemblyCopyright("Copyright 2016-2017 Takamasa Uramoto")]
+[assembly: AssemblyCopyright("Copyright 2016-2018 Takamasa Uramoto")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
