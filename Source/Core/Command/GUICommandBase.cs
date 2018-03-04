@@ -391,14 +391,19 @@ namespace MAPE.Command {
 			// prepare arguments
 			GUISettings guiSettings = this.Settings.GUI;
 			int tryCount = guiSettings.ResumeTryCount;
-			if (tryCount == 0 && resuming) {
-				// try at least one time
-				tryCount = 1;
+			int delay = guiSettings.ResumeDelay;
+			if (resuming == false) {
+				if (tryCount == 0) {
+					// try at least one time
+					tryCount = 1;
+				}
+				// delay is needed only for resuming
+				delay = 0;
 			}
 
 			// create a starter if necessary
 			if (0 < tryCount) {
-				starter = new Starter(this, resuming, tryCount, guiSettings.ResumeDelay, guiSettings.ResumeInterval);
+				starter = new Starter(this, resuming, tryCount, delay, guiSettings.ResumeInterval);
 			}
 
 			return starter;
