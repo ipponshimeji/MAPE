@@ -1,5 +1,12 @@
 # リリースノート
 
+### 2018/03/04 [1.0.20.0 (beta)](MAPE_1.0.20.0_Windows.zip) 
+
+sha256ハッシュ: 716618DCF11A8D9D1210AEE09A62E3A6CA18D0F7B9E716AD6E96E830730B3DF2
+
+* GUI版で`/Start`オプションを指定するとアプリ起動後自動的に中継を開始するようにしました。（Issue #3）
+
+
 ### 2017/09/20 [1.0.19.0 (beta)](MAPE_1.0.19.0_Windows.zip) 
 
 sha256ハッシュ: 26518A5A893B515CF8D5AF3DE553CEC8B490C355820274CDAFDADB5E1D05C523
