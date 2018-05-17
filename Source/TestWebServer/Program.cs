@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Threading;
 
 namespace MAPE.Test.TestWebServer {
     class Program {
@@ -36,7 +37,7 @@ namespace MAPE.Test.TestWebServer {
 				Console.Error.WriteLine(exception);
 				exitCode = ErrorExitCode;
 			} finally {
-				server.Stop();
+				server.Stop(Timeout.Infinite);
 			}
 
 			return exitCode; 
