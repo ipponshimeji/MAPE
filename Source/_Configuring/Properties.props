@@ -1,12 +1,12 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
   <PropertyGroup>
-    <Version>1.0.20.0</Version>
+    <Version>1.0.21.0</Version>
     <Company>Takamasa Uramoto</Company>
     <Product>MAPE</Product>
-    <Copyright>Copyright 2016-2017 Takamasa Uramoto</Copyright>
-    <AssemblyVersion>1.0.20.0</AssemblyVersion>
-    <FileVersion>1.0.20.0</FileVersion>
+    <Copyright>Copyright 2016-2018 Takamasa Uramoto</Copyright>
+    <AssemblyVersion>1.0.21.0</AssemblyVersion>
+    <FileVersion>1.0.21.0</FileVersion>
   </PropertyGroup>
 
 </Project>
