@@ -15,6 +15,8 @@ namespace MAPE.Command.Settings {
 
 			public const string Port = "Port";
 
+			public const string ConfigurationScript = "ConfigurationScript";
+
 			#endregion
 		}
 
@@ -24,6 +26,8 @@ namespace MAPE.Command.Settings {
 			public const string Host = "proxy.example.org";
 
 			public const int Port = 8080;
+
+			public const string ConfigurationScript = null;
 
 			#endregion
 
@@ -46,6 +50,8 @@ namespace MAPE.Command.Settings {
 
 		private int port;
 
+		private string configurationScript;
+
 		#endregion
 
 
@@ -58,7 +64,12 @@ namespace MAPE.Command.Settings {
 			set {
 				// argument checks
 				if (string.IsNullOrEmpty(value)) {
-					throw CreateArgumentNullOrEmptyException(nameof(value), SettingNames.Host);
+					if (this.configurationScript == null) {
+						// the value should not null or empty if configuration script is not specified
+						throw CreateArgumentNullOrEmptyException(nameof(value), SettingNames.Host);
+					} else {
+						value = null;
+					}
 				}
 
 				this.host = value;
@@ -79,6 +90,25 @@ namespace MAPE.Command.Settings {
 			}
 		}
 
+		public string ConfigurationScript {
+			get {
+				return this.configurationScript;
+			}
+			set {
+				// argument checks
+				if (string.IsNullOrEmpty(value)) {
+					if (this.host == null) {
+						// the value should not null or empty if host is not specified
+						throw CreateArgumentNullOrEmptyException(nameof(value), SettingNames.ConfigurationScript);
+					} else {
+						value = null;
+					}
+				}
+
+				this.configurationScript = value;
+			}
+		}
+
 		#endregion
 
 
@@ -88,16 +118,28 @@ namespace MAPE.Command.Settings {
 			// prepare settings
 			string host = Defaults.Host;
 			int port = Defaults.Port;
+			string configurationScript = Defaults.ConfigurationScript;
 			if (data != null) {
 				// get settings from data
-				host = data.GetStringValue(SettingNames.Host, host);
+				configurationScript = data.GetStringValue(SettingNames.ConfigurationScript, configurationScript);
+				host = data.GetStringValue(SettingNames.Host, string.IsNullOrEmpty(configurationScript)? host: null);
 				port = data.GetInt32Value(SettingNames.Port, port);
 			}
 
 			// set settings
 			try {
 				// may throw ArgumentException for an invalid value
-				this.Host = host;
+
+				// Note that non-empty value should be set first,
+				// because an ArgumentNullException will be thrown 
+				// if both this.Host and this.this.ConfigurationScript are null.
+				if (string.IsNullOrEmpty(configurationScript)) {
+					this.Host = host;
+					this.ConfigurationScript = configurationScript;
+				} else {
+					this.ConfigurationScript = configurationScript;
+					this.Host = host;
+				}
 				this.Port = port;
 			} catch (Exception exception) {
 				throw new FormatException(exception.Message);
@@ -118,6 +160,7 @@ namespace MAPE.Command.Settings {
 			// clone members
 			this.host = src.host;
 			this.port = src.port;
+			this.configurationScript = src.configurationScript;
 
 			return;
 		}
@@ -133,7 +176,7 @@ namespace MAPE.Command.Settings {
 
 		public WebProxy CreateWebProxy() {
 			// state checks
-			EnsureHostIsValid();
+			EnsureIsValid();
 			Debug.Assert(string.IsNullOrEmpty(this.Host) == false);
 			Debug.Assert(IPEndPoint.MinPort <= this.Port && this.Port <= IPEndPoint.MaxPort);
 
@@ -155,13 +198,16 @@ namespace MAPE.Command.Settings {
 			Debug.Assert(data != null);
 
 			// state checks
-			EnsureHostIsValid();
-			Debug.Assert(string.IsNullOrEmpty(this.Host) == false);
+			EnsureIsValid();
+			Debug.Assert(string.IsNullOrEmpty(this.Host) == false || string.IsNullOrEmpty(this.ConfigurationScript) == false);
 			Debug.Assert(IPEndPoint.MinPort <= this.Port && this.Port <= IPEndPoint.MaxPort);
 
 			// save settings (these settings are not omittable)
-			data.SetStringValue(SettingNames.Host, this.Host);
-			data.SetInt32Value(SettingNames.Port, this.Port);
+			string host = this.Host;
+			bool isDefault = (host == null || AreSameHostName(host, Defaults.Host));
+			data.SetStringValue(SettingNames.Host, this.Host, omitDefault, isDefault);
+			data.SetInt32Value(SettingNames.Port, this.Port, omitDefault, this.Port == Defaults.Port);
+			data.SetStringValue(SettingNames.ConfigurationScript, this.ConfigurationScript, omitDefault, this.ConfigurationScript == Defaults.ConfigurationScript);
 
 			return;
 		}
@@ -171,10 +217,10 @@ namespace MAPE.Command.Settings {
 
 		#region privates
 
-		private void EnsureHostIsValid() {
+		private void EnsureIsValid() {
 			// state checks
-			if (string.IsNullOrEmpty(this.Host)) {
-				throw CreateMissingIndispensableSettingException(SettingNames.Host);
+			if (string.IsNullOrEmpty(this.Host) && string.IsNullOrEmpty(this.ConfigurationScript)) {
+				throw new FormatException($"Either '{nameof(this.Host)}' or '{nameof(this.ConfigurationScript)}' must be specified.");
 			}
 
 			return;

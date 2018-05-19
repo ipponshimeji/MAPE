@@ -59,6 +59,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Command\Settings\ActualProxySettingsTest.cs" />
     <Compile Include="Http\Test\DiskMessageSample.cs" />
     <Compile Include="Http\Test\MemoryMessageSample.cs" />
     <Compile Include="Http\Test\MessageSampleStage.cs" />
