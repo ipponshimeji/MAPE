@@ -11,13 +11,37 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <GroupBox Header="{x:Static properties:Resources.ActualProxySettingsControl_authenticationProxyGroup_Header}" Padding="4,0,0,0">
-            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                <CheckBox x:Name="autoDetectProxyCheckBox" Content="{x:Static properties:Resources.ActualProxySettingsControl_autoDetectProxyCheckBox_Content}" VerticalAlignment="Center" Margin="2" Grid.IsSharedSizeScope="True" Checked="autoDetectProxyCheckBox_Checked" Unchecked="autoDetectProxyCheckBox_Unchecked" />
-                <Label Content="{x:Static properties:Resources.ActualProxySettingsControl_hostNameLabel_Content}" Margin="12,0,0,0" Target="{Binding ElementName=hostNameTextBox}" />
-                <TextBox x:Name="hostNameTextBox" Width="200" VerticalContentAlignment="Center" Text="{Binding HostName, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
-                <Label Content="{x:Static properties:Resources.ActualProxySettingsControl_portLabel_Content}" Margin="8,0,0,0" Target="{Binding ElementName=portTextBox}" />
-                <TextBox x:Name="portTextBox" Width="80" VerticalContentAlignment="Center" Text="{Binding Port, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" />
-            </StackPanel>
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <CheckBox Grid.Row="0" Grid.Column="0" x:Name="autoDetectProxyCheckBox" Content="{x:Static properties:Resources.ActualProxySettingsControl_autoDetectProxyCheckBox_Content}" VerticalAlignment="Center" Margin="2" Grid.IsSharedSizeScope="True" Checked="autoDetectProxyCheckBox_Checked" Unchecked="autoDetectProxyCheckBox_Unchecked" IsChecked="{Binding AutoDetectEnabled, UpdateSourceTrigger=PropertyChanged}" />
+                <Grid Grid.Row="0" Grid.Column="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" Content="{x:Static properties:Resources.ActualProxySettingsControl_hostNameLabel_Content}" Margin="12,0,0,0" Target="{Binding ElementName=hostNameTextBox}" />
+                    <TextBox Grid.Column="1" x:Name="hostNameTextBox" MinWidth="150" VerticalContentAlignment="Center" Text="{Binding HostName, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" Margin="0,2,0,2" />
+                    <Label Grid.Column="2" Content="{x:Static properties:Resources.ActualProxySettingsControl_portLabel_Content}" Margin="8,0,0,0" Target="{Binding ElementName=portTextBox}" />
+                    <TextBox Grid.Column="3" x:Name="portTextBox" Width="80" VerticalContentAlignment="Center" Text="{Binding Port, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" Margin="0,2,0,2" />
+                </Grid>
+                <Grid Grid.Row="1" Grid.Column="1" Margin="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition />
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" Content="{x:Static properties:Resources.ActualProxySettingsControl_configurationScriptLabel_Content}" Margin="12,0,0,0" Target="{Binding ElementName=configurationScriptTextBox}" />
+                    <TextBox Grid.Column="1" x:Name="configurationScriptTextBox" VerticalContentAlignment="Center" Text="{Binding ConfigurationScript, UpdateSourceTrigger=LostFocus, ValidatesOnExceptions=True}" Margin="0,2,0,2" />
+                </Grid>
+            </Grid>
         </GroupBox>
     </Grid>
 </UserControl>

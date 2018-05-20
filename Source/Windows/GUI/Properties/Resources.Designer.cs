@@ -62,7 +62,7 @@ namespace MAPE.Windows.GUI.Properties {
         
         /// <summary>
         ///   MAPE
-        ///(May Authentication Proxy Explode) に類似しているローカライズされた文字列を検索します。
+        ///(May Authentication Proxies Explode) に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string AboutWindow_ApplicationName {
             get {
@@ -112,6 +112,15 @@ namespace MAPE.Windows.GUI.Properties {
         public static string ActualProxySettingsControl_autoDetectProxyCheckBox_Content {
             get {
                 return ResourceManager.GetString("ActualProxySettingsControl_autoDetectProxyCheckBox_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Configuration Script: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ActualProxySettingsControl_configurationScriptLabel_Content {
+            get {
+                return ResourceManager.GetString("ActualProxySettingsControl_configurationScriptLabel_Content", resourceCulture);
             }
         }
         

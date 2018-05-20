@@ -20,7 +20,9 @@ namespace MAPE.Command {
 
 			public const string DefaultActualProxyPort = "DefaultActualProxyPort";
 
-            public const string ProxyTestUrl = "ProxyTestUrl";
+			public const string DefaultActualProxyConfigurationScript = "DefaultActualProxyConfigurationScript";
+
+			public const string ProxyTestUrl = "ProxyTestUrl";
 
             public const string TestUrl = "TestUrl";
 
@@ -209,6 +211,10 @@ namespace MAPE.Command {
 			}
 
 			return value;
+		}
+
+		public static string GetDefaultActualProxyConfigurationScript() {
+			return Util.Trim(GetAppSettings(ConfigNames.DefaultActualProxyConfigurationScript));
 		}
 
 		public static string GetTestUrl() {
