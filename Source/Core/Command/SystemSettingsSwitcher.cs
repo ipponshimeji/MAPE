@@ -38,6 +38,8 @@ namespace MAPE.Command {
 
 		public bool Enabled { get; protected set; } = true;
 
+		public string ActualProxyConfigurationScript { get; protected set; } = null;
+
 		public DnsEndPoint ActualProxyEndPoint { get; protected set; } = null;
 
 		#endregion
@@ -61,23 +63,32 @@ namespace MAPE.Command {
 			this.Owner = owner;
 
 			bool enabled;
+			string configurationScript;
 			DnsEndPoint actualProxyEndPoint;
 			if (settings == null) {
 				// simple initialization (ex. to restore only)
 				enabled = true;
+				configurationScript = null;
 				actualProxyEndPoint = null;
 			} else {
 				// usual initialization
 				enabled = settings.EnableSystemSettingsSwitch;
 				ActualProxySettings actualProxySettings = settings.ActualProxy;
 				if (actualProxySettings != null) {
-					actualProxyEndPoint = new DnsEndPoint(actualProxySettings.Host, actualProxySettings.Port);
+					configurationScript = actualProxySettings.ConfigurationScript;
+					if (string.IsNullOrEmpty(configurationScript)) {
+						actualProxyEndPoint = new DnsEndPoint(actualProxySettings.Host, actualProxySettings.Port);
+					} else {
+						actualProxyEndPoint = null;
+					}
 				} else {
+					configurationScript = null;
 					actualProxyEndPoint = null;
 				}
             }
 
             this.Enabled = enabled;
+			this.ActualProxyConfigurationScript = configurationScript;
 			this.ActualProxyEndPoint = actualProxyEndPoint;
 
 			return;
@@ -160,22 +171,6 @@ namespace MAPE.Command {
 			return settings;
 		}
 
-		public IActualProxy GetActualProxy(SystemSettings systemSettings = null) {
-			// argument checks
-			// systemSettings can be null
-
-			if (this.ActualProxyEndPoint != null) {
-				// actual proxy is explicitly specified by the settings 
-				return new StaticActualProxy(this.ActualProxyEndPoint);
-			} else {
-				// detect system settings
-				if (systemSettings == null) {
-					systemSettings = GetCurrentSystemSettings();
-				}
-				return GetSystemActualProxy(systemSettings);
-			}
-		}
-
 		public IActualProxy DetectSystemActualProxy(SystemSettings systemSettings = null) {
 			// argument checks
 			if (systemSettings == null) {
@@ -246,6 +241,25 @@ namespace MAPE.Command {
 
 
 		#region overridables
+
+		public virtual IActualProxy GetActualProxy(SystemSettings systemSettings = null) {
+			// argument checks
+			// systemSettings can be null
+
+			if (string.IsNullOrEmpty(this.ActualProxyConfigurationScript) == false) {
+				// ToDo: localize message
+				throw new NotSupportedException("'ConfigurationScript' in ActualProxySettings is not supported in this platform.");
+			} else if (this.ActualProxyEndPoint != null) {
+				// actual proxy is explicitly specified by the settings 
+				return new StaticActualProxy(this.ActualProxyEndPoint);
+			} else {
+				// detect system settings
+				if (systemSettings == null) {
+					systemSettings = GetCurrentSystemSettings();
+				}
+				return GetSystemActualProxy(systemSettings);
+			}
+		}
 
 		protected virtual IActualProxy GetSystemActualProxy(SystemSettings systemSettings) {
 			// argument checks
