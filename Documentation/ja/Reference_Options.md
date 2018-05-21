@@ -61,7 +61,7 @@
 
 #### 例
 
-認証プロキシとして`proxy.example.com:8080`を明に指定する例です。
+以下は、認証プロキシとして`proxy.example.com:8080`を明に指定する例です。
 
 Jsonのプロパティ名を引用符で括る必要があるため、
 オプションの値全体を引用符で括り、
@@ -71,6 +71,17 @@ Jsonのプロパティ名を引用符で括る必要があるため、
 mape.exe /ActualProxy:"{\"Host\": \"proxy.example.com\", \"Port\": 8080}"
 ```
 
+以下は、自動構成スクリプト`http://proxy.example.com/proxy.pac`によって認証プロキシを明に指定する例です。
+
+Jsonのプロパティ名を引用符で括る必要があるため、
+オプションの値全体を引用符で括り、
+さらにその中でプロパティ名をエスケープした引用符で括っていることに注意してください。
+
+なお、自動構成スクリプトとしてローカルファイルを指定することはできません。
+
+```
+mape.exe /ActualProxy:"{\"ConfigurationScript\": \"http://proxy.example.com/proxy.pac\"}"
+```
 
 ### AdditionalListeners
 
