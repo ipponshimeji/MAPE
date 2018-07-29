@@ -185,7 +185,7 @@ namespace MAPE.Http.Test {
 						bool actual = adapter.Read(message, null);
 
 						// ASSERT
-						Assert.Equal(false, actual);
+						Assert.False(actual);
 						Assert.Equal(MessageReadingState.None, message.ReadingState);
 					}
 				}
@@ -202,7 +202,7 @@ namespace MAPE.Http.Test {
 						bool actual = adapter.ReadHeader(message, null);
 
 						// ASSERT
-						Assert.Equal(false, actual);
+						Assert.False(actual);
 						Assert.Equal(MessageReadingState.None, message.ReadingState);
 					}
 				}
@@ -384,9 +384,9 @@ namespace MAPE.Http.Test {
 				// Note that the added modification is appended at the last
 				Assert.Equal(3, actual.Count);
 				Assert.Equal(new Span(10, 10), actual[0].Span);
-				Assert.Equal(null, actual[0].Handler);
+				Assert.Null(actual[0].Handler);
 				Assert.Equal(new Span(10, 10), actual[1].Span);
-				Assert.Equal(null, actual[1].Handler);
+				Assert.Null(actual[1].Handler);
 				Assert.Equal(new Span(10, 10), actual[2].Span);
 				Assert.Equal(handler, actual[2].Handler);
 			}

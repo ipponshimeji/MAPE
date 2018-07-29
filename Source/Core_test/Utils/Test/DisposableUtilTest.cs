@@ -149,7 +149,7 @@ namespace MAPE.Utils.Test {
 				DisposableUtil.ClearDisposableObject(ref arg);
 
 				// ASSERT
-				Assert.Equal(null, arg);
+				Assert.Null(arg);
 				Assert.Equal(1, sample.DisposedCount);
 			}
 
@@ -169,7 +169,7 @@ namespace MAPE.Utils.Test {
 				}
 
 				// ASSERT
-				Assert.Equal(null, arg);
+				Assert.Null(arg);
 				Assert.Equal(1, sample.DisposedCount);
 				LogEntry expectedEntry = new LogEntry(null, TraceEventType.Error, $"Fail to dispose the object at 'ClearDisposableObject.Error()': {sample.DisposeErrorMessage}");
 				logMonitor.AssertContains(expectedEntry);
@@ -185,7 +185,7 @@ namespace MAPE.Utils.Test {
 
 				// ASSERT
 				// no ArgumentNullException expected
-				Assert.Equal(null, arg);
+				Assert.Null(arg);
 			}
 
 			#endregion
@@ -543,7 +543,7 @@ namespace MAPE.Utils.Test {
 				CallTargetMethod(ref arg);
 
 				// ASSERT
-				Assert.Equal(null, arg);
+				Assert.Null(arg);
 				Assert.True(AreAllDisposed(samples));
 				Assert.True(IsCleared(backup));
 			}
@@ -565,7 +565,7 @@ namespace MAPE.Utils.Test {
 				}
 
 				// ASSERT
-				Assert.Equal(null, arg);
+				Assert.Null(arg);
 				Assert.True(AreAllDisposed(samples));
 				Assert.True(IsCleared(backup));
 				AssertLog(samples, $"{this.TestClassName}.CallTargetMethod()", logMonitor);
@@ -581,7 +581,7 @@ namespace MAPE.Utils.Test {
 
 				// ASSERT
 				// no ArgumentNullException expected
-				Assert.Equal(null, arg);
+				Assert.Null(arg);
 			}
 
 			[Fact(DisplayName = "target: empty")]
@@ -595,7 +595,7 @@ namespace MAPE.Utils.Test {
 
 				// ASSERT
 				// expected no ArgumentNullException
-				Assert.Equal(null, arg);
+				Assert.Null(arg);
 				Assert.True(IsCleared(backup));
 			}
 
@@ -611,7 +611,7 @@ namespace MAPE.Utils.Test {
 				CallTargetMethod(ref arg);
 
 				// ASSERT
-				Assert.Equal(null, arg);
+				Assert.Null(arg);
 				Assert.True(AreAllDisposed(samples));
 				Assert.True(IsCleared(backup));
 			}

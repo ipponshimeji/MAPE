@@ -88,7 +88,7 @@ namespace MAPE.Http.Test {
 					// ACT & ASSERT
 					int actualMessageCount = TestReadAndWrite(sample, (request) => {
 						Assert.Equal("CONNECT", request.Method);
-						Assert.Equal(true, request.IsConnectMethod);
+						Assert.True(request.IsConnectMethod);
 					});
 					Assert.Equal(1, actualMessageCount);
 					sample.AssertOutputEqualToSample();
@@ -192,7 +192,7 @@ namespace MAPE.Http.Test {
 						Assert.Equal(new Span(30, 56), request.HostSpan);
 
 						// TargetUri is null for request-target of origin-form
-						Assert.Equal(null, request.TargetUri);
+						Assert.Null(request.TargetUri);
 					});
 					Assert.Equal(1, actualMessageCount);
 					sample.AssertOutputEqualToSample();
@@ -247,7 +247,7 @@ namespace MAPE.Http.Test {
 						Assert.Equal(new Span(38, 65), request.HostSpan);
 
 						// TargetUri is null for request-target of authority-form
-						Assert.Equal(null, request.TargetUri);
+						Assert.Null(request.TargetUri);
 					});
 					Assert.Equal(1, actualMessageCount);
 					sample.AssertOutputEqualToSample();
@@ -275,7 +275,7 @@ namespace MAPE.Http.Test {
 						Assert.Equal(new Span(34, 61), request.HostSpan);
 
 						// TargetUri is null for request-target of authority-form
-						Assert.Equal(null, request.TargetUri);
+						Assert.Null(request.TargetUri);
 					});
 					Assert.Equal(1, actualMessageCount);
 					sample.AssertOutputEqualToSample();
@@ -300,7 +300,7 @@ namespace MAPE.Http.Test {
 						Assert.Equal(new Span(20, 46), request.HostSpan);
 
 						// TargetUri is null for request-target of asterisk-form
-						Assert.Equal(null, request.TargetUri);
+						Assert.Null(request.TargetUri);
 					});
 					Assert.Equal(1, actualMessageCount);
 					sample.AssertOutputEqualToSample();

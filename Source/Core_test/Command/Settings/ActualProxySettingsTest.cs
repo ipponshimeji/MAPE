@@ -24,7 +24,7 @@ namespace MAPE.Utils.Test {
 				// ASSERT
 				Assert.Equal(ActualProxySettings.Defaults.Host, target.Host);
 				Assert.Equal(ActualProxySettings.Defaults.Port, target.Port);
-				Assert.Equal(null, target.ConfigurationScript);
+				Assert.Null(target.ConfigurationScript);
 			}
 
 			[Fact(DisplayName = "data: address")]
@@ -41,7 +41,7 @@ namespace MAPE.Utils.Test {
 				// ASSERT
 				Assert.Equal(host, target.Host);
 				Assert.Equal(port, target.Port);
-				Assert.Equal(null, target.ConfigurationScript);
+				Assert.Null(target.ConfigurationScript);
 			}
 
 			[Fact(DisplayName = "data: configuration script")]
@@ -55,7 +55,7 @@ namespace MAPE.Utils.Test {
 				ActualProxySettings target = new ActualProxySettings(data);
 
 				// ASSERT
-				Assert.Equal(null, target.Host);
+				Assert.Null(target.Host);
 				Assert.Equal(ActualProxySettings.Defaults.Port, target.Port);
 				Assert.Equal(configurationScript, target.ConfigurationScript);
 			}
@@ -72,7 +72,7 @@ namespace MAPE.Utils.Test {
 				// ASSERT
 				Assert.Equal(ActualProxySettings.Defaults.Host, target.Host);
 				Assert.Equal(ActualProxySettings.Defaults.Port, target.Port);
-				Assert.Equal(null, target.ConfigurationScript);
+				Assert.Null(target.ConfigurationScript);
 			}
 
 			[Fact(DisplayName = "data: null host")]

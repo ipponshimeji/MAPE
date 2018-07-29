@@ -687,7 +687,7 @@ namespace MAPE.Utils.Test {
 				IObjectData data = CreateEmptyObjectData();
 
 				// ASSERT
-				Assert.Equal(0, data.GetNames().Count());
+				Assert.Empty(data.GetNames());
 			}
 
 			#endregion
@@ -804,7 +804,7 @@ namespace MAPE.Utils.Test {
 				IObjectData obj = data.CreateObject();
 
 				// ASSERT
-				Assert.Equal(0, data.GetNames().Count());
+				Assert.Empty(data.GetNames());
 			}
 
 			#endregion
@@ -852,7 +852,7 @@ namespace MAPE.Utils.Test {
 				// ASSERT
 
 				// name
-				Assert.Equal(1, data.GetNames().Count());
+				Assert.Single(data.GetNames());
 				Assert.Equal("Value2", data.GetNames().FirstOrDefault());
 
 				// value
@@ -878,7 +878,7 @@ namespace MAPE.Utils.Test {
 				// ASSERT
 
 				// name
-				Assert.Equal(1, data.GetNames().Count());
+				Assert.Single(data.GetNames());
 				Assert.Equal("Value2", data.GetNames().FirstOrDefault());
 
 				// value
