@@ -85,8 +85,18 @@ Cultureが設定されていない場合は、
 
 | 名前 | 型 | 省略時の値 | 内容 |
 |:----|:----|:----|:----|
-| Host | 文字列 | 必須 | プロキシのホスト名。 |
-| Port | 整数 | 必須 | プロキシのポート。 |
+| ConfigurationScript | 文字列 | null | プロキシの構成スクリプト（.pacファイル）のURI。 |
+| Host | 文字列 | "proxy.example.org" | プロキシのホスト名。 |
+| Port | 整数 | 8080 | プロキシのポート。 |
+
+`ConfigurationScript`が空でない文字列の場合、
+本来のプロキシの情報はこの値が表すスクリプト（.pacファイル）によって取得されます。
+`ConfigurationScript`がnullまたは空文字列の場合、
+`Host`と`Port`が本来のプロキシを表します。
+`ConfigurationScript`または`Host`の少なくとも一方は空でない値が設定されていなければなりません。
+
+`ConfigurationScript`によるプロキシ構成スクリプトの指定は、Windows環境のみでサポートされます。
+`ConfigurationScript`にはローカルファイルを指定することはできません。
 
 
 ### Credentialオブジェクト

@@ -228,6 +228,9 @@
   <data name="ActualProxySettingsControl_portLabel_Content" xml:space="preserve">
     <value>ポート(_P):</value>
   </data>
+  <data name="ActualProxySettingsControl_configurationScriptLabel_Content" xml:space="preserve">
+    <value>構成スクリプト(_C):</value>
+  </data>
   <data name="SettingsWindow_Title" xml:space="preserve">
     <value>設定</value>
   </data>

@@ -7,7 +7,7 @@
 	string copyright = "Copyright 2016-2018 Takamasa Uramoto";
 	int majorVersion = 1;
 	int minorVersion = 0;
-	int buildNumber = 21;
+	int buildNumber = 22;
 	int revision = 0;
 //	string configuration = "beta";
 	string configuration = "developing";

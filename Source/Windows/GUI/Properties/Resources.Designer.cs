@@ -19,7 +19,7 @@ namespace MAPE.Windows.GUI.Properties {
     // または Visual Studio のようなツールを使用して自動生成されました。
     // メンバーを追加または削除するには、.ResX ファイルを編集して、/str オプションと共に
     // ResGen を実行し直すか、または VS プロジェクトをビルドし直します。
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "4.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     public class Resources {
@@ -62,7 +62,7 @@ namespace MAPE.Windows.GUI.Properties {
         
         /// <summary>
         ///   MAPE
-        ///(May Authentication Proxy Explode) に類似しているローカライズされた文字列を検索します。
+        ///(May Authentication Proxies Explode) に類似しているローカライズされた文字列を検索します。
         /// </summary>
         public static string AboutWindow_ApplicationName {
             get {
@@ -112,6 +112,15 @@ namespace MAPE.Windows.GUI.Properties {
         public static string ActualProxySettingsControl_autoDetectProxyCheckBox_Content {
             get {
                 return ResourceManager.GetString("ActualProxySettingsControl_autoDetectProxyCheckBox_Content", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   _Configuration Script: に類似しているローカライズされた文字列を検索します。
+        /// </summary>
+        public static string ActualProxySettingsControl_configurationScriptLabel_Content {
+            get {
+                return ResourceManager.GetString("ActualProxySettingsControl_configurationScriptLabel_Content", resourceCulture);
             }
         }
         

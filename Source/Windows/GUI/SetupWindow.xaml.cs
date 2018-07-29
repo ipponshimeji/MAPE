@@ -79,9 +79,7 @@ namespace MAPE.Windows.GUI {
 			InitializeComponent();
 
 			// Authentication Proxy tab
-			this.actualProxy.SystemSettingsSwitcherSettings = settings.SystemSettingsSwitcher;
-			this.actualProxy.DefaultActualProxyHostName = setupContext.DefaultActualProxyHostName;
-			this.actualProxy.DefaultActualProxyPort = setupContext.DefaultActualProxyPort;
+			SystemSettingsSwitcherForWindowsSettings systemSettingsSwitcherSettings = settings.SystemSettingsSwitcher;
 			if (setupContext.NeedActualProxy) {
 				StringBuilder buf = new StringBuilder(Windows.Properties.Resources.Setup_AuthenticationProxy_Description_NeedToChange);
 				if (setupContext.IsDefaultActualProxyProvided) {
@@ -90,11 +88,16 @@ namespace MAPE.Windows.GUI {
 					buf.Append(Windows.Properties.Resources.Setup_Description_DefaultValueProvided);
 				}
 				this.authenticationProxyDescriptionTextBlock.Text = buf.ToString();
-				this.actualProxy.AutoDetectEnabled = false;
+				if (systemSettingsSwitcherSettings.ActualProxy == null) {
+					systemSettingsSwitcherSettings.ActualProxy = setupContext.CreateActualProxySettings();
+				}
 			} else {
 				this.authenticationProxyDescriptionTextBlock.Text = Windows.Properties.Resources.Setup_Description_NoNeedToChange;
-				this.actualProxy.AutoDetectEnabled = setupContext.ProxyDetected;
+				if (setupContext.ProxyDetected == false && systemSettingsSwitcherSettings.ActualProxy == null) {
+					systemSettingsSwitcherSettings.ActualProxy = setupContext.CreateActualProxySettings();
+				}
 			}
+			this.actualProxy.SystemSettingsSwitcherSettings = systemSettingsSwitcherSettings;
 
 			// System Settings Switch tab
 			this.systemSettingsSwitcher.SystemSettingsSwitcherSettings = settings.SystemSettingsSwitcher;

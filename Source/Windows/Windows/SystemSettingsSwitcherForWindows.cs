@@ -107,7 +107,18 @@ namespace MAPE.Windows {
 		#endregion
 
 
-		#region overridables
+		#region overrides
+
+		public override IActualProxy GetActualProxy(SystemSettings systemSettings) {
+			// argument checks
+			// systemSettings can be null
+
+			if (string.IsNullOrEmpty(this.ActualProxyConfigurationScript) == false) {
+				return new AutoConfigActualProxy(false, this.ActualProxyConfigurationScript);
+			} else {
+				return base.GetActualProxy(systemSettings);
+			}
+		}
 
 		protected override IActualProxy GetSystemActualProxy(SystemSettings systemSettings) {
 			// argument checks

@@ -75,6 +75,7 @@ GUI版コマンド（`mapegui.exe`）のアプリケーション構成ファイ�
 
 | キー | 値の型 | 値の内容 |
 |:----|:----|:----|
+| DefaultActualProxyConfigurationScript | 文字列 | `ActualProxy`オブジェクトの`DefaultActualProxyConfigurationScript`プロパティのデフォルト値 |
 | DefaultActualProxyHostName | 文字列 | `ActualProxy`オブジェクトの`Host`プロパティのデフォルト値 |
 | DefaultActualProxyPort | 整数 | `ActualProxy`オブジェクトの`Port`プロパティのデフォルト値 |
 | DefaultProxyOverride | 文字列 | `SystemSettingsSwitcher`オブジェクトの`ProxyOverride`プロパティのデフォルト値 |

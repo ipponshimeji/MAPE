@@ -30,6 +30,8 @@ namespace MAPE.Command {
 
 		public int? DefaultActualProxyPort { get; private set; }
 
+		public string DefaultActualProxyConfigurationScript { get; private set; }
+
 		#endregion
 
 
@@ -67,6 +69,7 @@ namespace MAPE.Command {
 			// ActualProxy
 			this.DefaultActualProxyHostName = SystemSettingsSwitcher.GetDefaultActualProxyHostName();
 			this.DefaultActualProxyPort = SystemSettingsSwitcher.GetDefaultActualProxyPort();
+			this.DefaultActualProxyConfigurationScript = SystemSettingsSwitcher.GetDefaultActualProxyConfigurationScript();
 			IActualProxy actualProxy = switcher.DetectSystemActualProxy();
 			if (actualProxy != null) {
 				this.ProxyDetected = true;
@@ -79,6 +82,29 @@ namespace MAPE.Command {
 			}
 
 			return;
+		}
+
+		#endregion
+
+
+		#region overridables
+
+		public virtual ActualProxySettings CreateActualProxySettings() {
+			// create an ActualProxySettings instance
+			ActualProxySettings actualProxySettings = new ActualProxySettings();
+
+			// set up the instance
+			if (string.IsNullOrEmpty(this.DefaultActualProxyHostName) == false) {
+				actualProxySettings.Host = this.DefaultActualProxyHostName;
+			}
+			if (this.DefaultActualProxyPort != null) {
+				actualProxySettings.Port = this.DefaultActualProxyPort.Value;
+			}
+			if (string.IsNullOrEmpty(this.DefaultActualProxyConfigurationScript) == false) {
+				actualProxySettings.ConfigurationScript = this.DefaultActualProxyConfigurationScript;
+			}
+
+			return actualProxySettings;
 		}
 
 		#endregion
