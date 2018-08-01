@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,6 +9,15 @@ using System.Threading.Tasks;
 namespace MAPE.Test.TestWebServer {
     public class Server: IRequestHandlerOwner {
 		#region data
+
+		protected string ProxyPrefix { get; }
+
+		protected string DirectPrefix { get; }
+
+		#endregion
+
+
+		#region data - synchronized by instanceLocker
 
 		private readonly object instanceLocker = new object();
 
@@ -17,9 +27,12 @@ namespace MAPE.Test.TestWebServer {
 
 		private HttpListener listener = null;
 
-		protected string ProxyPrefix { get; }
+		#endregion
 
-		protected string DirectPrefix { get; }
+
+		#region event
+
+		public event ErrorEventHandler OnError = null;
 
 		#endregion
 
@@ -73,12 +86,17 @@ namespace MAPE.Test.TestWebServer {
 						listener.Prefixes.Add(this.DirectPrefix);
 					}
 
+					// start listening
+					listener.Start();
+
 					// update status
 					this.listener = listener;
-					this.listeningTask = Task.Run((Action)Listen);
+					this.listeningTask = Listen();
 				} catch {
-					if (this.listener != null) {
-						this.listener = null;
+					Debug.Assert(this.listeningTask == null);
+					this.listener = null;
+					if (listener != null) {
+						listener.Close();
 					}
 					throw;
 				}
@@ -87,85 +105,81 @@ namespace MAPE.Test.TestWebServer {
 			return;
 		}
 
-		private void Listen() {
-			// state checks
-			HttpListener listener = this.listener;
-			if (listener == null) {
-				return;
-			}
-
-			// start listening
-			listener.Start();
+		private async Task Listen() {
+			// listen requests
 			try {
 				// Note that Stop() method will clear this.listener on an other thread.
-				while (this.listener != null) {
-					HttpListenerContext context = listener.GetContext();
+				HttpListener listener;
+				while ((listener = this.listener) != null) {
+					HttpListenerContext context = await listener.GetContextAsync();
 					RequestHandler handler = CreateRequestHandler(context);
-					try {
-						AddRequestHandler(handler);
-						handler.StartHandling();
-					} catch {
-						RemoveRequestHandler(handler);
-						// continue
-					}
+					AddRequestHandlerAndStartIt(handler);
 				}
-			} catch (ObjectDisposedException) {
-				// the listener stopped listening
-				// just quit
+			} catch (HttpListenerException exception) {
+				if (exception.ErrorCode == 995) {
+					// the listener stopped listening (995: ERROR_OPERATION_ABORTED)
+					// just quit
+				} else {
+					ReportError(exception);
+				}
 			} catch (Exception exception) {
-				Console.Error.WriteLine(exception.Message);
-			} finally {
-				lock (this.instanceLocker) {
-					this.listener = null;
-				}
-				listener.Close();
+				ReportError(exception);
 			}
 
 			return;
 		}
 
-		public void Stop(int millisecondsTimeout) {
+		public bool Stop(int millisecondsTimeout) {
 			// argument checks
 			if (millisecondsTimeout < Timeout.Infinite) {
 				throw new ArgumentOutOfRangeException(nameof(millisecondsTimeout));
 			}
 
 			// request the listeningTask to stop 
-			Task listeningTask;
-			RequestHandler[] handlers;
-			lock (this.instanceLocker) {
-				// state checks
-				listeningTask = this.listeningTask;
-				if (listeningTask == null) {
-					// not listening
-					return;
-				}
-
-				// stop the listener
-				HttpListener listener = this.listener;
-				if (listener != null) {
-					listener.Abort();
-					this.listener = null;
-				}
-
-				// clear the request handler list
-				handlers = this.requestHandlers.ToArray();
-				this.requestHandlers.Clear();
-			}
-
-			// wait for the request handling
 			bool completed = true;
-			completed = RequestHandler.WaitAll(handlers, millisecondsTimeout);
+			HttpListener listener = null;
+			try {
+				Task listeningTask;
 
-			// wait for the listening task, which usually quits immediately
-			completed = listeningTask.Wait(millisecondsTimeout) && completed;
+				lock (this.instanceLocker) {
+					// state checks
+					listeningTask = this.listeningTask;
+					if (listeningTask == null) {
+						// not listening
+						return true;
+					}
 
-			// update state
-			lock (this.instanceLocker) {
-				this.listeningTask = null;
+					// stop the listener
+					listener = this.listener;
+					if (listener != null) {
+						this.listener = null;
+						listener.Stop();
+					}
+				}
+
+				// wait for the listening task, which usually quits immediately
+				completed = listeningTask.Wait(millisecondsTimeout);
+
+				// wait for the request handling
+				RequestHandler[] handlers;
+				lock (this.instanceLocker) {
+					handlers = this.requestHandlers.ToArray();
+					this.requestHandlers.Clear();
+				}
+				completed = RequestHandler.WaitAll(handlers, millisecondsTimeout) && completed;
+			} finally {
+				// update state
+				lock (this.instanceLocker) {
+					this.listeningTask = null;
+				}
+
+				// close the listener
+				if (listener != null) {
+					listener.Close();
+				}
 			}
 
-			return;
+			return completed;
 		}
 
 		#endregion
@@ -188,6 +202,13 @@ namespace MAPE.Test.TestWebServer {
 
 		#region overridables
 
+		protected virtual void ReportError(Exception exception) {
+			ErrorEventHandler onError = this.OnError;
+			if (onError != null) {
+				onError(this, new ErrorEventArgs(exception));
+			}
+		}
+
 		protected virtual RequestHandler CreateRequestHandler(HttpListenerContext context) {
 			return new RequestHandler(this, context);
 		}
@@ -197,15 +218,21 @@ namespace MAPE.Test.TestWebServer {
 
 		#region privates
 
-		private void AddRequestHandler(RequestHandler handler) {
+		private void AddRequestHandlerAndStartIt(RequestHandler handler) {
 			// argument checks
 			if (handler == null) {
 				throw new ArgumentNullException(nameof(handler));
 			}
 
-			// add the request handler to the list
+			// add the request handler to the list and start it
 			lock (this.instanceLocker) {
 				this.requestHandlers.Add(handler);
+				try {
+					handler.StartHandling();
+				} catch {
+					this.requestHandlers.Remove(handler);
+					throw;
+				}
 			}
 		}
 
@@ -217,7 +244,7 @@ namespace MAPE.Test.TestWebServer {
 
 			// remove the request handler from the list
 			lock (this.instanceLocker) {
-				this.requestHandlers.Add(handler);
+				this.requestHandlers.Remove(handler);
 			}
 		}
 

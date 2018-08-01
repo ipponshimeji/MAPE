@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -128,14 +130,23 @@ namespace MAPE.Test.TestWebServer {
 			HttpListenerRequest request = this.context.Request;
 			HttpListenerResponse response = this.context.Response;
 
-
+			string responseString = "<HTML><BODY> Hello world!</BODY></HTML>";
+			byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
+			// Get a response stream and write the response to it.
+			response.ContentLength64 = buffer.Length;
+			using (System.IO.Stream output = response.OutputStream) {
+				output.Write(buffer, 0, buffer.Length);
+			}
 		}
 
 		protected virtual void HandleError(Exception exception) {
 			HttpListenerRequest request = this.context.Request;
 			HttpListenerResponse response = this.context.Response;
 
-
+			response.StatusCode = (int)HttpStatusCode.InternalServerError;
+			using (TextWriter writer = new StreamWriter(response.OutputStream, Encoding.UTF8)) {
+				writer.WriteLine($"<HTML><BODY>{exception.Message}</BODY></HTML>");
+			}
 		}
 
 		#endregion
