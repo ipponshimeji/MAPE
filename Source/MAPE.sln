@@ -32,7 +32,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Core_test", "Core_test\Core
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "_Configuring", "_Configuring\_Configuring.csproj", "{8D3041A0-22D2-4D29-BA11-BE76274F8CF0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestWebServer", "TestWebServer\TestWebServer.csproj", "{D1F9205C-0E9B-4ECA-A3E4-8C846C035AF1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestWebServer", "TestWebServer\TestWebServer.csproj", "{D1F9205C-0E9B-4ECA-A3E4-8C846C035AF1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

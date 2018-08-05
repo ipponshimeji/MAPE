@@ -8,12 +8,12 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>..\__Bin\Debug\netcoreapp2.0\</OutputPath>
+    <OutputPath>..\__Bin\Debug\</OutputPath>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <OutputPath>..\__Bin\Release\netcoreapp2.0\</OutputPath>
+    <OutputPath>..\__Bin\Release\</OutputPath>
   </PropertyGroup>
 
 </Project>
