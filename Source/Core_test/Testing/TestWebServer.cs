@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading;
 using Xunit;
 
 
@@ -21,9 +22,9 @@ namespace MAPE.Testing {
 
 		#region data
 
-		public string ProxyPrefix { get; private set; }
+		public IPEndPoint ProxyEndPoint { get; }
 
-		public string DirectPrefix { get; private set; }
+		public IPEndPoint DirectEndPoint { get; }
 
 		private Process process = null;
 
@@ -32,16 +33,16 @@ namespace MAPE.Testing {
 
 		#region creation and disposal
 
-		private TestWebServer(string proxyPrefix, string directPrefix = null) {
+		private TestWebServer(IPEndPoint proxyEndPoint, IPEndPoint directEndPoint) {
 			// argument checks
-			if (string.IsNullOrEmpty(proxyPrefix)) {
-				throw new ArgumentNullException(nameof(proxyPrefix));
+			if (proxyEndPoint == null) {
+				throw new ArgumentNullException(nameof(proxyEndPoint));
 			}
-			// directPrefix can be null
+			// directEndPoint can be null
 
 			// initialize members
-			this.ProxyPrefix = proxyPrefix;
-			this.DirectPrefix = directPrefix;
+			this.ProxyEndPoint = proxyEndPoint;
+			this.DirectEndPoint = directEndPoint;
 
 			return;
 		}
@@ -66,7 +67,7 @@ namespace MAPE.Testing {
 				if (useCount == 0) {
 					// Note that the following block may throw an exception on error.
 					Debug.Assert(instance == null);
-					server = new TestWebServer("http://127.0.0.1:8080/");
+					server = CreateTestWebServer();
 					server.Start();
 					instance = server;
 				} else {
@@ -108,23 +109,32 @@ namespace MAPE.Testing {
 			return Path.Combine(dirPath, "TestWebServer.dll");			
 		}
 
+		private static TestWebServer CreateTestWebServer() {
+			IPAddress address = IPAddress.Loopback;
+			int[] ports = TestUtil.GetFreePortToListen(address, 2);
+			IPEndPoint proxyEndPoint = new IPEndPoint(address, ports[0]);
+			IPEndPoint directEndPoint = new IPEndPoint(address, ports[1]);
+
+			return new TestWebServer(proxyEndPoint, directEndPoint);
+		}
+
 		private void Start() {
 			// state checks
 			Process process = this.process;
 			if (process != null) {
 				return;
 			}
+			// this method must be called within the scope locked by classLocker
+			Debug.Assert(Monitor.IsEntered(classLocker));
 
 			// start process
 			string serverFilePath = GetServerFilePath();
-			IPAddress address = IPAddress.Loopback;
-			int[] ports = TestUtil.GetFreePortToListen(address, 2);
-			this.ProxyPrefix = $"http://{address.ToString()}:{ports[0]}/";
-			this.DirectPrefix = $"http://{address.ToString()}:{ports[1]}/";
+			string proxyPrefix = $"http://{this.ProxyEndPoint}/";
+			string directPrefix = $"http://{this.DirectEndPoint}/";
 
 			ProcessStartInfo info = new ProcessStartInfo();
 			info.FileName = "dotnet";
-			info.Arguments = $"\"{serverFilePath}\" \"{this.ProxyPrefix}\" \"{this.DirectPrefix}\"";
+			info.Arguments = $"\"{serverFilePath}\" \"{proxyPrefix}\" \"{directPrefix}\"";
 			info.CreateNoWindow = true;
 			info.RedirectStandardInput = true;
 			info.RedirectStandardError = true;
@@ -149,9 +159,9 @@ namespace MAPE.Testing {
 			if (process == null) {
 				return;
 			}
+			// this method must be called within the scope locked by classLocker
+			Debug.Assert(Monitor.IsEntered(classLocker));
 
-			this.DirectPrefix = null;
-			this.ProxyPrefix = null;
 			try {
 				// input for "Hit Enter key to quit."
 				process.StandardInput.WriteLine();
