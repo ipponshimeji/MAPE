@@ -8,7 +8,7 @@ using MAPE.Testing;
 
 
 namespace MAPE.Server.Test {
-	public class ProxyTest {
+	public class ProxyingTest {
 		#region temp
 
 		[Fact(DisplayName = "Temp")]

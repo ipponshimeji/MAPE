@@ -1,11 +1,13 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Threading;
 
 namespace MAPE.Test.TestWebServer {
     class Program {
 		public const int SuccessExitCode = 0;
 		public const int ErrorExitCode = 1;
+		public const int EndPointInUseExitCode = 2;
 
 		private static int exitCode = SuccessExitCode;
 
@@ -33,10 +35,12 @@ namespace MAPE.Test.TestWebServer {
 				server.Start();
 
 				// run until a line received from the standard input
+				WriteStatusOutput("Started.");
 				Console.Out.WriteLine("Hit Enter key to quit.");
 				Console.In.ReadLine();
 			} catch (Exception exception) {
 				ReportError(exception);
+				WriteStatusOutput("Failed.");
 			} finally {
 				server.Stop(Timeout.Infinite);
 				server.OnError -= server_OnError;
@@ -53,6 +57,19 @@ namespace MAPE.Test.TestWebServer {
 		private static void ReportError(Exception exception) {
 			Console.Error.WriteLine(exception.Message);
 			Program.exitCode = ErrorExitCode;
+
+			// handle special case
+			HttpListenerException listenerException = exception as HttpListenerException;
+			if (listenerException != null && listenerException.ErrorCode == 183) {
+				// one of the specified end points is in use
+				Program.exitCode = EndPointInUseExitCode;
+			}
+		}
+
+		// Note that an invoker use this output to detect whether the server starts successfully.
+		// See MAPE.Testing.TestWebServer.Start()
+		private static void WriteStatusOutput(string line) {
+			Console.Out.WriteLine(line);
 		}
 
 		private static void server_OnError(object sender, ErrorEventArgs e) {
