@@ -4,6 +4,7 @@ using System.IO;
 using System.Net;
 using System.Text;
 using System.Threading;
+using MAPE.Test.TestWeb;
 using Xunit;
 
 
@@ -22,9 +23,11 @@ namespace MAPE.Testing {
 
 		#region data
 
-		public IPEndPoint ProxyEndPoint { get; private set; }
+		public IPEndPoint HttpEndPoint { get; private set; }
 
-		public IPEndPoint DirectEndPoint { get; private set; }
+		public IPEndPoint HttpsEndPoint { get; private set; }
+
+		public IPEndPoint ProxyEndPoint { get; private set; }
 
 		private Process process = null;
 
@@ -33,18 +36,24 @@ namespace MAPE.Testing {
 
 		#region creation and disposal
 
-		private TestWebServer(IPEndPoint proxyEndPoint, IPEndPoint directEndPoint) {
+		private TestWebServer(IPEndPoint httpEndPoint, IPEndPoint httpsEndPoint, IPEndPoint proxyEndPoint) {
 			// argument checks
-			// proxyEndPoint and directEndPoint can be null
+			if (httpEndPoint == null && httpsEndPoint != null) {
+				throw new ArgumentException("It must be null when 'httpEndPoint' is null.", nameof(httpsEndPoint));
+			}
+			if (httpEndPoint == null && proxyEndPoint != null) {
+				throw new ArgumentException("It must be null when 'httpEndPoint' is null.", nameof(proxyEndPoint));
+			}
 
 			// initialize members
+			this.HttpEndPoint = httpEndPoint;
+			this.HttpsEndPoint = httpsEndPoint;
 			this.ProxyEndPoint = proxyEndPoint;
-			this.DirectEndPoint = directEndPoint;
 
 			return;
 		}
 
-		private TestWebServer(): this(null, null) {
+		private TestWebServer(): this(null, null, null) {
 		}
 
 		#endregion
@@ -65,7 +74,7 @@ namespace MAPE.Testing {
 
 				// create an instance if necessary
 				if (useCount == 0) {
-					// Note that the following block may throw an exception on error.
+					// Note that the following code may throw an exception on error.
 					Debug.Assert(instance == null);
 					server = new TestWebServer();
 					server.Start();
@@ -131,28 +140,33 @@ namespace MAPE.Testing {
 			info.StandardErrorEncoding = Encoding.Default;
 			info.UseShellExecute = false;
 
-			string createArguments(IPEndPoint proxyEP, IPEndPoint directEP) {
+			string createArguments(IPEndPoint httpEP, IPEndPoint httpsEP, IPEndPoint proxyEP) {
 				// argument checks
-				Debug.Assert(proxyEP != null);
-				// directEP can be null
+				Debug.Assert(httpEP != null);
 
-				string arguments = $"\"{serverFilePath}\" \"http://{proxyEP}/\"";
-				if (directEP != null) {
-					arguments = string.Concat(arguments, $" \"http://{directEP}/\"");
+				string arguments = $"\"{serverFilePath}\" \"http://{httpEP}/\"";
+				if (httpsEP != null) {
+					arguments = string.Concat(arguments, $" \"https://{httpsEP}/\"");
+				} else if (proxyEP != null) {
+					Debug.Assert(httpsEP == null);
+					arguments = string.Concat(arguments, " \"\"");
+				}
+				if (proxyEP != null) {
+					arguments = string.Concat(arguments, $" \"http://{proxyEP}/\"");
 				}
 
 				return arguments;
 			}
 
-			Process startServer(ProcessStartInfo psi, IPEndPoint proxyEP, IPEndPoint directEP) {
+			Process startServer(ProcessStartInfo psi, IPEndPoint httpEP, IPEndPoint httpsEP, IPEndPoint proxyEP) {
 				// argument checks
 				Debug.Assert(psi != null);
 
 				// start server
-				psi.Arguments = createArguments(proxyEP, directEP);
+				psi.Arguments = createArguments(httpEP, httpsEP, proxyEP);
 				Process p = Process.Start(psi);
-				string state = p.StandardOutput.ReadLine();
-				if (state != "Started.") {
+				bool isStarted = TestWebSettings.ReadWhetherServerIsStarted(p);
+				if (isStarted == false) {
 					int timeoutMilliseconds = 3000;
 					if (p.WaitForExit(timeoutMilliseconds) == false) {
 						p.Kill();
@@ -163,11 +177,12 @@ namespace MAPE.Testing {
 				return p;
 			}
 
+			IPEndPoint httpEndPoint = this.HttpEndPoint;
+			IPEndPoint httpsEndPoint = this.HttpsEndPoint;
 			IPEndPoint proxyEndPoint = this.ProxyEndPoint;
-			IPEndPoint directEndPoint = this.DirectEndPoint;
-			if (proxyEndPoint != null) {
+			if (httpEndPoint != null) {
 				// start server with specified end points
-				process = startServer(info, proxyEndPoint, directEndPoint);
+				process = startServer(info, httpEndPoint, httpsEndPoint, proxyEndPoint);
 			} else {
 				// start server with automatically allocated ports
 				IPAddress address = IPAddress.Loopback;
@@ -175,23 +190,26 @@ namespace MAPE.Testing {
 				int count = 0;
 				do {
 					// find free ports
-					int[] ports = TestUtil.GetFreePortToListen(address, 2);
-					proxyEndPoint = new IPEndPoint(address, ports[0]);
-					directEndPoint = new IPEndPoint(address, ports[1]);
+					int[] ports = TestUtil.GetFreePortToListen(address, 3);
+					httpEndPoint = new IPEndPoint(address, ports[0]);
+					httpsEndPoint = new IPEndPoint(address, ports[1]);
+					proxyEndPoint = new IPEndPoint(address, ports[2]);
 
 					// try to start
-					// Note that exit code 2 means 'endpoint conflicted'
-					process = startServer(info, proxyEndPoint, directEndPoint);
+					process = startServer(info, httpEndPoint, httpsEndPoint, proxyEndPoint);
 					if (process.HasExited == false) {
 						// succeeded
+						this.HttpEndPoint = httpEndPoint;
+						this.HttpsEndPoint = httpsEndPoint;
 						this.ProxyEndPoint = proxyEndPoint;
-						this.DirectEndPoint = directEndPoint;
 						break;
-					} else if (process.ExitCode != 2 || retryCount <= count) {
+					} else if (process.ExitCode != TestWebSettings.EndPointInUseExitCode || retryCount <= count) {
+						// failed
 						break;
 					}
 
-					// prepare to retry
+					// maybe the found port has been used at the moment
+					// retry with new ports
 					process.Dispose();
 					process = null;
 					++count;

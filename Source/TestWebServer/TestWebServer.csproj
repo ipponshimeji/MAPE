@@ -16,4 +16,8 @@
     <OutputPath>..\__Bin\Release\</OutputPath>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\TestWeb\TestWeb.csproj" />
+  </ItemGroup>
+
 </Project>

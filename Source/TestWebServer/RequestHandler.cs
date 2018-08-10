@@ -4,9 +4,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using MAPE.Test.TestWeb;
 
 namespace MAPE.Test.TestWebServer {
 	public class RequestHandler {
@@ -121,6 +123,28 @@ namespace MAPE.Test.TestWebServer {
 			}
 		}
 
+
+		protected void Respond(HttpResponseMessage message) {
+			// argument checks
+			if (message == null) {
+				throw new ArgumentNullException(nameof(message));
+			}
+
+			// respond the given response message
+			HttpListenerResponse response = this.context.Response;
+			response.ProtocolVersion = message.Version;
+			response.StatusCode = (int)message.StatusCode;
+			response.StatusDescription = message.ReasonPhrase;
+			foreach (var header in message.Headers) {
+				response.Headers.Add(header.Key, string.Join(",", header.Value));
+			}
+			using (Stream stream = response.OutputStream) {
+				message.Content.CopyToAsync(stream);
+			}
+
+			return;
+		}
+
 		#endregion
 
 
@@ -128,15 +152,8 @@ namespace MAPE.Test.TestWebServer {
 
 		protected virtual void HandleRequest() {
 			HttpListenerRequest request = this.context.Request;
-			HttpListenerResponse response = this.context.Response;
 
-			string responseString = "<HTML><BODY> Hello world!</BODY></HTML>";
-			byte[] buffer = System.Text.Encoding.UTF8.GetBytes(responseString);
-			// Get a response stream and write the response to it.
-			response.ContentLength64 = buffer.Length;
-			using (System.IO.Stream output = response.OutputStream) {
-				output.Write(buffer, 0, buffer.Length);
-			}
+			Respond(Responses.GetResponse(request.RawUrl));
 		}
 
 		protected virtual void HandleError(Exception exception) {

@@ -31,6 +31,7 @@
     <ProjectReference Include="..\TestWebServer\TestWebServer.csproj">
       <Private>true</Private>
     </ProjectReference>
+    <ProjectReference Include="..\TestWeb\TestWeb.csproj" />
   </ItemGroup>
 
 </Project>
