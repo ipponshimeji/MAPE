@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -135,11 +136,24 @@ namespace MAPE.Test.TestWebServer {
 			response.ProtocolVersion = message.Version;
 			response.StatusCode = (int)message.StatusCode;
 			response.StatusDescription = message.ReasonPhrase;
+
+			HttpResponseHeaders messageHeaders = message.Headers;
+			response.SendChunked = messageHeaders.TransferEncodingChunked ?? false;
 			foreach (var header in message.Headers) {
-				response.Headers.Add(header.Key, string.Join(",", header.Value));
+				response.Headers.Add(header.Key, string.Join(", ", header.Value));
 			}
-			using (Stream stream = response.OutputStream) {
-				message.Content.CopyToAsync(stream);
+
+			HttpContent content = message.Content;
+			if (content != null) {
+				foreach (var header in content.Headers) {
+					response.Headers.Add(header.Key, string.Join(", ", header.Value));
+				}
+				if (response.SendChunked == false) {
+					response.ContentLength64 = content.Headers.ContentLength ?? 0;
+				}
+				using (Stream stream = response.OutputStream) {
+					content.CopyToAsync(stream).Wait();
+				}
 			}
 
 			return;

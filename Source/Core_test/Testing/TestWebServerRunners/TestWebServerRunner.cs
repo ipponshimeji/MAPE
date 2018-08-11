@@ -2,26 +2,23 @@
 using System.Diagnostics;
 using System.IO;
 using System.Net;
+using System.Net.Http;
 using System.Text;
-using System.Threading;
 using MAPE.Test.TestWeb;
-using Xunit;
 
 
-namespace MAPE.Testing {
-	public class TestWebServer {
-		#region data - synchronized by classLocker
+namespace MAPE.Testing.TestWebServerRunners {
+	public class TestWebServerRunner: ObjectWithUseCount {
+		#region data
 
-		private static readonly object classLocker = new object();
-
-		private static int useCount = 0;
-
-		private static TestWebServer instance = null;
+		private readonly IPAddress addressForAutoPortsAllocation;
 
 		#endregion
 
 
-		#region data
+		#region data - synchronized by base.useCountLocker
+
+		private Process process = null;
 
 		public IPEndPoint HttpEndPoint { get; private set; }
 
@@ -29,23 +26,37 @@ namespace MAPE.Testing {
 
 		public IPEndPoint ProxyEndPoint { get; private set; }
 
-		private Process process = null;
+		#endregion
+
+
+		#region properties
+
+		public bool AutoPortsAllocation {
+			get {
+				return this.addressForAutoPortsAllocation != null;
+			}
+		}
+
+		public bool IsRunning {
+			get {
+				return this.process != null;
+			}
+		}
 
 		#endregion
 
 
 		#region creation and disposal
 
-		private TestWebServer(IPEndPoint httpEndPoint, IPEndPoint httpsEndPoint, IPEndPoint proxyEndPoint) {
+		public TestWebServerRunner(IPEndPoint httpEndPoint, IPEndPoint httpsEndPoint, IPEndPoint proxyEndPoint) {
 			// argument checks
-			if (httpEndPoint == null && httpsEndPoint != null) {
-				throw new ArgumentException("It must be null when 'httpEndPoint' is null.", nameof(httpsEndPoint));
+			if (httpEndPoint == null) {
+				throw new ArgumentNullException(nameof(httpEndPoint));
 			}
-			if (httpEndPoint == null && proxyEndPoint != null) {
-				throw new ArgumentException("It must be null when 'httpEndPoint' is null.", nameof(proxyEndPoint));
-			}
+			// httpsEndPoint or proxyEndPoint can be null
 
 			// initialize members
+			this.addressForAutoPortsAllocation = null;
 			this.HttpEndPoint = httpEndPoint;
 			this.HttpsEndPoint = httpsEndPoint;
 			this.ProxyEndPoint = proxyEndPoint;
@@ -53,79 +64,32 @@ namespace MAPE.Testing {
 			return;
 		}
 
-		private TestWebServer(): this(null, null, null) {
+		public TestWebServerRunner(IPAddress address) {
+			// argument checks
+			if (address == null) {
+				throw new ArgumentNullException(nameof(address));
+			}
+
+			// initialize members
+			this.addressForAutoPortsAllocation = address;
+			this.HttpEndPoint = null;
+			this.HttpsEndPoint = null;
+			this.ProxyEndPoint = null;
+
+			return;
 		}
 
 		#endregion
 
 
-		#region methods
+		#region overrides
 
-		public static TestWebServer Use() {
-			TestWebServer server;
-			lock (classLocker) {
-				// state checks
-				if (useCount < 0) {
-					throw new InvalidOperationException("invalid state");
-				}
-				if (useCount == Int32.MaxValue) {
-					throw new InvalidOperationException("use count overflow");
-				}
-
-				// create an instance if necessary
-				if (useCount == 0) {
-					// Note that the following code may throw an exception on error.
-					Debug.Assert(instance == null);
-					server = new TestWebServer();
-					server.Start();
-					instance = server;
-				} else {
-					Debug.Assert(instance != null);
-					server = instance;
-				}
-
-				// increment the use count
-				++useCount;
-			}
-
-			return server;
-		}
-
-		public static void Unuse() {
-			lock (classLocker) {
-				// state checks
-				if (useCount <= 0) {
-					throw new InvalidOperationException("invalid state");
-				}
-
-				// destroy the instance if necessary
-				if (--useCount == 0) {
-					TestWebServer server = instance;
-					instance = null;
-					Debug.Assert(server != null);
-					server.Stop();
-				}
-			}
-		}
-
-		#endregion
-
-
-		#region privates
-
-		private static string GetServerFilePath() {
-			string dirPath = Path.GetDirectoryName(typeof(TestWebServer).Assembly.ManifestModule.FullyQualifiedName);
-			return Path.Combine(dirPath, "TestWebServer.dll");			
-		}
-
-		private void Start() {
+		protected override void OnUsed() {
 			// state checks
 			Process process = this.process;
 			if (process != null) {
 				return;
 			}
-			// this method must be called within the scope locked by classLocker
-			Debug.Assert(Monitor.IsEntered(classLocker));
 
 			// start process
 			string serverFilePath = GetServerFilePath();
@@ -177,23 +141,21 @@ namespace MAPE.Testing {
 				return p;
 			}
 
-			IPEndPoint httpEndPoint = this.HttpEndPoint;
-			IPEndPoint httpsEndPoint = this.HttpsEndPoint;
-			IPEndPoint proxyEndPoint = this.ProxyEndPoint;
-			if (httpEndPoint != null) {
+			if (this.AutoPortsAllocation == false) {
 				// start server with specified end points
-				process = startServer(info, httpEndPoint, httpsEndPoint, proxyEndPoint);
+				process = startServer(info, this.HttpEndPoint, this.HttpsEndPoint, this.ProxyEndPoint);
 			} else {
 				// start server with automatically allocated ports
-				IPAddress address = IPAddress.Loopback;
+				IPAddress address = this.addressForAutoPortsAllocation;
+				Debug.Assert(address != null);
 				int retryCount = 2;
 				int count = 0;
 				do {
 					// find free ports
 					int[] ports = TestUtil.GetFreePortToListen(address, 3);
-					httpEndPoint = new IPEndPoint(address, ports[0]);
-					httpsEndPoint = new IPEndPoint(address, ports[1]);
-					proxyEndPoint = new IPEndPoint(address, ports[2]);
+					IPEndPoint httpEndPoint = new IPEndPoint(address, ports[0]);
+					IPEndPoint httpsEndPoint = new IPEndPoint(address, ports[1]);
+					IPEndPoint proxyEndPoint = new IPEndPoint(address, ports[2]);
 
 					// try to start
 					process = startServer(info, httpEndPoint, httpsEndPoint, proxyEndPoint);
@@ -228,16 +190,19 @@ namespace MAPE.Testing {
 			this.process = process;
 		}
 
-		private void Stop() {
+		protected override void OnUnused() {
 			// state checks
 			Process process = this.process;
 			this.process = null;
 			if (process == null) {
 				return;
 			}
-			// this method must be called within the scope locked by classLocker
-			Debug.Assert(Monitor.IsEntered(classLocker));
 
+			if (this.AutoPortsAllocation) {
+				this.HttpEndPoint = null;
+				this.HttpsEndPoint = null;
+				this.ProxyEndPoint = null;
+			}
 			try {
 				// input for "Hit Enter key to quit."
 				process.StandardInput.WriteLine();
@@ -247,6 +212,16 @@ namespace MAPE.Testing {
 			}
 			process.WaitForExit();
 			process.Dispose();
+		}
+
+		#endregion
+
+
+		#region privates
+
+		private static string GetServerFilePath() {
+			string dirPath = Path.GetDirectoryName(typeof(TestWebServerRunner).Assembly.ManifestModule.FullyQualifiedName);
+			return Path.Combine(dirPath, "TestWebServer.dll");
 		}
 
 		#endregion

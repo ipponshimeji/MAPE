@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 
 namespace MAPE.Test.TestWeb {
     public class Responses {
@@ -26,13 +27,14 @@ namespace MAPE.Test.TestWeb {
 					break;
 			}
 
+			if ((response.Headers.TransferEncodingChunked ?? false) == false && response.Content != null) {
+				// ensure that the Content-Length header is added 
+				// It seems that Content-Length header is added when ContentLength property is accessed first time.
+				long? length = response.Content.Headers.ContentLength;
+			}
+
 			return response;
 		}
-
-		#endregion
-
-
-		#region privates
 
 		public static HttpResponseMessage GetNotFoundResponse(string path) {
 			HttpResponseMessage response = new HttpResponseMessage(HttpStatusCode.NotFound);
@@ -40,9 +42,9 @@ namespace MAPE.Test.TestWeb {
 			return response;
 		}
 
-		public static HttpResponseMessage GetSimpleResponse(string content) {
+		public static HttpResponseMessage GetSimpleResponse(string text) {
 			HttpResponseMessage response = new HttpResponseMessage();
-			response.Content = new StringContent(content);
+			response.Content = new StringContent(text);			
 
 			return response;
 		}
